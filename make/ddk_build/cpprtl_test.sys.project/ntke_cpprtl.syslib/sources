@@ -1,0 +1,76 @@
+MODULE_DIR_STEP = ..\..
+!INCLUDE $(MODULE_DIR_STEP)\ddk_build.mk
+
+MODULE_SOURCES_DIR    = $(MODULE_ROOT_STEP)\ke_mode\winnt\ntke_cpprtl
+
+#############################################################################
+
+TARGETTYPE = DRIVER_LIBRARY
+TARGETNAME = ntke_cpprtl
+
+
+SOURCES =  \
+    rtlk_init.cpp  \
+    rtlk_entry.cpp  \
+    rtlk_heap.cpp  \
+    rtlk_new.cpp  \
+    rtlk_gstatic.cpp  \
+    rtlk_std.cpp  \
+    rtlk_c.cpp  \
+    eh_aux.cpp  \
+    eh_msvc_internal_data_aux.cpp  \
+    eh_msvc_array_support.cpp  \
+    rtti_msvc_entry_points.cpp  \
+    rtti_msvc_internal_data_aux.cpp  \
+    rtti_engine.cpp  \
+    rtti_aux.cpp  \
+    rtti_type_info.cpp
+
+
+I386_SOURCES =  \
+    eh_msvc_entry_points.cpp  \
+    eh_msvc_internal_data.cpp  \
+    eh_engine.cpp  \
+    eh_exception_registration.cpp  \
+    eh_stack_walker.cpp  \
+    eh_except_list.x86.asm
+#    eh_prolog.x86.asm
+
+
+AMD64_SOURCES =  \
+    eh_msvc_entry_points.cpp  \
+    eh_engine.cpp  \
+    eh_stack_walker.cpp  \
+    eh_execute_handler.x64.asm  \
+    eh_restore_context.x64.asm  \
+    eh_invoke_funclet.x64.asm
+
+
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR);  \
+    $(MODULE_SOURCES_DIR)\eh;  \
+    $(MODULE_SOURCES_DIR)\rtti;  \
+    $(MODULE_SOURCES_DIR)\std_incl;  \
+    $(INCLUDES)
+    
+
+!if  "$(_BUILDARCH)" == "x86"
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR)\eh\frame_based;  \
+    $(MODULE_SOURCES_DIR)\eh\frame_based\_x86;  \
+    $(MODULE_SOURCES_DIR)\rtti\_x86;  \
+    $(INCLUDES)
+!endif
+
+
+!if  "$(_BUILDARCH)" == "AMD64"
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR)\eh\table_based;  \
+    $(MODULE_SOURCES_DIR)\eh\table_based\_x64;  \
+    $(MODULE_SOURCES_DIR)\rtti\_x64;  \
+    $(INCLUDES)
+!endif
+
+
+
+!INCLUDE ..\project_common.mk

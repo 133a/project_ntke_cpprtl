@@ -1,0 +1,34 @@
+MODULE_DIR_STEP = ..\..
+!INCLUDE $(MODULE_DIR_STEP)\ddk_build.mk
+
+BUILD_ALLOW_ALL_WARNINGS=1
+
+MODULE_SOURCES_DIR    = $(MODULE_ROOT_STEP)\ke_mode\winnt\ntke_cpprtl\rtti\rtti_test_suite
+
+#############################################################################
+
+TARGETTYPE = DRIVER_LIBRARY
+TARGETNAME = ntke_rtti_test_suite
+
+
+SOURCES =  \
+    rtti_test_loop.cpp  \
+    test_mi01.cpp  \
+    test_mi02.cpp  \
+    test_mi03.cpp  \
+    test_si01.cpp  \
+    test_vi01.cpp  \
+    test_vi02.cpp  \
+    test_vi03.cpp  \
+    test_vi04.cpp  \
+    test_vi05.cpp
+
+
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR);  \
+    $(MODULE_SOURCES_DIR)\..;  \
+    $(MODULE_SOURCES_DIR)\..\..\std_incl;  \
+    $(INCLUDES)
+
+    
+!INCLUDE ..\project_common.mk

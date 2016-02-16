@@ -1,0 +1,25 @@
+MODULE_DIR_STEP = ..\..
+!INCLUDE $(MODULE_DIR_STEP)\ddk_build.mk
+
+MODULE_SOURCES_DIR    = $(MODULE_ROOT_STEP)\ke_mode\winnt\ntke_cpprtl\gstatic_test_suite
+
+#############################################################################
+
+TARGETTYPE = DRIVER_LIBRARY
+TARGETNAME = ntke_gstatic_test_suite
+
+
+SOURCES =  \
+    gstatic_test_loop.cpp  \
+    test_gstatic01.cpp  \
+    test_gstatic02.cpp  \
+    test_gstatic03.cpp  \
+
+
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR);  \
+    $(MODULE_SOURCES_DIR)\..;  \
+    $(INCLUDES)
+
+    
+!INCLUDE ..\project_common.mk

@@ -1,0 +1,43 @@
+MODULE_DIR_STEP = ..\..
+!INCLUDE $(MODULE_DIR_STEP)\ddk_build.mk
+
+MODULE_SOURCES_DIR    = $(MODULE_ROOT_STEP)\ke_mode\winnt\ntke_cpprtl\cpprtl_test_kemode
+
+#############################################################################
+
+TARGETTYPE = DRIVER
+TARGETNAME = cpprtl_test
+
+
+USER_C_FLAGS  =  $(USER_C_FLAGS) /DTEST_GSTATIC /DTEST_EH /DTEST_RTTI /DTEST_STL /DTEST_THREADS /DTEST_WORKITEM /DTEST_DPC /DTEST_APC
+
+
+TARGETLIBS = \
+    $(DDK_LIB_PATH)\ntoskrnl.lib  \
+    $(DDK_LIB_PATH)\hal.lib  \
+    $(DDK_LIB_PATH)\wdm.lib  \
+    $(MODULE_OUTPUT_DIR)\*\ntke_cpprtl.lib  \
+    $(MODULE_OUTPUT_DIR)\*\ntke_eh_test_suite.lib  \
+    $(MODULE_OUTPUT_DIR)\*\ntke_rtti_test_suite.lib  \
+    $(MODULE_OUTPUT_DIR)\*\ntke_gstatic_test_suite.lib  \
+    $(MODULE_OUTPUT_DIR)\*\ntke_stl_test_suite.lib
+
+
+SOURCES =  \
+    main.cpp  \
+    run_tests.cpp  \
+    test_irql.cpp  \
+    test_thread.cpp  \
+    test_workitem.cpp  \
+    test_dpc.cpp  \
+    test_apc.cpp
+
+
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR);  \
+    $(MODULE_SOURCES_DIR)\..;  \
+    $(MODULE_SOURCES_DIR)\..\std_incl;  \
+    $(INCLUDES)
+
+    
+!INCLUDE ..\project_common.mk

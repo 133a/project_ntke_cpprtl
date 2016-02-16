@@ -1,0 +1,49 @@
+/////////////////////////////////////////////////////////////////////////////
+////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    mailto:kt133a@seznam.cz
+////    license: the MIT license
+/////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef NTKE_CPPRTL_TYPEINFO_
+#define NTKE_CPPRTL_TYPEINFO_
+
+
+#include "exception"
+#include "../rtti/rtti_type_info.h"
+
+
+namespace std
+{
+
+  typedef ::type_info type_info;
+
+
+  class bad_cast 
+    : public exception
+  {
+  public:
+    bad_cast() throw() {}
+    bad_cast(bad_cast const&) throw() {}
+    bad_cast& operator=(bad_cast const&) throw() { return *this; }
+    virtual ~bad_cast() throw() {}
+    virtual char const* what() const throw() { return "std::bad_cast"; }
+  };
+
+
+  class bad_typeid
+    : public exception
+  {
+  public:
+    bad_typeid() throw() {}
+    bad_typeid(bad_typeid const&) throw() {}
+    bad_typeid& operator=(bad_typeid const&) throw() { return *this; }
+    virtual ~bad_typeid() throw() {}
+    virtual char const* what() const throw() { return "std::bad_typeid"; }
+  };
+
+}
+
+
+#endif // include guard
+

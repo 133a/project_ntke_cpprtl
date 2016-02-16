@@ -1,0 +1,8 @@
+#ifndef STLPORT_SUPPORT_REDIRECT_CSTDARG_
+#define STLPORT_SUPPORT_REDIRECT_CSTDARG_
+
+#include "cppstd_headers_redirect.h"
+#include NTKE_INCLUDE_DDK_STL(cstdarg)
+
+#endif // include guard
+

@@ -1,0 +1,31 @@
+MODULE_DIR_STEP = ..\..
+!INCLUDE $(MODULE_DIR_STEP)\ddk_build.mk
+
+MODULE_SOURCES_DIR    = $(MODULE_ROOT_STEP)\ke_mode\winnt\ntke_cpprtl\stl_test_suite
+
+#############################################################################
+
+TARGETTYPE = DRIVER_LIBRARY
+TARGETNAME = ntke_stl_test_suite
+
+
+SOURCES =  \
+    stl_test_loop.cpp  \
+    test_stl01.cpp  \
+    test_stl02.cpp  \
+    test_stl03.cpp  \
+    test_stl04.cpp  \
+    test_stl05.cpp  \
+    test_stl06.cpp
+
+
+INCLUDES =  \
+    $(MODULE_ROOT_STEP)\3rd_party\STLport\5.2.1\STLport-5.2.1\stlport;  \
+    $(MODULE_ROOT_STEP);  \
+    $(MODULE_SOURCES_DIR)\..\std_incl;  \
+    $(MODULE_SOURCES_DIR)\..;  \
+    $(MODULE_SOURCES_DIR);  \
+    $(INCLUDES)
+
+    
+!INCLUDE ..\project_common.mk

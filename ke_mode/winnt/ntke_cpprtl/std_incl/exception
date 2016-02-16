@@ -1,0 +1,66 @@
+/////////////////////////////////////////////////////////////////////////////
+////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    mailto:kt133a@seznam.cz
+////    license: the MIT license
+/////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef NTKE_CPPRTL_EXCEPTION_
+#define NTKE_CPPRTL_EXCEPTION_
+
+
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4290)  //  C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
+#endif
+
+
+namespace std
+{
+
+  class exception
+  {
+  public:
+    exception() throw() {}
+    exception(exception const&) throw() {}
+    exception& operator=(exception const&) throw() { return *this; }
+    virtual ~exception() throw() {}
+    virtual char const* what() const throw() { return "std::exception"; }
+  };
+
+
+  class bad_exception
+    : public exception
+  {
+  public:
+    bad_exception() throw() {}
+    bad_exception(bad_exception const&) throw() {}
+    bad_exception& operator=(bad_exception const&) throw() { return *this; }
+    virtual ~bad_exception() throw() {}
+    virtual char const* what() const throw() { return "std::bad_exception"; }
+  };
+
+
+  typedef void (*unexpected_handler)();
+  unexpected_handler set_unexpected(unexpected_handler f) throw();
+  void unexpected();
+
+
+  typedef void (*terminate_handler)();
+  terminate_handler set_terminate(terminate_handler f) throw();
+  void terminate();
+
+
+  void terminate();
+  bool uncaught_exception();
+
+}
+
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
+
+
+#endif // include guard
+

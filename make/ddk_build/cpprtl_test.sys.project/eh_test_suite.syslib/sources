@@ -1,0 +1,70 @@
+MODULE_DIR_STEP = ..\..
+!INCLUDE $(MODULE_DIR_STEP)\ddk_build.mk
+
+MODULE_SOURCES_DIR    = $(MODULE_ROOT_STEP)\ke_mode\winnt\ntke_cpprtl\eh\eh_test_suite
+
+#############################################################################
+
+TARGETTYPE = DRIVER_LIBRARY
+TARGETNAME = ntke_eh_test_suite
+
+
+SOURCES =  \
+    eh_test_suite.cpp  \
+    test00.cpp  \
+    test01.cpp  \
+    test02.cpp  \
+    test03.cpp  \
+    test04.cpp  \
+    test05.cpp  \
+    test06.cpp  \
+    test07.cpp  \
+    test08.cpp  \
+    test09.cpp  \
+    test10.cpp  \
+    test100.cpp  \
+    test11.cpp  \
+    test12.cpp  \
+    test13.cpp  \
+    test14.cpp  \
+    test15.cpp  \
+    test16.cpp  \
+    test17.cpp  \
+    test18.cpp  \
+    test19.cpp  \
+    test20.cpp  \
+    test21.cpp  \
+    test22.cpp  \
+    test23.cpp  \
+    test24.cpp  \
+    test25.cpp  \
+    test26.cpp  \
+    test51.cpp  \
+    test52.cpp  \
+    test53.cpp  \
+    test54.cpp  
+
+
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR);  \
+    $(MODULE_SOURCES_DIR)\..;  \
+    $(INCLUDES)
+    
+
+!if  "$(_BUILDARCH)" == "x86"
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR)\..\frame_based;  \
+    $(INCLUDES)
+!endif
+
+
+!if  "$(_BUILDARCH)" == "AMD64"
+INCLUDES =  \
+    $(MODULE_SOURCES_DIR)\..\table_based;  \
+    $(MODULE_SOURCES_DIR)\..\table_based\_x64;  \
+    $(INCLUDES)
+!endif
+
+
+
+!INCLUDE ..\project_common.mk

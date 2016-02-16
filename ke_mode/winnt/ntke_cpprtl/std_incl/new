@@ -1,0 +1,90 @@
+/////////////////////////////////////////////////////////////////////////////
+////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    mailto:kt133a@seznam.cz
+////    license: the MIT license
+/////////////////////////////////////////////////////////////////////////////
+
+
+#ifndef NTKE_CPPRTL_NEW_
+#define NTKE_CPPRTL_NEW_
+
+
+#include "exception"
+#include "cstddef"
+
+
+namespace std
+{
+
+  struct nothrow_t {};
+  extern nothrow_t const nothrow;
+
+
+  class bad_alloc
+    : public exception
+  {
+  public:
+    bad_alloc() throw() {}
+    bad_alloc(bad_alloc const&) throw() {}
+    bad_alloc& operator=(bad_alloc const&) throw() { return *this; }
+    virtual ~bad_alloc() throw() {}
+    virtual char const* what() const throw() { return "std::bad_alloc"; }
+  };
+
+
+  typedef void (*new_handler)();
+  new_handler set_new_handler(new_handler new_p) throw();
+
+}
+
+
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable:4290)  //  C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
+#endif
+
+
+// scalar new/delete
+void* __cdecl operator new       (std::size_t size)  throw(std::bad_alloc);
+void  __cdecl operator delete    (void* ptr)         throw();
+
+void* __cdecl operator new       (std::size_t size, std::nothrow_t const&)  throw();
+void  __cdecl operator delete    (void* ptr,        std::nothrow_t const&)  throw();
+
+
+// array new/delete
+void* __cdecl operator new[]     (std::size_t size)   throw(std::bad_alloc);
+void  __cdecl operator delete[]  (void* ptr)          throw();
+
+void* __cdecl operator new[]     (std::size_t size, std::nothrow_t const&)  throw();
+void  __cdecl operator delete[]  (void* ptr,        std::nothrow_t const&)  throw();
+
+
+// placement scalar new/delete
+void* __cdecl operator new       (std::size_t size, void* ptr)  throw();
+void  __cdecl operator delete    (void* ptr,        void*    )  throw();
+
+
+// placement array new/delete
+void* __cdecl operator new[]     (std::size_t size, void* ptr)  throw();
+void  __cdecl operator delete[]  (void* ptr,        void*    )  throw();
+
+
+#if ( _MSC_VER >= 1900 )  // msvc2015 introduced kinda sized delete operators
+void  __cdecl operator delete    (void* ptr,  std::size_t)  throw();
+void  __cdecl operator delete[]  (void* ptr,  std::size_t)  throw();
+#endif
+
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
+
+
+#ifdef NT_KERNEL_MODE
+#  include "../rtlk_new.h"
+#endif
+
+
+#endif  // include guard
+

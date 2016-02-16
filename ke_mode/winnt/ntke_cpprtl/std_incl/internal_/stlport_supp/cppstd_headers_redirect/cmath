@@ -1,0 +1,8 @@
+#ifndef STLPORT_SUPPORT_REDIRECT_CMATH_
+#define STLPORT_SUPPORT_REDIRECT_CMATH_
+
+#include "cppstd_headers_redirect.h"
+#include NTKE_INCLUDE_DDK_STL(cmath)
+
+#endif // include guard
+

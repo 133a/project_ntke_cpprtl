@@ -1,0 +1,8 @@
+DIRS =                         \
+    ntke_cpprtl.syslib         \
+    eh_test_suite.syslib       \
+    rtti_test_suite.syslib     \
+    gstatic_test_suite.syslib  \
+    stl_test_suite.syslib      \
+    cpprtl_test.sys
+
