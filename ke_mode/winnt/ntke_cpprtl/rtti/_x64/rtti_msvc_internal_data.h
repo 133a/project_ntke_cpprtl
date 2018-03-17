@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -58,11 +58,11 @@ namespace rtti
     rva_t            class_hierarchy_descr;    // describes inheritance hierarchy (--> class_hierarchy_descriptor*)
   };
 
-}  //  namespace rtti
+}  // namespace rtti
 
-}  //  namespace msvc_internal_data
-}  //  namespace cpprtl
+}  // namespace msvc_internal_data
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -60,6 +60,6 @@ namespace msvc_internal_data_aux
   cl_info<msvc_internal_data::rtti::type_descriptor, msvc_internal_data::rtti::base_class_descriptor2>::base_t::addr_offset
   = &msvc_internal_data::rtti::base_class_descriptor2::type_descr;
 
-}  //  namespace msvc_internal_data_aux
-}  //  namespace cpprtl
+}  // namespace msvc_internal_data_aux
+}  // namespace cpprtl
 

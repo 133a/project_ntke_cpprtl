@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -25,9 +25,9 @@ namespace cpprtl
   {
     typedef unsigned long int array_length_t;
   }
-  typedef int  image_base_t;  //  a fake placeholder
+  typedef int  image_base_t;  // a fake placeholder
 }
 
 
-#endif // include guard
+#endif  // include guard
 

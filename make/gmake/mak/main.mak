@@ -7,7 +7,6 @@
   make.makefile = GNUmakefile
   make.enum = 1 2 3 4 5 6 7 8 9
   make.make = $(MAKE)
-# make.no_df = 1
 
 
 include $(make.dir.mak)/func.mak

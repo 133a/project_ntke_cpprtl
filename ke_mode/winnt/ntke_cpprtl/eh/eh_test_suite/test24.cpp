@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -41,18 +41,18 @@ namespace cpprtl { namespace test { namespace eh
     try
     {
 
-      exc_test et(ctx);
+      eh_test et(ctx);
       while ( ctx.state < CYCLE_COUNT24 )
       {
-        exc_test et(ctx);
+        eh_test et(ctx);
         try
         {
-          exc_test et(ctx);
+          eh_test et(ctx);
           throw int(SPECIAL_EXCEPTION24);
         }
         catch (int i)
         {   
-          exc_test et(ctx);
+          eh_test et(ctx);
           if ( SPECIAL_EXCEPTION24 == i )
           {
             ++ctx.state;

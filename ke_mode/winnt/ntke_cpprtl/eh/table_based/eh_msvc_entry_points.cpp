@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -15,13 +15,14 @@ typedef cpprtl::msvc_internal_data::eh::exception_descriptor _ThrowInfo;
 #endif 
 
 
-////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 ////
-////  compiler's internally pre-declared EH routines' entry points
+////  cl internally pre-declared EH routines' entry points
 ////
-////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 
-extern "C" void _CxxThrowException(void* exc_object, ::_ThrowInfo const* exc_descr)
+extern "C"
+void _CxxThrowException(void* exc_object, ::_ThrowInfo const* exc_descr)
 {
   cpprtl::eh::eh_engine::throw_exception
   (
@@ -31,28 +32,30 @@ extern "C" void _CxxThrowException(void* exc_object, ::_ThrowInfo const* exc_des
 }
 
 
-extern "C" ::EXCEPTION_DISPOSITION __CxxFrameHandler3(::EXCEPTION_RECORD* exc_rec, void* frame_ptr, ::CONTEXT* context, ::DISPATCHER_CONTEXT* dc)
+extern "C"
+::EXCEPTION_DISPOSITION __CxxFrameHandler3(::EXCEPTION_RECORD* exc_rec, void* frame_ptr, ::CONTEXT* context, ::DISPATCHER_CONTEXT* dc)
 {
   return
     cpprtl::eh::eh_engine::frame_handler3
     (
-      exc_rec
+      *exc_rec
     , reinterpret_cast<cpprtl::eh::eh_engine::frame_ptr_t>(frame_ptr)
-    , context
-    , dc
+    , *context
+    , *dc
     );
 }
 
 
-extern "C" ::EXCEPTION_DISPOSITION __CxxFrameHandler(::EXCEPTION_RECORD* exc_rec, void* frame_ptr, ::CONTEXT* context, ::DISPATCHER_CONTEXT* dc)
+extern "C"
+::EXCEPTION_DISPOSITION __CxxFrameHandler(::EXCEPTION_RECORD* exc_rec, void* frame_ptr, ::CONTEXT* context, ::DISPATCHER_CONTEXT* dc)
 {
   return
     cpprtl::eh::eh_engine::frame_handler3
     (
-      exc_rec
+      *exc_rec
     , reinterpret_cast<cpprtl::eh::eh_engine::frame_ptr_t>(frame_ptr)
-    , context
-    , dc
+    , *context
+    , *dc
     );
 }
 

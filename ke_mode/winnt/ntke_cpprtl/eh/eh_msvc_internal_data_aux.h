@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -465,9 +465,9 @@ namespace eh
     msvc_internal_data_aux::aux_::iterator_traits<msvc_internal_data::eh::func_descriptor, msvc_internal_data::eh::func_descriptor const*>
   > func_descriptor_iterator;
 
-}  //  namespace eh
-}  //  namespace cpprtl
+}  // namespace eh
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

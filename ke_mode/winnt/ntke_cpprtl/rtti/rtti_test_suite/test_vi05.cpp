@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -13,12 +13,7 @@
 
 
 #include <typeinfo>
-
-
-// msvc cl.exe < v14.00.50727 lacks BC_WITH_HIERARCHY
-#if defined(_MSC_FULL_VER)  &&  _MSC_FULL_VER < 140050727
-#define MSVC_OLD_STYLE_RTTI
-#endif
+#include "rtti_test_defs.h"
 
 
 namespace
@@ -26,14 +21,32 @@ namespace
   int const A_VAL = 43678;
 
 
-  class base000 { public : int a; virtual ~base000() {} base000() : a(A_VAL) {} };
+  class base000 { public: int a; virtual ~base000(){} base000() : a(A_VAL) {} };
 
   class base00 : public base000 { int a; };
 
-  class base10 : virtual private base00 { int a; };
-  class base11 : virtual private base00, public base000 { int a; };
+  class base10
+    : virtual
+    #ifdef MSVC_2015U3_FIXED_RTTI
+      protected
+    #else
+      private
+    #endif
+      base00
+  { int a; };
 
-  class derived : public base10, public base11 { int a; };
+  class base11
+    : virtual
+    #ifdef MSVC_2015U3_FIXED_RTTI
+      protected
+    #else
+      private
+    #endif
+      base00
+    , public base000
+  { int a; };
+
+  class derived : public base10, public base11 { public: int a; };
 
 /**************************************************
 
@@ -134,7 +147,7 @@ namespace cpprtl { namespace test { namespace rtti
       }
 #endif
 
-      ret = 0; // one would go here only if tests are successfully passed
+      ret = 0;  // one would get here only if tests were passed successfully
     }
     catch (int& i)
     {
@@ -157,9 +170,4 @@ namespace cpprtl { namespace test { namespace rtti
 
 
 }  }  }
-
-
-#ifdef MSVC_OLD_STYLE_RTTI
-#undef MSVC_OLD_STYLE_RTTI
-#endif
 

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -36,7 +36,7 @@ namespace
   {
     try
     {
-      throw ; // !
+      throw ;  // !
     }
     catch (int&)
     {
@@ -49,9 +49,9 @@ namespace
   {
     try
     {
-      throw exc_test(ctx, MAGIC_VALUE12);  // this magic value is expected to be catched in test12()
+      throw eh_test(ctx, MAGIC_VALUE12);  // this magic value is expected to be catched in test12()
     }
-    catch (exc_test ex)
+    catch (eh_test ex)
     {
       try 
       {
@@ -69,9 +69,9 @@ namespace
   {
     try
     {
-      throw exc_test(ctx, MAGIC_VALUE12);  // this magic value is expected to be catched in test12()
+      throw eh_test(ctx, MAGIC_VALUE12);  // this magic value is expected to be catched in test12()
     }
-    catch (exc_test&)
+    catch (eh_test&)
     {
       try 
       {
@@ -92,14 +92,14 @@ namespace cpprtl { namespace test { namespace eh
 
   int test12()
   {
-    context ctx(2 * MAGIC_VALUE12);  //  2 catches are expected - by val and by ref
+    context ctx(2 * MAGIC_VALUE12);  // 2 catches are expected - by val and by ref
     ctx.state = EH_OK;
     {
       try 
       {
         ff_catch_by_val(ctx);
       }
-      catch (exc_test ex)
+      catch (eh_test ex)
       {
         ctx.state += ex.i;
       }
@@ -108,7 +108,7 @@ namespace cpprtl { namespace test { namespace eh
       {
         ff_catch_by_ref(ctx);
       }
-      catch (exc_test& ex)
+      catch (eh_test& ex)
       {
         ctx.state += ex.i;
       }

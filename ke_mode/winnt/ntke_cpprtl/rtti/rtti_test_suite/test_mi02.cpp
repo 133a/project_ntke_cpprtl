@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -13,12 +13,7 @@
 
 
 #include <typeinfo>
-
-
-// msvc cl.exe < v14.00.50727 lacks BC_WITH_HIERARCHY
-#if defined(_MSC_FULL_VER)  &&  _MSC_FULL_VER < 140050727
-#define MSVC_OLD_STYLE_RTTI
-#endif
+#include "rtti_test_defs.h"
 
 
 namespace
@@ -343,7 +338,7 @@ namespace cpprtl { namespace test { namespace rtti
       }
 
 
-      ret = 0; // one would go here only if tests are successfully passed
+      ret = 0;  // one would get here only if tests were passed successfully
     }
     catch (int& i)
     {
@@ -366,9 +361,4 @@ namespace cpprtl { namespace test { namespace rtti
 
 
 }  }  }
-
-
-#ifdef MSVC_OLD_STYLE_RTTI
-#undef MSVC_OLD_STYLE_RTTI
-#endif
 

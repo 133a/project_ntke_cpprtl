@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -13,6 +13,7 @@
 
 
 #include <typeinfo>
+#include "rtti_test_defs.h"
 
 
 namespace
@@ -139,7 +140,7 @@ namespace cpprtl { namespace test { namespace rtti
         }
       }
 
-      ret = 0; // one would go here only if tests are successfully passed
+      ret = 0;  // one would get here only if tests were passed successfully
     }
     catch (int& i)
     {

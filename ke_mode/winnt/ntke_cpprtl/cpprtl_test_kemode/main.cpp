@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -27,7 +27,7 @@ extern "C" NTSTATUS DriverEntry(DRIVER_OBJECT* pDriverObject, UNICODE_STRING* /*
   DbgPrint("cpprtl_test.DriverEntry()\n");
   pDriverObject->DriverUnload = &DriverUnload;
   int ret = cpprtl_tests::run();
-  DbgPrint("cpprtl_test.DriverEntry() : cpprtl_tests::run() has finished with ret %d\n", ret);
+  DbgPrint("cpprtl_test.DriverEntry() : cpprtl_tests::run()=%i\n", ret);
   return 0 == ret ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
 

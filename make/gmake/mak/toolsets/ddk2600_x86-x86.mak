@@ -1,5 +1,5 @@
 ifndef DDK2600_FOLDER
-  $(error DDK2600_FOLDER is not defined)
+  $(error define DDK2600_FOLDER)
 endif
 
 
@@ -15,18 +15,14 @@ ddk2600.dir.lib        = $(ddk2600.dir)/lib
 ddk2600.compiler       = $(ddk2600.dir.bin)/x86/cl.exe
 wdk.compiler           = $(ddk2600.compiler)
 
-
 ddk2600.assembler      = $(ddk2600.dir.bin)/x86/ml.exe
 wdk.assembler          = $(ddk2600.assembler)
-
 
 ddk2600.linker         = $(ddk2600.dir.bin)/x86/link.exe
 wdk.linker             = $(ddk2600.linker)
 
-
 ddk2600.libtool        = $(ddk2600.dir.bin)/x86/lib.exe
 wdk.libtool            = $(ddk2600.libtool)
-
 
 
 ifeq      '$(target.kernel)'  'nt5.0'
@@ -34,7 +30,7 @@ ifeq      '$(target.kernel)'  'nt5.0'
 else ifeq '$(target.kernel)'  'nt5.1'
   ddk2600.dir.kernel = wxp
 else 
-  $(error target.kernel=$(target.kernel) is unsupported)
+  $(error unknown target.kernel=$(target.kernel))
 endif
 
 
@@ -45,20 +41,19 @@ wdk.dir.include.wdm       = $(ddk2600.dir.include)/ddk/wdm/$(ddk2600.dir.kernel)
 wdk.dir.lib.wdm           = $(ddk2600.dir.lib)/$(ddk2600.dir.kernel)/i386
 
 
-wdk.dir.include.1         = $(wdk.dir.include.win32)
-wdk.dir.include.2         = $(wdk.dir.include.crt)
-wdk.dir.include.3         = $(wdk.dir.include.ddk)
-wdk.dir.include.4         = $(wdk.dir.include.wdm)
-wdk.dir.lib.1             = $(wdk.dir.lib.wdm)
-
+sdk.dir.include.1         = $(wdk.dir.include.win32)
+sdk.dir.include.2         = $(wdk.dir.include.crt)
+sdk.dir.include.3         = $(wdk.dir.include.ddk)
+sdk.dir.include.4         = $(wdk.dir.include.wdm)
+sdk.dir.lib.1             = $(wdk.dir.lib.wdm)
 
 
 wdk.df                    = $(make.dir.bin)/x86/df.exe
 
 
-target.arch = x86
 wdk.version = 2600
-toolset.host.arch = x86
+target.arch = x86
+toolset.arch = x86
 toolset.family = ddk2600
 toolset.supported.kernels = nt5.0 nt5.1
 toolset.not_supported.signing = 1
@@ -68,7 +63,7 @@ toolset.not_supported.thiscall = 1
 toolset.not_supported.template_partial_specialization = 1
 
 
-ifndef wdk.toolset.aux
+ifndef toolset.aux.type
   include $(make.dir.toolsets)/wdk/wdk.mak
 endif
 

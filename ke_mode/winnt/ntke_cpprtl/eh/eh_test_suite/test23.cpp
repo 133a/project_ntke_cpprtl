@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -38,13 +38,13 @@ namespace
   int ftb23(context& ctx)
   try
   {
-    exc_test et(ctx);
+    eh_test et(ctx);
     throw int(SPECIAL_EXCEPTION23);
     return UNEXPECTED_RET1;
   }
   catch (int i)
   {
-    exc_test et(ctx);
+    eh_test et(ctx);
     if ( SPECIAL_EXCEPTION23 == i)
     {
       ctx.state += i;
@@ -69,14 +69,14 @@ namespace cpprtl { namespace test { namespace eh
 
   int test23()
   {
-    context ctx ( SPECIAL_EXCEPTION23 * 2 );  //  1 catch and 1 return value are expected
+    context ctx ( SPECIAL_EXCEPTION23 * 2 );  // 1 catch and 1 return value are expected
     ctx.state = EH_OK;
 
     {
-      exc_test et(ctx);
+      eh_test et(ctx);
       try
       {
-        exc_test et(ctx);
+        eh_test et(ctx);
         ctx.state += ftb23(ctx);
       }
       catch (int)

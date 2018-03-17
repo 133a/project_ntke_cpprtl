@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -19,17 +19,18 @@ namespace
     EH_OK                     = 0,
     UNEXPECTED_ERROR          = -1,
     SPECIAL_EXCEPTION         = -2,
-    ARR_SZ                    = 6,
+    ARR_SZ                    = 8,
   };
 
 
   void throwing_func(int const& idx)
   {
-    if ( (idx % ARR_SZ) > ARR_SZ/2 )
+    if ( ( idx % ARR_SZ ) > ( ARR_SZ >> 1 ) )
     {
       throw int(SPECIAL_EXCEPTION);
     }
   }
+
 
   static int ctor_count53    = 0;
   static int cctor_count53   = 0;

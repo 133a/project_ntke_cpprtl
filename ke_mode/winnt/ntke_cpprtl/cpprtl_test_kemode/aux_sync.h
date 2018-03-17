@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -42,7 +42,7 @@ namespace aux_
 
     NTSTATUS acquire()
     {
-      ASSERT(KeGetCurrentIrql() <= APC_LEVEL);  // for a continuous time-out
+      ASSERT ( KeGetCurrentIrql() <= APC_LEVEL );  // for a continuous time-out
       return KeWaitForSingleObject(&evt, Executive, KernelMode, FALSE, 0);
     }
 
@@ -59,13 +59,13 @@ namespace aux_
 
     LONG set()
     {
-      ASSERT(KeGetCurrentIrql() <= DISPATCH_LEVEL);  // for Wait==FALSE
+      ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );  // for Wait==FALSE
       return KeSetEvent(&evt, EVENT_INCREMENT, FALSE);
     }
 
     LONG reset()
     {
-      ASSERT(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+      ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );
       return KeResetEvent(&evt);
     }
 
@@ -88,25 +88,25 @@ namespace aux_
   public:
     void acquire(KIRQL& irql)
     {
-      ASSERT(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+      ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );
       KeAcquireSpinLock(&slck, &irql);
     }
 
     void release(KIRQL& irql)
     {
-      ASSERT(KeGetCurrentIrql() == DISPATCH_LEVEL);
+      ASSERT ( KeGetCurrentIrql() == DISPATCH_LEVEL );
       KeReleaseSpinLock(&slck, irql);
     }
 
     void acquire_at_dpc()
     {
-      ASSERT(KeGetCurrentIrql() >= DISPATCH_LEVEL);
+      ASSERT ( KeGetCurrentIrql() >= DISPATCH_LEVEL );
       KeAcquireSpinLockAtDpcLevel(&slck);
     }
 
     void release_from_dpc()
     {
-      ASSERT(KeGetCurrentIrql() == DISPATCH_LEVEL);
+      ASSERT ( KeGetCurrentIrql() == DISPATCH_LEVEL );
       KeReleaseSpinLockFromDpcLevel(&slck);
     }
 
@@ -180,13 +180,13 @@ namespace aux_
   public:
     NTSTATUS acquire()
     {
-      ASSERT(KeGetCurrentIrql() <= APC_LEVEL);  // for continuous time-out
+      ASSERT ( KeGetCurrentIrql() <= APC_LEVEL );  // for continuous time-out
       return KeWaitForSingleObject(&mtx, Executive, KernelMode, FALSE, 0);
     }
 
     void release()
     {
-      ASSERT(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+      ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );
       KeReleaseMutex(&mtx, FALSE);
     }
 
@@ -209,7 +209,7 @@ namespace aux_
         status = mtx.acquire();
       }
       while ( !locked() && NT_SUCCESS(status) );
-      ASSERT( locked() );
+      ASSERT ( locked() );
     }
 
     ~auto_mutex()
@@ -236,32 +236,32 @@ namespace aux_
   public:
     fast_mutex()
     {
-      ASSERT(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+      ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );
       ExInitializeFastMutex(&fmtx);
     }
 
   public:
     void acquire()
     {
-      ASSERT(KeGetCurrentIrql() <= APC_LEVEL);
+      ASSERT ( KeGetCurrentIrql() <= APC_LEVEL );
       ExAcquireFastMutex(&fmtx);
     }
 
     void release()
     {
-      ASSERT(KeGetCurrentIrql() == APC_LEVEL);
+      ASSERT ( KeGetCurrentIrql() == APC_LEVEL );
       ExReleaseFastMutex(&fmtx);
     }
 
     void acquire_unsafe()
     {
-      ASSERT(KeGetCurrentIrql() == APC_LEVEL);
+      ASSERT ( KeGetCurrentIrql() == APC_LEVEL );
       ExAcquireFastMutexUnsafe(&fmtx);
     }
 
     void release_unsafe()
     {
-      ASSERT(KeGetCurrentIrql() == APC_LEVEL);
+      ASSERT ( KeGetCurrentIrql() == APC_LEVEL );
       ExReleaseFastMutexUnsafe(&fmtx);
     }
 
@@ -326,5 +326,5 @@ namespace aux_
 #endif
 
 
-#endif // include guard
+#endif  // include guard
 

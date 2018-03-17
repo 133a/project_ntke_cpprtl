@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -30,10 +30,10 @@ namespace
 {
 
   struct ctest05
-    : protected exc_test
+    : protected eh_test
   {
     ctest05(context& c) 
-      : exc_test ( c )
+      : eh_test ( c )
     {
       ++ctx.ctor_count;
       ++ctx.xtor_count;
@@ -41,7 +41,7 @@ namespace
 
 
     ctest05(ctest05 const& src)
-      : exc_test  ( src )
+      : eh_test  ( src )
     {
       ++ctx.cctor_count;
       ++ctx.xtor_count;

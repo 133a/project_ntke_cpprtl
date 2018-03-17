@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ namespace
       , ctx     ( c_ )
       , b01     ( c_ )
     {
-      throw int(SPECIAL_EXCEPTION17);  //  we do throw here and expecting '6' destructors invoked
+      throw int(SPECIAL_EXCEPTION17);  // we do throw here and expecting '6' destructors invoked
       ++ctx.ctor_count;
       ++ctx.xtor_count;
     }

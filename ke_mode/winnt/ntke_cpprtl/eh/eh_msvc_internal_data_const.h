@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -65,11 +65,11 @@ namespace eh
     FLAG_EHs = 1 << 0  // function was compiled with /EHs - so cpp-frame-handler provides no action for seh exceptions (VC8 +)
   };
 
-}  //  namespace eh
+}  // namespace eh
 
-}  //  namespace msvc_internal_data
-}  //  namespace cpprtl
+}  // namespace msvc_internal_data
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

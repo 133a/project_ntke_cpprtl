@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -50,16 +50,16 @@ namespace cpprtl
       , void                                     const* const  context
       , void                                     const* const  dc
       , msvc_internal_data::eh::func_descriptor  const* const  func_descr
-      , exception_registration                        *        cg_reg = 0
-      , int                                                    catch_depth = 0
+      , exception_registration                        *        cg_reg       = 0
+      , int                                                    catch_depth  = 0
       );
 
-    } // namespace eh_engine
+    }  // namespace eh_engine
 
-  } // namespace eh
+  }  // namespace eh
 
-} // namespace cpprtl
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

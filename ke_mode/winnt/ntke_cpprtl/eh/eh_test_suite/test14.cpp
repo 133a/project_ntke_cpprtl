@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -33,24 +33,24 @@ namespace
 {
 
   struct vtest
-    : virtual public exc_test
+    : virtual public eh_test
   {
     context& ctx;
     unsigned i;
 
     vtest(context& c_, int const& i_)
-      : exc_test  ( c_ )
-      , ctx       ( c_ )
-      , i         ( i_ )
+      : eh_test  ( c_ )
+      , ctx      ( c_ )
+      , i        ( i_ )
     {
       ++ctx.vctor_count;
       ++ctx.xtor_count;
     }
 
     vtest(vtest const& src)
-      : exc_test  ( src )
-      , ctx       ( src.ctx )
-      , i         ( src.i )
+      : eh_test  ( src )
+      , ctx      ( src.ctx )
+      , i        ( src.i )
     {
       ++ctx.vcctor_count;
       ++ctx.xtor_count;

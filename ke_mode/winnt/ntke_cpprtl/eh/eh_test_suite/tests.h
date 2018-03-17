@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -71,10 +71,10 @@ namespace eh
   int test108();
   int test109();
 
-}  //  namespace eh
-}  //  namespace test
-}  //  namespace cpprtl
+}  // namespace eh
+}  // namespace test
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

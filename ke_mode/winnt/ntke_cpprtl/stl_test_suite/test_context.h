@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ namespace aux_
       return state_balance() | xtor_balance();
     }
 
-  private:  //  context is intended to be the single instance in a test
+  private:  // context is intended to be the single instance in a test
     test_context(test_context const&);
     test_context& operator=(test_context&);
   };
@@ -201,8 +201,8 @@ namespace aux_
   };
 
 
-}  //  namespace aux_
+}  // namespace aux_
 
 
-#endif  //  include guard
+#endif  // include guard
 

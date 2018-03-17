@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -15,14 +15,15 @@ typedef cpprtl::msvc_internal_data::eh::exception_descriptor _ThrowInfo;
 #endif 
 
 
-////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 ////
-////  compiler's internally pre-declared EH routines' entry points
+////  cl internally pre-declared EH routines' entry points
 ////
-////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 
 
-extern "C" void __stdcall _CxxThrowException(void* exc_object, ::_ThrowInfo const* exc_descr)
+extern "C"
+void __stdcall _CxxThrowException(void* exc_object, ::_ThrowInfo const* exc_descr)
 {
   cpprtl::eh::eh_engine::throw_exception
   (
@@ -32,10 +33,15 @@ extern "C" void __stdcall _CxxThrowException(void* exc_object, ::_ThrowInfo cons
 }
 
 
-extern "C" ::EXCEPTION_DISPOSITION __cdecl __CxxFrameHandler3(::EXCEPTION_RECORD* exc_rec, void* frame_ptr, void* context, void* dc)
+extern "C"
+::EXCEPTION_DISPOSITION __cdecl __CxxFrameHandler3(::EXCEPTION_RECORD* exc_rec, void* frame_ptr, void* context, void* dc)
 {
   cpprtl::msvc_internal_data::eh::func_descriptor* func_dsc = 0;
-  __asm  mov func_dsc, eax
+#ifdef _M_IX86
+  __asm  mov func_dsc, eax  // func_descriptor = x86.eax
+#else
+#  error check $(target.arch)
+#endif
   return
     cpprtl::eh::eh_engine::frame_handler3
     (
@@ -48,9 +54,13 @@ extern "C" ::EXCEPTION_DISPOSITION __cdecl __CxxFrameHandler3(::EXCEPTION_RECORD
 }
 
 
-// __declspec(naked) 'cos it's just a jump to the frame handler 3
-extern "C" __declspec(naked) ::EXCEPTION_DISPOSITION __cdecl __CxxFrameHandler(::EXCEPTION_RECORD* exc_rec, void* frame_ptr, void* context, void* dc)
+extern "C" __declspec(naked)  // naked 'cos it's just a jump to the FrameHandler3
+::EXCEPTION_DISPOSITION __cdecl __CxxFrameHandler(::EXCEPTION_RECORD* exc_rec, void* frame_ptr, void* context, void* dc)
 {
+#ifdef _M_IX86
   __asm  jmp __CxxFrameHandler3
+#else
+#  error check $(target.arch)
+#endif
 }
 

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ namespace
 
 
   typedef aux_::test_object<int>                                int_obj;
-  typedef std::list<int_obj>                                    int_obj_list;  //  the default stl allocator is suggested to use the nonpaged memory
+  typedef std::list<int_obj>                                    int_obj_list;  // the default stl allocator is suggested to use the nonpaged memory
   typedef std::list<int_obj, aux_::int_obj_nonpaged_allocator>  int_obj_nonpaged_list;
   typedef std::list<int_obj, aux_::int_obj_paged_allocator>     int_obj_paged_list;
 }
@@ -87,7 +87,7 @@ namespace cpprtl { namespace test { namespace stl
           throw aux_::test_error(TEST_EMPTY_LIST_FAILED0);
         }
 
-      ////  testing a list with the default (np) allocator
+      ////  testing the list with the default (np) allocator
         for ( int i = TEST_LIST_MIN_ELEMENT ; i < TEST_LIST_SIZE ; ++i )
         {
           if ( i % 2 )
@@ -139,7 +139,7 @@ namespace cpprtl { namespace test { namespace stl
         }
 
 
-      ////  a list with the explicit np-allocator
+      ////  the list with the explicit np-allocator
         int_obj_nonpaged_list test_lst3(TEST_LIST_SIZE, int_obj(ctx, -1));
         if ( TEST_LIST_SIZE != test_lst3.size() )
         {
@@ -166,7 +166,7 @@ namespace cpprtl { namespace test { namespace stl
         }
 
 
-      ////  a list with the explicit paged-allocator
+      ////  the list with the explicit paged-allocator
         if ( IRQL_REL( ==PASSIVE_LEVEL ) )
         {
           int_obj_paged_list test_lst5;

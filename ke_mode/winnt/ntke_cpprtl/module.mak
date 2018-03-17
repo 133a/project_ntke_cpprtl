@@ -1,7 +1,7 @@
 module.name = ntke_cpprtl
 module.type = syslib
 
-module.path.base = .
+module.dir.base = .
 
 
 #############################################################################
@@ -15,11 +15,7 @@ module.sources       = rtlk_init.cpp \
                        rtlk_std.cpp \
                        rtlk_c.cpp
 
-module.path.include  = $(project.dir.root)/ke_mode/winnt/ntke_cpprtl
-
-module.EHcpp = a
-module.RTTI  = 1
-
+module.dir.include   = $(project.dir.root)/ke_mode/winnt/ntke_cpprtl
 
 
 #############################################################################

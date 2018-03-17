@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -37,28 +37,28 @@ namespace cpprtl { namespace test { namespace eh
   {
     context ctx(MAGIC_VALUE13);
     {
-      exc_test et(ctx);
+      eh_test et(ctx);
       try
       {
-        exc_test et(ctx);
+        eh_test et(ctx);
         try 
         {
-          exc_test et(ctx);
-          throw exc_test(ctx, MAGIC_VALUE13);
+          eh_test et(ctx);
+          throw eh_test(ctx, MAGIC_VALUE13);
         }
-        catch (exc_test& ex)
+        catch (eh_test& ex)
         {
-          exc_test et(ctx);
+          eh_test et(ctx);
           if (MAGIC_VALUE13 == ex.i)
           {
             try
             {
-              exc_test et(ctx);
+              eh_test et(ctx);
               throw;
             }
-            catch (exc_test/*&*/ ex)
+            catch (eh_test/*&*/ ex)
             {
-              exc_test et(ctx);
+              eh_test et(ctx);
               ctx.state = ex.i;
             }
             catch ( ... )

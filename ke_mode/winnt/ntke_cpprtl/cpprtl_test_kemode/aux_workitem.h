@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -28,7 +28,7 @@ namespace aux_
   protected:
     work_item()
     {
-      ExInitializeWorkItem(&wqi, &work_item::wqi_routine, reinterpret_cast<void*>(this));  //  any IRQL
+      ExInitializeWorkItem(&wqi, &work_item::wqi_routine, reinterpret_cast<void*>(this));  // any IRQL
     }
 
     void enqueue()
@@ -40,12 +40,9 @@ namespace aux_
   private:
     static void wqi_routine(void* ctx)
     {
-      ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );  //  for a work-item routine
-      if ( work_item* wi = reinterpret_cast<work_item*>(ctx) )
-      {
-        wi->payload();
-      }
-    ////  be aware of a race 'the driver unloading vs this execution point'
+      ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );  // for a work-item routine
+      reinterpret_cast<work_item*>(ctx)->payload();
+    // be aware of the race 'the driver unloading vs this execution point'
     }
 
   private:
@@ -53,9 +50,8 @@ namespace aux_
     work_item& operator=(work_item const&);
   };
 
+}  // namespace aux_
 
-}  //  namespace aux_
 
-
-#endif // include guard
+#endif  // include guard
 

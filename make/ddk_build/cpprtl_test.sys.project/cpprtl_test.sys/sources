@@ -25,6 +25,7 @@ TARGETLIBS = \
 
 SOURCES =  \
     main.cpp  \
+    aux_cpu.cpp  \
     run_tests.cpp  \
     test_irql.cpp  \
     test_thread.cpp  \

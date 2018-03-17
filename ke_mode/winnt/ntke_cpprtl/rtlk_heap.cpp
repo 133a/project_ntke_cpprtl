@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -53,7 +53,7 @@ namespace heap
 
   void* alloc(size_t const& sz, POOL_TYPE const& pt, ULONG const& tag)
   {
-    ASSERT(DBG_memory_allocation_check(pt));
+    ASSERT ( DBG_memory_allocation_check(pt) );
     return ExAllocatePoolWithTag(pt, sz, tag);
   }
 
@@ -62,7 +62,7 @@ namespace heap
   {
     if (ptr)
     {
-      ASSERT(KeGetCurrentIrql() <= DISPATCH_LEVEL);  // but make sure IRQL <= APC_LEVEL for PagedPool
+      ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );  // but make sure IRQL <= APC_LEVEL for PagedPool
       ExFreePool(ptr);
     }
   }
@@ -72,7 +72,7 @@ namespace heap
   {
     if (ptr)
     {
-      ASSERT(DBG_memory_allocation_check(pt));
+      ASSERT ( DBG_memory_allocation_check(pt) );
       ExFreePool(ptr);
     }
   }

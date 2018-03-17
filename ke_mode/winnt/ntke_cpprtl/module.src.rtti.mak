@@ -1,5 +1,5 @@
-ifndef module.path.base
-  $(error $(module.name) module.path.base is not defined)
+ifndef module.dir.base
+  $(error define module.dir.base for $(module.name))
 endif
 
 
@@ -12,7 +12,6 @@ module.sources            += rtti_msvc_entry_points.cpp \
                              rtti_type_info.cpp \
                              rtti_aux.cpp
 
-module.path.include       += $(module.path.base)/rtti  $(module.path.base)/rtti/_$(target.arch)
-module.path.sources       += $(module.path.base)/rtti  $(module.path.base)/rtti/_$(target.arch)
-
+module.dir.include        += $(module.dir.base)/rtti  $(module.dir.base)/rtti/_$(target.arch)
+module.dir.sources        += $(module.dir.base)/rtti  $(module.dir.base)/rtti/_$(target.arch)
 

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -11,7 +11,7 @@
 
 #include <windows.h>
 
-#if 00000000  //  all the things are now available at the WinSDK um-headers
+#if 00000000  // all the things are now available at the WinSDK um-headers
 
 #ifndef    EXCEPTION_UNWINDING
 #define    EXCEPTION_UNWINDING      0x2
@@ -77,9 +77,9 @@ extern "C"
   );
 
 
-}  //  extern "C"
+}  // extern "C"
 
-#endif  //  00000000
+#endif  // 00000000
 
-#endif // include guard
+#endif  // include guard
 

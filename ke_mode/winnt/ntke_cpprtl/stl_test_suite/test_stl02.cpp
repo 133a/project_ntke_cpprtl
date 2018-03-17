@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -56,7 +56,7 @@ namespace
 
 
   typedef aux_::test_object<int>                                  int_obj;
-  typedef std::vector<int_obj>                                    int_obj_vector;  //  the default stl allocator is suggested to use the nonpaged memory
+  typedef std::vector<int_obj>                                    int_obj_vector;  // the default stl allocator is suggested to use the nonpaged memory
   typedef std::vector<int_obj, aux_::int_obj_nonpaged_allocator>  int_obj_nonpaged_vector;
   typedef std::vector<int_obj, aux_::int_obj_paged_allocator>     int_obj_paged_vector;
 }
@@ -154,7 +154,7 @@ namespace cpprtl { namespace test { namespace stl
         }
 
 
-      ////  a vector with the explicit np-allocator
+      ////  the vector with the explicit np-allocator
         int_obj_nonpaged_vector test_vec3(TEST_VECTOR_SIZE, int_obj(ctx, -1));
         if ( TEST_VECTOR_SIZE != test_vec3.size() )
         {
@@ -181,7 +181,7 @@ namespace cpprtl { namespace test { namespace stl
           throw aux_::test_error(TEST_VECTOR_NOT_EQUAL);
         }
 
-      ////  a vector with the explicit paged-allocator
+      ////  the vector with the explicit paged-allocator
         if ( IRQL_REL( ==PASSIVE_LEVEL ) )
         {
           int_obj_paged_vector test_vec5;

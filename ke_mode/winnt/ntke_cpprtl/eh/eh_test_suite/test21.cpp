@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -30,11 +30,11 @@
 
   extern "C" void __stdcall RtlRaiseException(::EXCEPTION_RECORD* ExceptionRecord);
 
-#else // ! NT_KERNEL_MODE
+#else  // ! NT_KERNEL_MODE
 
   #  include <windows.h>
 
-#endif // NT_KERNEL_MODE
+#endif  // NT_KERNEL_MODE
 
 
 #include <excpt.h>
@@ -53,7 +53,7 @@ namespace
     RAISE21                   = 0xE0000000 + 21,
 
 #ifdef NT_KERNEL_MODE
-  //  here we just get stack overflow if too many nested raises occures in kernel mode
+  // here we just get stack overflow if too many nested raises occures in kernel mode
   #if defined (_M_IX86)
     NESTED_RAISE_STATUS_LIMIT21      = 2,  // '4' leads to BSOD (x86 mscl), '3' (x86_nt5.1 kAPC icl -Od)
   #elif defined (_M_AMD64) || defined (_M_X64) || defined (_M_ARM)
@@ -62,7 +62,7 @@ namespace
   #  error check $(target.arch)
   #endif
 #else
-  //  feel more free to make nested raises in a user mode process
+  // feel free to make nested raises in a user mode process
     NESTED_RAISE_STATUS_LIMIT21      = 128,
 #endif  //  NT_KERNEL_MODE
   };
@@ -123,7 +123,7 @@ namespace cpprtl { namespace test { namespace eh
     //  in kernel the RtlRaiseException() is only allowed when IRQL<=DISPATCH_LEVEL otherwise a bound trap is expected
       return 0;
     }
-#endif  //  NT_KERNEL_MODE
+#endif  // NT_KERNEL_MODE
 
     context ctx(NESTED_RAISE_STATUS_LIMIT21);
     ctx.state = EH_OK;

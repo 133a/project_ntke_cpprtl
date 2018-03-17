@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -30,7 +30,7 @@ namespace
 
     explicit context(int expected)
       : state_expected  ( expected )
-      , state           ( -1 )
+      , state           ( -56789 )
       , flags           ( 0 )
       , ctor_count      ( 0 )
       , cctor_count     ( 0 )
@@ -57,18 +57,18 @@ namespace
       return state_balance() | xtor_balance();
     }
 
-  private:  //  context is intended to be the single instance in a test
+  private:  // context is intended to be the single instance in a test
     context(context const&);
     context& operator=(context&);
   };
 
 
-  struct exc_test
+  struct eh_test
   {
     context& ctx;
     unsigned i;
 
-    explicit exc_test(context& c_, int const& i_ = 0)
+    explicit eh_test(context& c_, int const& i_ = 0)
       : ctx  ( c_ )
       , i    ( i_ )
     {
@@ -76,7 +76,7 @@ namespace
       ++ctx.xtor_count;
     }
 
-    exc_test(exc_test const& src)
+    eh_test(eh_test const& src)
       : ctx  ( src.ctx )
       , i    ( src.i )
     {
@@ -84,7 +84,7 @@ namespace
       ++ctx.xtor_count;
     }
 
-    ~exc_test()
+    ~eh_test()
     {
       i = 0;
       ++ctx.dtor_count;
@@ -95,5 +95,5 @@ namespace
 
 }
 
-#endif // include guard
+#endif  // include guard
 

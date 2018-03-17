@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@
 #    define  _STLP_NATIVE_C_INCLUDE_PATH          ../crt
 #  elif  DDK_VER < 10000   //  wdk8.0 wdk8.1
 #    define  _STLP_NATIVE_C_INCLUDE_PATH          ../include
-#  elif  DDK_VER == 10240  // wdk10
+#  elif  DDK_VER >= 10240  // wdk10 ewdk16299-km
 #    define  _STLP_NATIVE_C_INCLUDE_PATH          ke_mode/winnt/ntke_cpprtl/std_incl/internal_/stlport_supp/cstd_headers_redirect
 #  else
 #    error unsupported DDK_VER
@@ -66,5 +66,5 @@
 #define  _STLP_NATIVE_CPP_RUNTIME_INCLUDE_PATH  ke_mode/winnt/ntke_cpprtl/std_incl
 
 
-#endif  //  include guard
+#endif  // include guard
 

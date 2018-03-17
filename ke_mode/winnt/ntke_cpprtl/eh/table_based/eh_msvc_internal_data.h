@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -35,9 +35,11 @@ namespace eh
 #if defined (_M_X64) || defined (_M_AMD64)
   typedef void  (*unwind_action_ft)(void*, void*);
   typedef void* (*catch_handler_ft)(void*, void*);
-#elif defined (_M_ARM)
+#elif defined (_M_ARM) || defined (_M_ARM64)
   typedef void  (*unwind_action_ft)(void);
   typedef void* (*catch_handler_ft)(void);
+#else
+# error check $(target.arch)
 #endif
 
 
@@ -150,10 +152,10 @@ namespace eh
   };
 
 
-}  //  namespace eh
-}  //  namespace msvc_internal_data
-}  //  namespace cpprtl
+}  // namespace eh
+}  // namespace msvc_internal_data
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

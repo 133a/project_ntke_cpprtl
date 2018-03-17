@@ -2,12 +2,7 @@ module.name = ntke_eh
 module.type = syslib
 
 
-module.path.base = ..
-
-
-ifndef module.EHcpp
-module.EHcpp = a
-endif
+module.dir.base = ..
 
 
 include ./module.src.mak

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ namespace
       , base11  ( c_ )
       , ctx     ( c_ )
     {
-      throw int(SPECIAL_EXCEPTION18);  //  we do throw here and expecting (2*MAGIC_CTOR + 1*MAGIC_VBCTOR + 2*MAGIC_DTOR + 1*MAGIC_VBDTOR)
+      throw int(SPECIAL_EXCEPTION18);  // we do throw here and expecting (2*MAGIC_CTOR + 1*MAGIC_VBCTOR + 2*MAGIC_DTOR + 1*MAGIC_VBDTOR)
       ++ctx.ctor_count;
       ++ctx.xtor_count;
       ctx.state += MAGIC_CTOR;

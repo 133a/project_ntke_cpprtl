@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -37,19 +37,19 @@ namespace eh
     //  return x86.eax -  the current exception registration
     }
 
-    ::size_t x86_ebp() const  //  do NOT use it for any manually implanted registrations
+    ::size_t frame_pointer() const  //  do NOT use it for any manually implanted registrations
     {
     //  if the exception_record is placed on the stack by a compiler as a part of the function prologue then the following address is known to be the current frame base
       return reinterpret_cast< ::size_t>(this) + sizeof(exception_registration);
     }
 
-    ::size_t const& x86_esp() const  //  do NOT use it for any manually implanted registrations
+    ::size_t const& stack_pointer() const  //  do NOT use it for any manually implanted registrations
     {
     //  if the exception_record is placed on the stack by a compiler as a part of the function prologue then the previous DWORD is known to be the saved x86.esp
       return reinterpret_cast< ::size_t const&>(reinterpret_cast<void* const*>(this)[-1]);
     }
 
-    ::size_t& x86_esp()  //  do NOT use it for any manually implanted registrations
+    ::size_t& stack_pointer()  //  do NOT use it for any manually implanted registrations
     {
       return reinterpret_cast< ::size_t&>(reinterpret_cast<void**>(this)[-1]);
     }
@@ -95,10 +95,10 @@ namespace eh
   };
 
 
-}  //  namespace eh
-}  //  namespace msvc_internal_data
-}  //  namespace cpprtl
+}  // namespace eh
+}  // namespace msvc_internal_data
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

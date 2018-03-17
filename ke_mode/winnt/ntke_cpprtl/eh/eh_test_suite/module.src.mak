@@ -6,10 +6,20 @@ module.sources     = eh_test_suite.cpp \
                      test51.cpp test52.cpp test53.cpp test54.cpp \
                      test100.cpp
 
-module.path.include     += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh
-module.path.include.x86 += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/frame_based
-module.path.include.x64 += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based \
-                           $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based/_x64 
-module.path.include.arm += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based \
-                           $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based/_arm
+
+module.dir.include        += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh
+
+module.dir.include.x86    += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/frame_based
+
+module.dir.include.x64    += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based \
+                             $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based/_x64 
+
+module.dir.include.arm    += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based \
+                             $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based/_arm
+
+module.dir.include.arm64  += $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based \
+                             $(project.dir.root)/ke_mode/winnt/ntke_cpprtl/eh/table_based/_arm64
+
+
+module.EHa = 1
 

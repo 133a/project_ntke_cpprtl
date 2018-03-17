@@ -1,5 +1,5 @@
 ifndef DDK3790SP1_FOLDER
-  $(error DDK3790SP1_FOLDER is not defined)
+  $(error define DDK3790SP1_FOLDER)
 endif
 
 
@@ -15,18 +15,14 @@ ddk3790sp1.dir.lib        = $(ddk3790sp1.dir)/lib
 ddk3790sp1.compiler       = $(ddk3790sp1.dir.bin)/x86/cl.exe
 wdk.compiler              = $(ddk3790sp1.compiler)
 
-
 ddk3790sp1.assembler      = $(ddk3790sp1.dir.bin)/x86/ml.exe
 wdk.assembler             = $(ddk3790sp1.assembler)
-
 
 ddk3790sp1.linker         = $(ddk3790sp1.dir.bin)/x86/link.exe
 wdk.linker                = $(ddk3790sp1.linker)
 
-
 ddk3790sp1.libtool        = $(ddk3790sp1.dir.bin)/x86/lib.exe
 wdk.libtool               = $(ddk3790sp1.libtool)
-
 
 
 ifeq      '$(target.kernel)'  'nt5.0'
@@ -36,7 +32,7 @@ else ifeq '$(target.kernel)'  'nt5.1'
 else ifeq '$(target.kernel)'  'nt5.2'
   ddk3790sp1.dir.kernel = wnet
 else 
-  $(error target.kernel=$(target.kernel) is unsupported)
+  $(error unknown target.kernel=$(target.kernel))
 endif
 
 
@@ -47,20 +43,19 @@ wdk.dir.include.wdm       = $(ddk3790sp1.dir.include)/ddk/wdm/$(ddk3790sp1.dir.k
 wdk.dir.lib.wdm           = $(ddk3790sp1.dir.lib)/$(ddk3790sp1.dir.kernel)/i386
 
 
-wdk.dir.include.1         = $(wdk.dir.include.win32)
-wdk.dir.include.2         = $(wdk.dir.include.crt)
-wdk.dir.include.3         = $(wdk.dir.include.ddk)
-wdk.dir.include.4         = $(wdk.dir.include.wdm)
-wdk.dir.lib.1             = $(wdk.dir.lib.wdm)
-
+sdk.dir.include.1         = $(wdk.dir.include.win32)
+sdk.dir.include.2         = $(wdk.dir.include.crt)
+sdk.dir.include.3         = $(wdk.dir.include.ddk)
+sdk.dir.include.4         = $(wdk.dir.include.wdm)
+sdk.dir.lib.1             = $(wdk.dir.lib.wdm)
 
 
 wdk.df                    = $(make.dir.bin)/x86/df.exe
 
 
-target.arch = x86
 wdk.version = 3790
-toolset.host.arch = x86
+target.arch = x86
+toolset.arch = x86
 toolset.family = ddk3790sp1
 toolset.supported.kernels = nt5.0 nt5.1 nt5.2
 toolset.not_supported.signing = 1
@@ -68,7 +63,7 @@ toolset.not_supported.RTC_and_GS = 1
 toolset.not_supported.thiscall = 1
 
 
-ifndef wdk.toolset.aux
+ifndef toolset.aux.type
   include $(make.dir.toolsets)/wdk/wdk.mak
 endif
 

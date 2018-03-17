@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -23,30 +23,37 @@ namespace aux_
     class thread_func_wrapper
     {
     private:
+      typedef thread_func_wrapper self_type;
+
+      kevent evt;
       FUNC const& func;
-      kevent& sync_evt;
 
     public:
-      thread_func_wrapper(FUNC const& f, kevent& evt)
-        : func(f)
-        , sync_evt(evt)
+      thread_func_wrapper(FUNC const& f)
+        : evt  ( false, kevent::MANUAL_RESET )
+        , func ( f )
       {}
+
+      void acquire()
+      {
+        evt.acquire(STATUS_SUCCESS);
+      }
 
       static void kthread_start_func(void* arg)
       {
-        ASSERT(arg);
-        ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
-        KeSetPriorityThread(KeGetCurrentThread(), LOW_REALTIME_PRIORITY); // KeGetCurrentThread() at any IRQL
-        thread_func_wrapper& wrapper = *reinterpret_cast<thread_func_wrapper*>(arg);
+        ASSERT ( arg );
+        ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
+        KeSetPriorityThread(KeGetCurrentThread(), LOW_REALTIME_PRIORITY);  // KeGetCurrentThread() at any IRQL
+        self_type& wrapper = *reinterpret_cast<self_type*>(arg);
         FUNC func = wrapper.func;
-        wrapper.sync_evt.set();
+        wrapper.evt.set();
         func();
-        ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+        ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
         PsTerminateSystemThread(STATUS_SUCCESS);
       }
     };
 
-  }  //  namespace internal_
+  }  // namespace internal_
 
 
   class kthread
@@ -76,7 +83,7 @@ namespace aux_
     {
       if ( thr )
       {
-        ASSERT(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+        ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );
         ObDereferenceObject(thr);
         thr = 0;
       }
@@ -84,11 +91,11 @@ namespace aux_
 
     NTSTATUS acquire()
     {
-      NTSTATUS status = STATUS_UNSUCCESSFUL;
+      NTSTATUS status = STATUS_SUCCESS;
       if ( thr )
       {
-        ASSERT(KeGetCurrentThread() != thr);
-        ASSERT(KeGetCurrentIrql() <= APC_LEVEL);  //  for continuous time-out
+        ASSERT ( KeGetCurrentThread() != thr );
+        ASSERT ( KeGetCurrentIrql() <= APC_LEVEL );  // for continuous time-out
         status = KeWaitForSingleObject(thr, Executive, KernelMode, FALSE, 0);
       }
       return status;
@@ -117,25 +124,34 @@ namespace aux_
         OBJECT_ATTRIBUTES oa;
         InitializeObjectAttributes(&oa, 0, OBJ_KERNEL_HANDLE, 0, 0);
     
-        kevent sync_evt(false, kevent::MANUAL_RESET);
-        internal_::thread_func_wrapper<FUNC> tfw(func, sync_evt);
-        ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
-        status = PsCreateSystemThread(&hthread, THREAD_ALL_ACCESS, &oa, 0, 0, &internal_::thread_func_wrapper<FUNC>::kthread_start_func, reinterpret_cast<void*>(&tfw));
-        if (NT_SUCCESS(status))
+        internal_::thread_func_wrapper<FUNC> tfw(func);
+        ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
+        status = 
+          PsCreateSystemThread
+          (
+            &hthread
+          , THREAD_ALL_ACCESS
+          , &oa
+          , 0
+          , 0
+          , &internal_::thread_func_wrapper<FUNC>::kthread_start_func
+          , reinterpret_cast<void*>(&tfw)
+          );
+        if ( NT_SUCCESS(status) )
         {
-          ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+          ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
           ObReferenceObjectByHandle(hthread, THREAD_ALL_ACCESS, 0, KernelMode, reinterpret_cast<PVOID*>(&thr), 0);
-          ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+          ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
           ZwClose(hthread);
-          sync_evt.acquire(STATUS_SUCCESS);
+          tfw.acquire();
         }
       }
       return status;
     }
   };
 
-}  //  namespace aux_
+}  // namespace aux_
 
 
-#endif // include guard
+#endif  // include guard
 

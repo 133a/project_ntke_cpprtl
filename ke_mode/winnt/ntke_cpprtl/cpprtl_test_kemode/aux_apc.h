@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ namespace aux_
   private:
     void init_apc(special const&, PKTHREAD kt, void* = 0)  // norm_ctx
     {
-      KeInitializeApc    //  any IRQL
+      KeInitializeApc  // any IRQL
       (
         static_cast<KAPC*>(this)
       , kt
@@ -132,7 +132,7 @@ namespace aux_
 
     void init_apc(regular const&, PKTHREAD kt, void* norm_ctx)
     {
-      KeInitializeApc    //  any IRQL
+      KeInitializeApc  // any IRQL
       (
         static_cast<KAPC*>(this)
       , kt
@@ -148,41 +148,30 @@ namespace aux_
   private:
     static void special_kernel_apc_routine(KAPC* pa, PKNORMAL_ROUTINE* pf_norm, void** pnorm_ctx, void** psys_ctx1, void** psys_ctx2)
     {
-      ASSERT ( KeGetCurrentIrql() == APC_LEVEL );  //  for a special kAPC routine
-      if ( pa )
-      {
-        static_cast<kapc*>(pa)->special_kernel_payload(pf_norm, pnorm_ctx, psys_ctx1, psys_ctx2);
-      }
+      ASSERT ( KeGetCurrentIrql() == APC_LEVEL );  // for a special kAPC routine
+      static_cast<kapc*>(pa)->special_kernel_payload(pf_norm, pnorm_ctx, psys_ctx1, psys_ctx2);
     }
 
     static void regular_kernel_apc_routine(KAPC* pa, PKNORMAL_ROUTINE* pf_norm, void** pnorm_ctx, void** psys_ctx1, void** psys_ctx2)
     {
-      ASSERT ( KeGetCurrentIrql() == APC_LEVEL );  //  for a regular kAPC routine
-      if ( pa )
-      {
-        kapc* apc = static_cast<kapc*>(pa);
-        apc->regular_kernel_payload(pf_norm, pnorm_ctx, psys_ctx1, psys_ctx2);
-        *pnorm_ctx = reinterpret_cast<void*>(apc);  // tamper the temporary norm_ctx by kapc* for the regular_normal_apc_routine to be able to access our kapc object
-      }
+      ASSERT ( KeGetCurrentIrql() == APC_LEVEL );  // for a regular kAPC routine
+      kapc* apc = static_cast<kapc*>(pa);
+      apc->regular_kernel_payload(pf_norm, pnorm_ctx, psys_ctx1, psys_ctx2);
+      *pnorm_ctx = reinterpret_cast<void*>(apc);  // tamper the temporary norm_ctx by kapc* for the regular_normal_apc_routine to be able to access our kapc object
     }
 
     static void regular_normal_apc_routine(void* norm_ctx, void* sys_ctx1, void* sys_ctx2)
     {
-      ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );  //  for a normal kAPC routine
-      if ( norm_ctx )  // assumed kapc* is stored here by regular_kernel_apc_routine
-      {
-        kapc* apc = reinterpret_cast<kapc*>(norm_ctx);
-        apc->regular_normal_payload(apc->KAPC::NormalContext, sys_ctx1, sys_ctx2);  // untamper the normal_ctx here
-      }
+      ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );  // for a normal kAPC routine
+      ASSERT ( norm_ctx );  // assumed kapc* is stored here by regular_kernel_apc_routine
+      kapc* apc = reinterpret_cast<kapc*>(norm_ctx);
+      apc->regular_normal_payload(apc->KAPC::NormalContext, sys_ctx1, sys_ctx2);  // untamper the normal_ctx here
     }
 
     static void rundown_apc_routine(KAPC* pa)
     {
-      ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );  //  for an APC rundown routine
-      if ( pa )
-      {
-        static_cast<kapc*>(pa)->rundown_payload();
-      }
+      ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );  // for an APC rundown routine
+      static_cast<kapc*>(pa)->rundown_payload();
     }
 
   private:
@@ -191,8 +180,8 @@ namespace aux_
   };
 
 
-}  //  namespace aux_
+}  // namespace aux_
 
 
-#endif // include guard
+#endif  // include guard
 

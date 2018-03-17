@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -121,7 +121,7 @@ namespace
       sum += arr[u].get();
     }
 
-    if ( sum != (arr[0].get() + arr[ARR_SZ-1].get()) * ARR_SZ/2 )
+    if ( sum != (arr[0].get() + arr[ARR_SZ-1].get()) * (ARR_SZ >> 1) )
     {
       throw int(ARRAY_IS_CORRUPTED);
     }

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -13,6 +13,7 @@
 
 
 #include <typeinfo>
+#include "rtti_test_defs.h"
 
 
 #ifdef NT_KERNEL_MODE
@@ -255,10 +256,10 @@ namespace cpprtl { namespace test { namespace rtti
 
 #ifdef NT_KERNEL_MODE
       enum { KE_SKIP_TESTS = 3 };
-      if ( KeGetCurrentIrql() > PASSIVE_LEVEL )  //  skip from this point
+      if ( KeGetCurrentIrql() > PASSIVE_LEVEL )  // skip from this point
       {
-        ret += KE_SKIP_TESTS;                        //  adjusting the test counter,
-        goto IF_IRQL_IS_GREATER_THAN_PASSIVE_LEVEL;  //  if current IRQL>PASSIVE_LEVEL an access violation at a user space address becomes the bound trap, so let's skip.
+        ret += KE_SKIP_TESTS;                        // adjusting the test counter,
+        goto IF_IRQL_IS_GREATER_THAN_PASSIVE_LEVEL;  // if current IRQL>PASSIVE_LEVEL an access violation at a user space address becomes the bound trap, so let's skip.
       }
 #endif  //  NT_KERNEL_MODE
 
@@ -295,7 +296,7 @@ namespace cpprtl { namespace test { namespace rtti
 
       // badly designed to get bad_cast by access violation
       ++ret;
-#ifndef __CODEGEARC__  //  bcc64's cxxabi-lib makes access violation
+#ifndef __CODEGEARC__  // bcc64's cxxabi-lib makes access violation
       {
         while (1)
         {
@@ -324,7 +325,7 @@ namespace cpprtl { namespace test { namespace rtti
 
       // badly designed to get bad_typeid by access violation
       ++ret;
-#ifndef __CODEGEARC__  //  bcc64 cxxabi-lib's typeid() returns hanging ref here
+#ifndef __CODEGEARC__  // bcc64 cxxabi-lib's typeid() returns hanging ref here
       {
         while (1)
         {
@@ -350,10 +351,10 @@ namespace cpprtl { namespace test { namespace rtti
 
 
 #ifdef NT_KERNEL_MODE
-IF_IRQL_IS_GREATER_THAN_PASSIVE_LEVEL: ;  //  'IRQL>PASSIVE_LEVEL'  skip to this point
+IF_IRQL_IS_GREATER_THAN_PASSIVE_LEVEL: ;  // 'IRQL>PASSIVE_LEVEL'  skip to this point
 #endif
 
-      ret = 0; // one would go here only if tests are successfully passed
+      ret = 0;  // one would get here only if tests were passed successfully
     }
     catch (int& i)
     {

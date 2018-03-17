@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -53,6 +53,20 @@ namespace aux_
   }
 
 
+////   make the stack traversing started
+  void raise_exception(::EXCEPTION_RECORD& exc_rec)
+  {
+  #ifdef NT_KERNEL_MODE
+  //  KIRQL irql = KeGetCurrentIrql();
+  //  ::size_t r_stack = IoGetRemainingStackSize();
+    IRQL_CHECK ( <=DISPATCH_LEVEL )  // RtlRaiseException()
+    RtlRaiseException(&exc_rec);
+  #else
+    ::RaiseException(exc_rec.ExceptionCode, exc_rec.ExceptionFlags, exc_rec.NumberParameters, exc_rec.ExceptionInformation);
+  #endif
+  }
+
+
 ////   terminate the process execution if the exception handling goes a wrong way
   void invalid_exception()
   {
@@ -73,22 +87,19 @@ namespace aux_
   #endif
   }
 
+}  // namespace aux_
+}  // namespace eh
+}  // namespace cpprtl
 
-////   make the stack traversing started
-  void raise_exception(::EXCEPTION_RECORD& exc_rec)
+
+extern "C"
+{
+#if ( _MSC_VER >= 1900 )  // msvc2015/wdk10 (upd3) compiler predeclared
+  extern "C" void __cdecl __std_terminate()
   {
-  #ifdef NT_KERNEL_MODE
-  //  KIRQL irql = KeGetCurrentIrql();
-  //  ::size_t r_stack = IoGetRemainingStackSize();
-    IRQL_CHECK ( <=DISPATCH_LEVEL )  // RtlRaiseException()
-    RtlRaiseException(&exc_rec);
-  #else
-    ::RaiseException(exc_rec.ExceptionCode, exc_rec.ExceptionFlags, exc_rec.NumberParameters, exc_rec.ExceptionInformation);
-  #endif
+    using namespace cpprtl;
+    eh::aux_::invalid_exception(eh::EXCEPTION_CODE_CPP, eh::EXCEPTION_SUBCODE_STD_TERMINATE_INTERNAL);
   }
-
-
-}  //  namespace aux_
-}  //  namespace eh
-}  //  namespace cpprtl
+#endif
+}  // extern "C"
 

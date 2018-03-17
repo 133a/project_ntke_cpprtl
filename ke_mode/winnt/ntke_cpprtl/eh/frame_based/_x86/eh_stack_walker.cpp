@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ namespace eh_engine
 
     struct dispatcher_context
     {
-      exception_registration* exc_reg;  //  keep it at [0] position for the compatibility with os's dispatching/unwinding engines
+      exception_registration* exc_reg;  // keep it at [0] position for the compatibility with os's dispatching/unwinding engines
     };
 
 
@@ -108,9 +108,8 @@ namespace eh_engine
     //  invoke the frame handler
       int disposition = frame_handler(exc_rec, exc_reg, ctx, dsp_ctx);
 
-    //  unlink the custom exception registration
+    //  unlink the custom exception registration and return the frame disposition
       efh_reg.unlink();
-    // return the frame disposition
       return disposition;
     }
 
@@ -128,7 +127,7 @@ namespace eh_engine
     )
     {
       ::EXCEPTION_RECORD*  current_exc_rec = &original_exc_rec;
-      ::CONTEXT* current_ctx = 0;  //  the stack walker can't be invoked from a trap but just can be invoked as a function call so do we need to maintain the context ?
+      ::CONTEXT* current_ctx = 0;  // the stack walker can't be invoked from a trap but just can be invoked as a function call so do we need to maintain the context ?
 
       exception_registration* prev_exc_reg    = 0;
       exception_registration* nested_exc_reg  = 0;
@@ -138,13 +137,14 @@ namespace eh_engine
 
       if 
       (
-         eh::EXCEPTION_CODE_CPP == original_exc_rec.ExceptionCode
-      && EXCEPTION_OPCODE_THROW == original_exc_rec.ExceptionInformation[EXCPTR_OPCODE]
+        eh::EXCEPTION_CODE_CPP == original_exc_rec.ExceptionCode
+      &&
+        EXCEPTION_OPCODE_THROW == original_exc_rec.ExceptionInformation[EXCPTR_OPCODE]
       )
       {
         target_unwind_exc_rec.ExceptionCode                              =  eh::EXCEPTION_CODE_CPP;
         target_unwind_exc_rec.ExceptionInformation[EXCPTR_OPCODE]        =  EXCEPTION_OPCODE_STACKWALKER_UNWIND;
-        original_exc_rec.ExceptionInformation[EXCPTR_THR_UNWIND_EXCREC]  =  reinterpret_cast< ::ULONG_PTR>(&target_unwind_exc_rec);  //  here the frame handler is to save the unwinding info if any
+        original_exc_rec.ExceptionInformation[EXCPTR_THR_UNWIND_EXCREC]  =  reinterpret_cast< ::ULONG_PTR>(&target_unwind_exc_rec);  // here the frame handler is to save the unwinding info if any
         original_exc_rec.ExceptionInformation[EXCPTR_FLAGS]             |=  EXCEPTION_FLAG_STACKWALKER_UNWIND;
       }
 
@@ -152,10 +152,11 @@ stack_walker_frame_traversing_loop:
       for ( current_exc_reg = exception_registration::head() ; exception_registration::REG_END != current_exc_reg ; )
       {
 
-        if  //  check the frame exception registration consistency
+        if  // check the frame exception registration consistency
         (
-          current_exc_reg > current_exc_reg->next                  //  check the next frame exception registration is at the upper stack position or just the 'END_REG' 
-          || ( reinterpret_cast< ::size_t>(current_exc_reg) & STACK_MISALIGNMENT )  //  and is being properly aligned
+          current_exc_reg > current_exc_reg->next                              // check the next frame exception registration is at the upper stack position or just the 'END_REG' 
+        ||
+          (reinterpret_cast< ::size_t>(current_exc_reg) & STACK_MISALIGNMENT)  // and is being properly aligned
         )
         {
           goto stack_walker_bad_stack;
@@ -163,13 +164,13 @@ stack_walker_frame_traversing_loop:
 
         if ( unwind_phase )
         {
-          if ( current_exc_reg > target_exc_reg )  //  in such a case the target seems to be just unreachable
+          if ( current_exc_reg > target_exc_reg )  // in such a case the target seems to be just unreachable
           {
             goto stack_walker_bad_stack;
           }
-          if ( current_exc_reg == target_exc_reg )  //  the target frame has been reached and we are to perform the target unwind and the continuation
+          if ( current_exc_reg == target_exc_reg )  // the target frame has been reached and we are to perform the target unwind and the continuation
           {
-            original_exc_rec.ExceptionFlags  &=  ~EXCEPTION_UNWIND;  //  remove any unwinding flags
+            original_exc_rec.ExceptionFlags &= ~EXCEPTION_UNWIND;  // remove any unwinding flags
             goto stack_walker_target_unwind;
           }
         }
@@ -198,7 +199,7 @@ stack_walker_frame_traversing_loop:
       //  check the frame disposition
         switch ( disposition )
         {
-        case ExceptionContinueExecution:   //  expected at the dispatching phase
+        case ExceptionContinueExecution:   // expected at the dispatching phase
           if ( current_exc_rec->ExceptionFlags & EXCEPTION_NONCONTINUABLE )
           {
             goto stack_walker_noncontinuable;
@@ -206,7 +207,7 @@ stack_walker_frame_traversing_loop:
           goto stack_walker_continue_execution;
           break;
 
-        case ExceptionNestedException:   //  expected at the dispatching phase, 'efh_handler' is expected to fill our dsp_ctx with the values the previous dispatching loop stucked with
+        case ExceptionNestedException:   // expected at the dispatching phase, 'efh_handler' is expected to fill our dsp_ctx with the values the previous dispatching loop stucked with
           current_exc_rec->ExceptionFlags |= EXCEPTION_NESTED_CALL;
           if ( dsp_ctx.exc_reg > nested_exc_reg )
           {
@@ -214,17 +215,18 @@ stack_walker_frame_traversing_loop:
           }
           break;
 
-        case ExceptionCollidedUnwind:   //  expected at the unwinding phase, 'efh_handler' is expected to fill our dsp_ctx with the values the previous dispatching loop stucked with
-          current_exc_reg = dsp_ctx.exc_reg;  //  let's just preempt the exception registration the previous unwinding loop got stucked with
+        case ExceptionCollidedUnwind:   // expected at the unwinding phase, 'efh_handler' is expected to fill our dsp_ctx with the values the previous dispatching loop stucked with
+          current_exc_reg = dsp_ctx.exc_reg;  // let's just preempt the exception registration the previous unwinding loop got stucked with
           break;
 
-        case ExceptionContinueSearch:   //  expected both at the dispatching and unwinding
-          if ( !unwind_phase )  //  here to check if the stack unwind should be started or even proceed to the stack consolidation
+        case ExceptionContinueSearch:   // expected both at the dispatching and unwinding
+          if ( !unwind_phase )  // here to check if the stack unwind should be started or even proceed to the stack consolidation
           {
-            if    //  the following flags are expected to be set only at the eh_engine::stack_unwind():
+            if  // the following flags are expected to be set only at the eh_engine::stack_unwind():
             ( 
-                eh::EXCEPTION_CODE_CPP == target_unwind_exc_rec.ExceptionCode
-            &&  EXCEPTION_OPCODE_TARGET_UNWIND == target_unwind_exc_rec.ExceptionInformation[EXCPTR_OPCODE] 
+              eh::EXCEPTION_CODE_CPP == target_unwind_exc_rec.ExceptionCode
+            &&
+              EXCEPTION_OPCODE_TARGET_UNWIND == target_unwind_exc_rec.ExceptionInformation[EXCPTR_OPCODE] 
             )
             {
             // make the preparations for the unwind phase:
@@ -234,18 +236,18 @@ stack_walker_frame_traversing_loop:
               {
                 target_exc_reg = reinterpret_cast<exception_registration*>(target_unwind_exc_rec.ExceptionInformation[EXCPTR_TUW_CATCH_GUARD_REGISTRATION]);
               }
-              original_exc_rec.ExceptionFlags |= EXCEPTION_UNWINDING;   //  'EXCEPTION_EXIT_UNWIND' isn't expected 'cos we are having the target frame
+              original_exc_rec.ExceptionFlags |= EXCEPTION_UNWINDING;   // 'EXCEPTION_EXIT_UNWIND' isn't expected 'cos we are having the target frame
     
               nested_exc_reg  = 0;
               prev_exc_reg    = 0;
-              unwind_phase    = true;                     //  the unwind phase can be started only by these eh-lib frame handler
-              goto stack_walker_frame_traversing_loop;    //  follow to the unwinding phase of the stack walking
+              unwind_phase    = true;                     // the unwind phase can be started only by these eh-lib frame handler
+              goto stack_walker_frame_traversing_loop;    // follow to the unwinding phase of the stack walking
             }
           }
           break;
 
         default:
-          goto stack_walker_invalid_disposition;  //  the frame handler is not expected to return these values
+          goto stack_walker_invalid_disposition;  // the frame handler is not expected to return these values
           break;
         };
 
@@ -294,16 +296,15 @@ stack_walker_unexpected :
       target_unwind_exc_rec.NumberParameters = 0;
       eh::aux_::raise_exception(target_unwind_exc_rec);
 
-      return false;  //  could anyone achieve here ?
+      return false;  // could anyone achieve here ?
     }
 
-  }  //  namespace aux_
-
+  }  // namespace aux_
 
 
   void stack_walk(::EXCEPTION_RECORD& original_exc_rec)
   {
-  //  do NOT use the objects with destructor semantics at this scope because if the target unwind is to occure the continuation will just cut the stack up
+  // do NOT use objects with the destructor semantics at this scope because if the target unwind is to occure the continuation will just cut the stack up
 
     void* ret_addr           = 0;
     ::size_t prev_stack_ptr  = 0;
@@ -319,20 +320,20 @@ stack_walker_unexpected :
 
     if ( aux_::stack_walk_impl(original_exc_rec, target_unwind_exc_rec) )
     {
-    //  the stack_walk_impl() has got the stack unwound up to the target frame and has filled the 'target_unwind_exc_rec' with the data necessary to perform the target unwind and the continuation
+    // the stack_walk_impl() has got the stack unwound up to the target frame and has filled the 'target_unwind_exc_rec' with the data necessary to perform the target unwind and the continuation
       (reinterpret_cast<void (*)(::EXCEPTION_RECORD*)>(target_unwind_exc_rec.ExceptionInformation[EXCPTR_TUW_CALLBACK_ADDR]))(&target_unwind_exc_rec);
-    //  just doesn't return into this scope
+    // just doesn't return into this scope
     }
 
-    //  otherwise the stack_walk_impl() requests for continuing the stack_walk() caller
+    // otherwise the stack_walk_impl() requests for the stack_walk() caller continuation
     return;
   }
 
-} // namespace eh_engine
+}  // namespace eh_engine
 
 
-}  //  namespace eh
-}  //  namespace cpprtl
+}  // namespace eh
+}  // namespace cpprtl
 
 
 #ifdef _MSC_VER

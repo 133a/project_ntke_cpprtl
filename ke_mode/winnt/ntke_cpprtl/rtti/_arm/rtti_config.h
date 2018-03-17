@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -26,9 +26,9 @@ namespace cpprtl
   }
 
   typedef unsigned int   rva_t;
-  typedef unsigned long  image_base_t;  //  actually it's a fake 'cos the RVA isn't used
+  typedef unsigned long  image_base_t;  // actually it's a fake 'cos RVA isn't used
 }
 
 
-#endif // include guard
+#endif  // include guard
 

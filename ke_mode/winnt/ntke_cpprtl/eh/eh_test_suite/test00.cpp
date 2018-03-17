@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ namespace cpprtl { namespace test { namespace eh
       }
     }
     return ctx.balance();
-#endif  //  _MSC_VER
+#endif  // _MSC_VER
 
     return 0;
   }

@@ -1,5 +1,5 @@
 ifndef DDK3790SP1_FOLDER
-  $(error DDK3790SP1_FOLDER is not defined)
+  $(error define DDK3790SP1_FOLDER)
 endif
 
 
@@ -15,24 +15,20 @@ ddk3790sp1.dir.lib        = $(ddk3790sp1.dir)/lib
 ddk3790sp1.compiler       = $(ddk3790sp1.dir.bin)/win64/x86/amd64/cl.exe
 wdk.compiler              = $(ddk3790sp1.compiler)
 
-
 ddk3790sp1.assembler      = $(ddk3790sp1.dir.bin)/win64/x86/amd64/ml64.exe
 wdk.assembler             = $(ddk3790sp1.assembler)
 
-
 ddk3790sp1.linker         = $(ddk3790sp1.dir.bin)/win64/x86/amd64/link.exe
 wdk.linker                = $(ddk3790sp1.linker)
-
 
 ddk3790sp1.libtool        = $(ddk3790sp1.dir.bin)/win64/x86/amd64/lib.exe
 wdk.libtool               = $(ddk3790sp1.libtool)
 
 
-
 ifeq '$(target.kernel)' 'nt5.2'
   ddk3790sp1.dir.kernel = wnet
 else 
-  $(error target.kernel=$(target.kernel) is unsupported)
+  $(error unknown target.kernel=$(target.kernel))
 endif
 
 
@@ -43,27 +39,26 @@ wdk.dir.include.wdm       = $(ddk3790sp1.dir.include)/ddk/wdm/$(ddk3790sp1.dir.k
 wdk.dir.lib.wdm           = $(ddk3790sp1.dir.lib)/$(ddk3790sp1.dir.kernel)/amd64
 
 
-wdk.dir.include.1         = $(wdk.dir.include.win32)
-wdk.dir.include.2         = $(wdk.dir.include.crt)
-wdk.dir.include.3         = $(wdk.dir.include.ddk)
-wdk.dir.include.4         = $(wdk.dir.include.wdm)
-wdk.dir.lib.1             = $(wdk.dir.lib.wdm)
-
+sdk.dir.include.1         = $(wdk.dir.include.win32)
+sdk.dir.include.2         = $(wdk.dir.include.crt)
+sdk.dir.include.3         = $(wdk.dir.include.ddk)
+sdk.dir.include.4         = $(wdk.dir.include.wdm)
+sdk.dir.lib.1             = $(wdk.dir.lib.wdm)
 
 
 wdk.df                    = $(make.dir.bin)/x86/df.exe
 
 
-target.arch = x64
 wdk.version = 3790
-toolset.host.arch = x86
+target.arch = x64
+toolset.arch = x86
 toolset.family = ddk3790sp1
 toolset.supported.kernels = nt5.2
 toolset.not_supported.signing = 1
-wdk.linker.option.machine = AMD64
+toolset.option.machine = AMD64
 
 
-ifndef wdk.toolset.aux
+ifndef toolset.aux.type
   include $(make.dir.toolsets)/wdk/wdk.mak
 endif
 

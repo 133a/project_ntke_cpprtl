@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -17,7 +17,7 @@
 extern const ULONG ntke_memtag;
 
 
-//  the operators new() with their counterparts for EH memory deallocation (mscl C4291)
+// the operators new() with their counterparts for EH memory deallocation (mscl C4291)
 
 #ifdef _MSC_VER
 #  pragma warning(push)

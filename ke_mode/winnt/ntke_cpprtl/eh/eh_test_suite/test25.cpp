@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -32,10 +32,10 @@ namespace
 {
   void f25(context& ctx)
   {
-    exc_test et(ctx);
+    eh_test et(ctx);
     if ( ++ctx.state >= RECURSION_COUNT25 )
     {
-      exc_test et(ctx);
+      eh_test et(ctx);
       throw int(SPECIAL_EXCEPTION25);
     }
     f25(ctx);
@@ -54,7 +54,7 @@ namespace cpprtl { namespace test { namespace eh
 
     try
     {
-      exc_test et(ctx);
+      eh_test et(ctx);
       f25(ctx);
     }
     catch (int const i)

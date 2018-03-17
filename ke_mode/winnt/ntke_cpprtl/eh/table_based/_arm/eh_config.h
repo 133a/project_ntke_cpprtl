@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -16,7 +16,7 @@
 #define CFG_RVA
 
 
-#ifndef NTKE_EH_CONFIG_DO_NOT_USE_STACK_WALKER  //  TODO (_M_ARM && NT_KERNEL_MODE [nt6.2.9200]) : 'RtlRestoreContext()' doesn't support a stack consolidation ?
+#ifndef NTKE_EH_CONFIG_DO_NOT_USE_STACK_WALKER  // TODO (_M_ARM && NT_KERNEL_MODE [nt6.2.9200]) : 'RtlRestoreContext()' doesn't support a stack consolidation ?
 #  define CFG_EH_STACK_WALKER
 #endif
 
@@ -42,5 +42,5 @@ namespace cpprtl
 }
 
 
-#endif  //  include guard
+#endif  // include guard
 

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -21,14 +21,14 @@
   #endif
 
 
-#else // ! NT_KERNEL_MODE
+#else  // ! NT_KERNEL_MODE
 #  include <windows.h>
-#endif // NT_KERNEL_MODE
+#endif  // NT_KERNEL_MODE
 
 
 #include "rtti_config.h"
 #include <check_irql.h>
 
 
-#endif // include guard
+#endif  // include guard
 

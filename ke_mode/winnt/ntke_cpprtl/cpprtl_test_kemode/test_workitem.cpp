@@ -1,19 +1,36 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
 
 
 #include "ntddk.include.h"
-#include "tests_aux.h"
-#include "aux_workitem.h"
+#include <cstddef>
+#include <new>
+#include "aux_cpu.h"
 #include "aux_sync.h"
+#include "aux_task.h"
+#include "aux_workitem.h"
+#include "tests_aux.h"
 #include "test_workitem.h"
 
 
-namespace
+namespace cpprtl_tests
 {
+  enum
+  {
+    WORKITEM_FACTOR = 2
+  };
+
+
+  enum
+  {
+    RET_ERROR_WORKITEM_ALLOC         = -1101
+  , RET_ERROR_WORKITEM_SPAWN         = -1102
+  , RET_ERROR_WORKITEM_TASK_SPAWN    = -1103
+  };
+
 
   class work_item
     : public aux_::work_item
@@ -21,20 +38,17 @@ namespace
     typedef aux_::spin_lock       lock_type;
     typedef aux_::auto_spin_lock  auto_lock_type;
 
-  public:
-    typedef cpprtl_tests::testFT testFT;
-
   private:
     lock_type     lock;
     aux_::kevent  evt;
-    int           res;
+    int           status;
     testFT        ftest;
 
   public:
     work_item()
-      : evt    ( false, aux_::kevent::MANUAL_RESET )
-      , res    ( cpprtl_tests::RET_ERROR_UNEXPECTED )
-      , ftest  ( 0 )
+      : evt     ( false, aux_::kevent::MANUAL_RESET )
+      , status  ( RET_ERROR_UNEXPECTED )
+      , ftest   ( 0 )
     {}
 
     virtual ~work_item()
@@ -47,10 +61,10 @@ namespace
       bool do_enqueue = false;
       {
         auto_lock_type lck(lock);
-        if ( lck.locked() && 0 == ftest )
+        if ( 0 == ftest )
         {
           evt.reset();
-          res = cpprtl_tests::RET_ERROR_UNEXPECTED;
+          status = RET_ERROR_UNEXPECTED;
           ftest = f;
           do_enqueue = true;
         }
@@ -70,20 +84,16 @@ namespace
 
     int result() const
     {
-      return res;
+      return status;
     }
 
   protected:
     virtual void payload()
     {
-      DbgPrint("work_item::payload() %d\n", KeGetCurrentThread());
-      if ( ftest )
+      DbgPrint("work_item::payload() %p\n", KeGetCurrentThread());
+      ftest(status);
       {
-        ftest(res);
-      }
-      auto_lock_type lck(lock);
-      if ( lck.locked() )
-      {
+        auto_lock_type lck(lock);
         ftest = 0;
         evt.set();
       }
@@ -91,143 +101,101 @@ namespace
 
   };
 
-}
 
-
-namespace cpprtl_tests
-{
-
-  //  run in the queued work item
-  int test_workitem(testFT test_funcs[])
+  class work_item_task
+    : public aux_::task_bunch<work_item>
   {
-    work_item wi;
-    for ( int i = 0 ; test_funcs[i] ; ++i )
+    typedef aux_::task_bunch<work_item> base_type;
+
+  public:
+    work_item_task()
+    {}
+
+    ~work_item_task()
     {
-      if ( !wi.spawn(test_funcs[i]) )
+      acquire();
+    }
+
+    bool spawn(std::size_t const& n, testFT f)
+    {
+      task_num = n;
+      spawned = 0;
+      task.reset(new(std::nothrow) task_type[task_num]);
+      if ( !task.get() )
       {
-        return RET_ERROR_WORK_ITEM_SPAWN;
+        status = RET_ERROR_WORKITEM_ALLOC;
+        return false;
       }
-      if ( !NT_SUCCESS(wi.acquire()) )
+      for ( spawned = 0 ; spawned < task_num ; ++spawned )
       {
-        return RET_ERROR_WORK_ITEM_ACQUIRE;
+        if ( !task[spawned].spawn(f) )
+        {
+          status = RET_ERROR_WORKITEM_SPAWN;
+          return false;
+        }
       }
-      if ( RET_SUCCESS != wi.result() )
+      status = RET_SUCCESS;
+      return true;
+    }
+
+    void acquire()
+    {
+      while ( spawned > 0 )
       {
-        DbgPrint("cpprtl_tests::test_workitem() : test_func %d ret %d\n", i, wi.result());
-        return wi.result();
+        task[--spawned].acquire();
       }
     }
+  };
+
+
+  int test_workitem_impl(testFT tests[], std::size_t const& task_num)
+  {
+    for ( unsigned i = 0 ; tests[i] ; ++i )
+    {
+      DbgPrint("test_workitem_impl() : spawning work_items[%u] for test[%u]\n", unsigned(task_num), i);
+      work_item_task task;
+      if ( !task.spawn(task_num, tests[i]) )
+      {
+        return RET_ERROR_WORKITEM_TASK_SPAWN;
+      }
+      task.acquire();
+
+      for ( unsigned k = 0 ; k < task_num ; ++k )
+      {
+        if ( RET_SUCCESS != task[k].result() )
+        {
+          DbgPrint("test_workitem_impl() ERROR : test[%u]=%i at work_item[%u]\n", i, task[k].result(), k);
+          return task[k].result();
+        }
+      }
+    }
+    DbgPrint("test_workitem_impl() : 0\n");
     return RET_SUCCESS;
   }
 
 }  // namespace cpprtl_tests
 
 
-namespace
-{
-  using cpprtl_tests::WQI_NUM;
-
-
-  class wi_task
-  {
-    work_item   wi         [WQI_NUM];
-    int       (&wi_status) [WQI_NUM];
-
-  public:
-    explicit wi_task(int (&st) [WQI_NUM])
-      : wi_status ( st )
-    {}
-
-    bool spawn(cpprtl_tests::testFT f)
-    {
-      for ( int i = 0 ; i < WQI_NUM ; ++i )
-      {
-        if ( ! wi[i].spawn(f) )
-        {
-          wi_status[i] = cpprtl_tests::RET_ERROR_WORK_ITEM_SPAWN;
-          return false;
-        }
-        wi_status[i] = STATUS_SUCCESS;
-      }
-      return true;
-    }
-
-    bool acquire()
-    {
-      bool ok = true;
-      for ( int i = 0 ; i < WQI_NUM && NT_SUCCESS(wi_status[i]) ; ++i )
-      {
-        if ( !NT_SUCCESS(wi[i].acquire()) )
-        {
-          wi_status[i] = cpprtl_tests::RET_ERROR_WORK_ITEM_ACQUIRE;
-          ok = false;
-          continue;
-        }
-        wi_status[i] = wi[i].result();
-      }
-      return ok;
-    }
-  };
-
-
-  class wi_task_auto_acquire
-  {
-    wi_task* wi;
-
-  public:
-    explicit wi_task_auto_acquire(wi_task* const t)
-      : wi ( t )
-    {}
-
-    void release()
-    {
-      wi = 0;
-    }
-
-    ~wi_task_auto_acquire()
-    {
-      if ( wi )
-      {
-        wi->acquire();
-      }
-    }
-  };
-
-}
-
-
 namespace cpprtl_tests
 {
 
-  int test_workitem_mt(testFT test_funcs[])
+  int test_workitem(testFT tests[])
   {
-    int wi_status [WQI_NUM] = { STATUS_UNSUCCESSFUL };
-    wi_task wi(wi_status);
+    DbgPrint("test_workitem()\n");
+    return test_workitem_impl(tests, 1);
+  }
 
-    for ( int i = 0 ; test_funcs[i] ; ++i )
+
+  int test_workitem_mt(testFT tests[])
+  {
+    std::size_t const task_num = aux_::get_number_processors() * WORKITEM_FACTOR;
+    DbgPrint("test_workitem_mt() : task_num=%u\n", unsigned(task_num));
+    if ( task_num > 1 )
     {
-      wi_task_auto_acquire acq(&wi);  // spawn guard
-      if ( ! wi.spawn(test_funcs[i]) )
-      {
-        return RET_ERROR_WORK_ITEM_TASK_SPAWN;
-      }
-      acq.release();
-      if ( ! wi.acquire() )
-      {
-        return RET_ERROR_WORK_ITEM_TASK_ACQUIRE;
-      }
-
-      for ( int k = 0 ; k < WQI_NUM ; ++k)
-      {
-        if ( RET_SUCCESS != wi_status[k] )
-        {
-          DbgPrint("cpprtl_tests::test_workitem_mt() : test_func %d ret %d\n", i, wi_status[k]);
-          return wi_status[k];
-        }
-      }
+      return test_workitem_impl(tests, task_num);
     }
     return RET_SUCCESS;
   }
 
-}  //  namespace cpprtl_tests
+}  // namespace cpprtl_tests
 

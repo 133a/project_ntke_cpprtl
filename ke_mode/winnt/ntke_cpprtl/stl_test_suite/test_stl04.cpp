@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -58,7 +58,7 @@ namespace
 
 
   typedef aux_::test_object<int>      int_obj;
-  typedef std::map<int, int_obj>      int_obj_map;  //  the default stl allocator is suggested to use the nonpaged memory
+  typedef std::map<int, int_obj>      int_obj_map;  // the default stl allocator is suggested to use the nonpaged memory
 
   typedef std::map
   <
@@ -181,7 +181,7 @@ namespace cpprtl { namespace test { namespace stl
         }
 
 
-      ////  a map with the explicit np-allocator
+      ////  the map with the explicit np-allocator
         int_obj_nonpaged_map test_map3;
         for ( int i = TEST_MAP_MIN_ELEMENT ; i <= TEST_MAP_MAX_ELEMENT ; ++i )
         {
@@ -218,7 +218,7 @@ namespace cpprtl { namespace test { namespace stl
         }
 
 
-      ////  a map with the explicit paged-allocator
+      ////  the map with the explicit paged-allocator
         if ( IRQL_REL( ==PASSIVE_LEVEL ) )
         {
           int_obj_paged_map test_map5;

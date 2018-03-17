@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -49,18 +49,18 @@ namespace cpprtl
 
       ::EXCEPTION_DISPOSITION frame_handler3
       (
-        ::EXCEPTION_RECORD         *        exc_rec
-      , frame_ptr_t           const&        frame
-      , ::CONTEXT             const* const  context
-      , ::DISPATCHER_CONTEXT  const* const  dc
+        ::EXCEPTION_RECORD    const&  exc_rec
+      , frame_ptr_t           const&  frame
+      , ::CONTEXT             const&  context
+      , ::DISPATCHER_CONTEXT  const&  dc
       );
 
-    }  //  namespace eh_engine
+    }  // namespace eh_engine
 
-  }  //  namespace eh
+  }  // namespace eh
 
-}  //  namespace cpprtl
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

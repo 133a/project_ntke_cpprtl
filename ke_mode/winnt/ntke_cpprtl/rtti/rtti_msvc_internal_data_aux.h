@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -154,7 +154,7 @@ namespace msvc_internal_data_aux
   };
 
 
-} // namespace msvc_internal_data_aux
+}  // namespace msvc_internal_data_aux
 
 
 namespace rtti
@@ -218,9 +218,9 @@ namespace rtti
   , msvc_internal_data::rtti::base_class_descriptor2
   >::iterator                                                      base_class_type_descriptor;
 
-} // namespace rtti
-} // namespace cpprtl
+}  // namespace rtti
+}  // namespace cpprtl
 
 
-#endif // include guard
+#endif  // include guard
 

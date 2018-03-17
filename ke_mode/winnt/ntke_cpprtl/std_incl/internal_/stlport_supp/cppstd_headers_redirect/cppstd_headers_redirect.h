@@ -13,7 +13,7 @@
 #  elif  DDK_VER < 10000   //  wdk8.0 wdk8.1
 #    define NTKE_INCLUDE_DDK_STL_PATH    ../include
 #    define NTKE_INCLUDE_DDK_CPPRT_PATH  ../include
-#  elif  DDK_VER == 10240  // wdk10
+#  elif  DDK_VER >= 10240  // wdk10 ewdk16299-km
 #    define NTKE_INCLUDE_DDK_STL_PATH    ../include
 #    define NTKE_INCLUDE_DDK_CPPRT_PATH  ../include
 #  else

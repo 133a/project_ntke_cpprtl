@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -71,17 +71,17 @@ namespace
       : base00  ( c_ )
       , ctx     ( c_ )
     {
-      exc_test et(c_);
+      eh_test et(c_);
       throw int(SPECIAL_EXCEPTION100);
       ++ctx.ctor_count;
       ++ctx.xtor_count;
     }
     catch (int i)
     {
-      exc_test et(c_);
+      eh_test et(c_);
       if ( SPECIAL_EXCEPTION100 == i )
       {
-        exc_test et(c_);
+        eh_test et(c_);
         c_.state += i;
       }
       else
@@ -119,10 +119,10 @@ namespace
     }
     catch (int i)
     {
-      exc_test et(c_);
+      eh_test et(c_);
       if ( SPECIAL_EXCEPTION100 == i )
       {
-        exc_test et(c_);
+        eh_test et(c_);
         c_.state += i;
       }
       else
@@ -152,7 +152,7 @@ namespace cpprtl { namespace test { namespace eh
 
   int test100()
   {
-    context ctx ( 3*SPECIAL_EXCEPTION100 + 1*MAGIC_DTOR100);  //  3 catches are expected + 1 dtor is expected
+    context ctx ( 3*SPECIAL_EXCEPTION100 + 1*MAGIC_DTOR100);  // 3 catches are expected + 1 dtor
     ctx.state = EH_OK;
     try
     {
@@ -179,7 +179,7 @@ namespace cpprtl { namespace test { namespace eh
     return 0;
 #else
     return ctx.balance();
-#endif  //  _MSC_VER < 1310
+#endif  // _MSC_VER < 1310
   }
 
 }  }  }

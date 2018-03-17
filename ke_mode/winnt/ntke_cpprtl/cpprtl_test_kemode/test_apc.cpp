@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -10,13 +10,29 @@
 #include "tests_aux.h"
 #include "test_apc.h"
 #include "aux_apc.h"
+#include "aux_cpu.h"
 #include "aux_sync.h"
-#include "scoped_ptr.h"
+#include "aux_task.h"
+#include "aux_scoped_ptr.h"
 #include "thread_type.h"
 
 
-namespace
+namespace cpprtl_tests
 {
+  enum
+  {
+    APC_FACTOR = 2
+  };
+
+  enum
+  {
+    RET_ERROR_APC_ALLOC       = -1301
+  , RET_ERROR_APC_SPAWN       = -1302
+  , RET_ERROR_APC_ACQUIRE     = -1303
+  , RET_ERROR_APC_PENDING     = -1304
+  , RET_ERROR_APC_TASK_SPAWN  = -1305
+  };
+
 
   class kapc
     : public aux_::kapc
@@ -24,9 +40,6 @@ namespace
     typedef aux_::fast_mutex           lock_type;
     typedef aux_::auto_fast_mutex      auto_lock_type;
     typedef aux_::apc_auto_fast_mutex  apc_auto_lock_type;
-
-  public:
-    typedef cpprtl_tests::testFT testFT;
 
   private:
     lock_type     lock;
@@ -37,10 +50,9 @@ namespace
   public:
     kapc()
       : evt    ( false, aux_::kevent::MANUAL_RESET )
-      , res    ( cpprtl_tests::RET_ERROR_UNEXPECTED )
+      , res    ( RET_ERROR_UNEXPECTED )
       , ftest  ( 0 )
-    {
-    }
+    {}
 
     virtual ~kapc()
     {
@@ -53,10 +65,10 @@ namespace
       bool do_enqueue = false;
       {
         auto_lock_type lck(lock);
-        if ( lck.locked() && 0 == ftest )
+        if ( 0 == ftest )
         {
           evt.reset();
-          res = cpprtl_tests::RET_ERROR_APC_PENDING;
+          res = RET_ERROR_APC_PENDING;
           ftest = f;
           do_enqueue = true;
         }
@@ -79,319 +91,367 @@ namespace
     }
 
   protected:
+    template <typename AUTO_LOCK_TYPE>
+    void payload_cleanup()
+    {
+      AUTO_LOCK_TYPE lck(lock);
+      ftest = 0;
+      evt.set();
+    }
+
+    template <typename AUTO_LOCK_TYPE>
     void payload_impl()
     {
-      if ( ftest )
+      testFT f = 0;
       {
-        if ( cpprtl_tests::RET_SUCCESS == res || cpprtl_tests::RET_ERROR_APC_PENDING == res )
-        {
-          ftest(res);
-        }
+        AUTO_LOCK_TYPE lck(lock);
+        f = ftest;
       }
+      f(res);
     }
 
     virtual void special_kernel_payload(PKNORMAL_ROUTINE*, void**, void**, void**)
     {
-      DbgPrint("kapc::special_kernel_payload() %d\n", KeGetCurrentThread());
-      payload_impl();
-
-      apc_auto_lock_type lck(lock);
-      if ( lck.locked() )
-      {
-        ftest = 0;
-        evt.set();
-      }
+      typedef apc_auto_lock_type auto_lock_t;
+      DbgPrint("kapc::special_kernel_payload() %p\n", KeGetCurrentThread());
+      payload_impl<auto_lock_t>();
+      payload_cleanup<auto_lock_t>();
     }
 
     virtual void regular_kernel_payload(PKNORMAL_ROUTINE*, void**, void**, void**)
     {
-      DbgPrint("kapc::regular_kernel_payload() %d\n", KeGetCurrentThread());
-      payload_impl();
+      typedef apc_auto_lock_type auto_lock_t;
+      DbgPrint("kapc::regular_kernel_payload() %p\n", KeGetCurrentThread());
+      payload_impl<auto_lock_t>();
+    // cleanup is expected by regular_normal_payload()
     }
 
     virtual void regular_normal_payload(void*, void*, void*)
     {
-      DbgPrint("kapc::regular_normal_payload() %d\n", KeGetCurrentThread());
-      payload_impl();
-
-      auto_lock_type lck(lock);
-      if ( lck.locked() )
-      {
-        ftest = 0;
-        evt.set();
-      }
+      typedef auto_lock_type auto_lock_t;
+      DbgPrint("kapc::regular_normal_payload() %p\n", KeGetCurrentThread());
+      payload_impl<auto_lock_t>();
+      payload_cleanup<auto_lock_t>();
     }
 
     virtual void rundown_payload()
     {
+      typedef auto_lock_type auto_lock_t;
       DbgPrint("kapc::rundown_payload()\n");
-
-      auto_lock_type lck(lock);
-      if ( lck.locked() )
-      {
-        ftest = 0;
-        evt.set();
-      }
+      payload_cleanup<auto_lock_t>();
     }
-
   };
 
-}
 
-
-namespace
-{
-
-  //  run in the kAPC
-  void test_apc_impl(cpprtl_tests::testFT test_funcs[], PKTHREAD kt_rx, int& res)
+  template <typename APC_TYPE>
+  class apc_tx
   {
-    aux_::scoped_ptr<kapc> apc(new(std::nothrow) kapc);  //  NPaged no-throwing new
-
-    if ( ! apc.get() )
-    {
-      res = cpprtl_tests::RET_ERROR_APC_ALLOC;
-      return;
-    }
-
-    for ( int i = 0 ; test_funcs[i] ; ++i )
-    {
-
-    // regular kAPC
-      if ( ! apc->spawn(aux_::kapc::regular(), kt_rx, test_funcs[i]) )
-      {
-        res = cpprtl_tests::RET_ERROR_APC_SPAWN_REGULAR;
-        return;
-      }
-      if ( ! NT_SUCCESS(apc->acquire()) )
-      {
-        res = cpprtl_tests::RET_ERROR_APC_ACQUIRE_REGULAR;
-        return;
-      }
-      if ( cpprtl_tests::RET_SUCCESS != apc->result() )
-      {
-        DbgPrint("test_apc_impl() regular : test_func %d ret %d\n", i, apc->result());
-        res = apc->result();
-        return;
-      }
-
-    // special kAPC
-      if ( ! apc->spawn(aux_::kapc::special(), kt_rx, test_funcs[i]) )
-      {
-        res = cpprtl_tests::RET_ERROR_APC_SPAWN_SPECIAL;
-        return;
-      }
-      if ( ! NT_SUCCESS(apc->acquire()) )
-      {
-        res = cpprtl_tests::RET_ERROR_APC_ACQUIRE_SPECIAL;
-        return;
-      }
-      if ( cpprtl_tests::RET_SUCCESS != apc->result() )
-      {
-        DbgPrint("test_apc_impl() special : test_func %d ret %d\n", i, apc->result());
-        res = apc->result();
-        return;
-      }
-    }
-
-    res = cpprtl_tests::RET_SUCCESS;
-  }
-
-
-  class test_apc_adapter
-  {
-    int& res;
-    cpprtl_tests::testFT* test_funcs;
-    PKTHREAD kt_rx;
+    int&      res;
+    testFT    func;
+    PKTHREAD  kt_rx;
 
   public:
-    test_apc_adapter(cpprtl_tests::testFT tf[], int& i, PKTHREAD kt)
-      : res        ( i )
-      , test_funcs ( tf )
-      , kt_rx      ( kt )
+    apc_tx(int& i, testFT tf, PKTHREAD kt)
+      : res    ( i )
+      , func   ( tf )
+      , kt_rx  ( kt )
     {}
 
     void operator()() const
     {
-      test_apc_routine(test_funcs, res, kt_rx);
+      apc_tx_routine(res, func, kt_rx);
     }
 
-    static void test_apc_routine(cpprtl_tests::testFT test_funcs[], int& res, PKTHREAD kt)
+    static void apc_tx_routine(int& res, testFT func, PKTHREAD kt_rx)
     {
-      test_apc_impl(test_funcs, kt ? kt : KeGetCurrentThread(), res);
+    //  DbgPrint("apc_tx : %p\n", KeGetCurrentThread());
+      res = apc_tx_impl(func, kt_rx ? kt_rx : KeGetCurrentThread());
     }
+
+  private:
+    static int apc_tx_impl(testFT func, PKTHREAD kt_rx)
+    {
+      aux_::scoped_ptr<kapc> apc(new(std::nothrow) kapc);
+      if ( !apc.get() )
+      {
+        return RET_ERROR_APC_ALLOC;
+      }
+      if ( !apc->spawn(APC_TYPE(), kt_rx, func) )
+      {
+        return RET_ERROR_APC_SPAWN;
+      }
+      if ( !NT_SUCCESS(apc->acquire()) )
+      {
+        return RET_ERROR_APC_ACQUIRE;
+      }
+      return apc->result();
+    }
+
   };
 
-}
 
-
-namespace
-{
-
-  class apc_rx_thread_adapter
+  class apc_rx
   {
     aux_::kevent& evt;
 
   public:
-    explicit apc_rx_thread_adapter(aux_::kevent& e)
+    explicit apc_rx(aux_::kevent& e)
       : evt ( e )
     {}
 
     void operator()() const
     {
-      apc_rx_thread_routine(evt);
+      apc_rx_routine(evt);
     }
 
-    static void apc_rx_thread_routine(aux_::kevent& evt)
+    static void apc_rx_routine(aux_::kevent& evt)
     {
+    //  DbgPrint("apc_rx : %p\n", KeGetCurrentThread());
       evt.acquire(STATUS_SUCCESS);
     }
   };
 
-}
 
-
-namespace
-{
-// a separate APC-receiving threads to be spawned to provide APC-callbacks with the most stack possible for the tests to complete (EH test08/21 are using a very stack consuming engine)
-
-
-  // spawns a thread sending kAPCs to itself
-  class sending_apc_to_thread_itself
+  // spawns a thread sending kAPCs to self
+  class sending_apc_to_thread_self
   {
-    aux_::thread_type kt;
+    aux_::thread_type  kt;
+    int                status;
 
   public:
-    int start(cpprtl_tests::testFT test_funcs[], int& res)
+    sending_apc_to_thread_self()
+      : status ( RET_ERROR_UNEXPECTED )
+    {}
+
+    ~sending_apc_to_thread_self()
+    {
+      acquire();
+    }
+
+    template <typename APC_TYPE>
+    int spawn(testFT func)
     {
       if
       (
       #ifdef NTKE_KTHREAD
-        ! NT_SUCCESS ( kt.spawn(typeaux::functee(&test_apc_adapter::test_apc_routine, test_funcs, typeaux::make_ref(res), static_cast<PKTHREAD>(0))) )
+        ! NT_SUCCESS ( kt.spawn(typeaux::functee(&apc_tx<APC_TYPE>::apc_tx_routine, typeaux::make_ref(status), func, static_cast<PKTHREAD>(0))) )
       #else
-        ! NT_SUCCESS ( kt.spawn(test_apc_adapter(test_funcs, res, 0)) )
+        ! NT_SUCCESS ( kt.spawn(apc_tx<APC_TYPE>(status, func, 0)) )
       #endif
       )
       {
-        return cpprtl_tests::RET_ERROR_THREAD_SPAWN;
+        return false;
       }
-      return cpprtl_tests::RET_SUCCESS;
+      return true;
     }
 
-    ~sending_apc_to_thread_itself()
+    void acquire()
     {
       kt.acquire(STATUS_SUCCESS);
     }
+
+    int result() const
+    {
+      return status;
+    }
+
   };
 
 
   // spawns a separate APC-receiving thread
-  class sending_apc_to_separate_thread
+  class sending_apc_to_another_thread
   {
     aux_::thread_type  kt_tx;
     aux_::thread_type  kt_rx;
     aux_::kevent       stop_evt;
+    int                status;
 
   public:
-    sending_apc_to_separate_thread() : stop_evt ( false, aux_::kevent::MANUAL_RESET) {}
+    sending_apc_to_another_thread()
+      : stop_evt ( false, aux_::kevent::MANUAL_RESET )
+      , status   ( RET_ERROR_UNEXPECTED )
+    {}
 
-    int start(cpprtl_tests::testFT test_funcs[], int& res)
+    ~sending_apc_to_another_thread()
+    {
+      acquire();
+    }
+
+    template <typename APC_TYPE>
+    bool spawn(testFT func)
     {
       if
       (
       #ifdef NTKE_KTHREAD
-        ! NT_SUCCESS ( kt_rx.spawn(typeaux::functee(&apc_rx_thread_adapter::apc_rx_thread_routine, typeaux::make_ref(stop_evt))) )
+        ! NT_SUCCESS ( kt_rx.spawn(typeaux::functee(&apc_rx::apc_rx_routine, typeaux::make_ref(stop_evt))) )
       #else
-        ! NT_SUCCESS ( kt_rx.spawn(apc_rx_thread_adapter(stop_evt)) )
+        ! NT_SUCCESS ( kt_rx.spawn(apc_rx(stop_evt)) )
       #endif
       )
       {
-        return cpprtl_tests::RET_ERROR_THREAD_SPAWN;
+        return false;
       }
       if
       (
       #ifdef NTKE_KTHREAD
-        ! NT_SUCCESS ( kt_tx.spawn(typeaux::functee(&test_apc_adapter::test_apc_routine, test_funcs, typeaux::make_ref(res), kt_rx.native_type())) )
+        ! NT_SUCCESS ( kt_tx.spawn(typeaux::functee(&apc_tx<APC_TYPE>::apc_tx_routine, typeaux::make_ref(status), func, kt_rx.native_type())) )
       #else
-        ! NT_SUCCESS ( kt_tx.spawn(test_apc_adapter(test_funcs, res, kt_rx.native_type())) )
+        ! NT_SUCCESS ( kt_tx.spawn(apc_tx<APC_TYPE>(status, func, kt_rx.native_type())) )
       #endif                                               
       )
       {
-        return cpprtl_tests::RET_ERROR_THREAD_SPAWN;
+        return false;
       }
-      return cpprtl_tests::RET_SUCCESS;
+      return true;
     }
 
-    ~sending_apc_to_separate_thread()
+    void acquire()
     {
       kt_tx.acquire(STATUS_SUCCESS);
       stop_evt.set();
       kt_rx.acquire(STATUS_SUCCESS);
     }
+
+    int result() const
+    {
+      return status;
+    }
+
   };
 
-}
+
+  template <typename APC_TASK_TYPE>
+  class apc_task
+    : public aux_::task_bunch<APC_TASK_TYPE>
+  {
+    typedef aux_::task_bunch<APC_TASK_TYPE> base_type;
+
+  public:
+    apc_task()
+    {}
+
+    ~apc_task()
+    {
+      acquire();
+    }
+
+    template <typename APC_TYPE>
+    bool spawn(std::size_t const& n, testFT f)
+    {
+      task_num = n;
+      spawned = 0;
+      task.reset(new(std::nothrow) task_type[task_num]);
+      if ( !task.get() )
+      {
+        status = RET_ERROR_APC_ALLOC;
+        return false;
+      }
+      for ( spawned = 0 ; spawned < task_num ; ++spawned )
+      {
+        if ( !task[spawned].spawn<APC_TYPE>(f) )
+        {
+          status = RET_ERROR_APC_TASK_SPAWN;
+          return false;
+        }
+      }
+      status = RET_SUCCESS;
+      return true;
+    }
+
+    void acquire()
+    {
+      while ( spawned > 0 )
+      {
+        task[--spawned].acquire();
+      }
+    }
+  };
+
+
+  template <typename APC_TYPE, typename APC_TASK_TYPE>
+  int test_apc_impl(testFT tests[], std::size_t const& task_num)
+  {
+    for ( unsigned i = 0 ; tests[i] ; ++i )
+    {
+      DbgPrint("test_apc_impl() : spawning kapcs[%u] for test[%u]\n", unsigned(task_num), i);
+      apc_task<APC_TASK_TYPE> task;
+      if ( !task.spawn<APC_TYPE>(task_num, tests[i]) )
+      {
+        return RET_ERROR_APC_TASK_SPAWN;
+      }
+      task.acquire();
+
+      for ( unsigned k = 0 ; k < task_num ; ++k )
+      {
+        if ( RET_SUCCESS != task[k].result() )
+        {
+          DbgPrint("test_apc_impl() ERROR : test[%u]=%i at kapc[%u]\n", i, task[k].result(), k);
+          return task[k].result();
+        }
+      }
+    }
+    DbgPrint("test_apc_impl() : 0\n");
+    return RET_SUCCESS;
+  }
+
+}  // namespace cpprtl_tests
 
 
 namespace cpprtl_tests
 {
-  //  the only APC-receiving thread is spawned at a time to proceed with MT-unsafe tests
-  int test_apc(testFT test_funcs[])
+
+  int test_apc(testFT tests[])
   {
-    int status = RET_ERROR_UNEXPECTED;
-
+    using aux_::kapc;
+    DbgPrint("test_apc() : special, rx-self\n");
+    int status = test_apc_impl<kapc::special, sending_apc_to_thread_self>(tests, 1);
+    if ( RET_SUCCESS == status )
     {
-      sending_apc_to_thread_itself task;
-      if ( task.start(test_funcs, status) != RET_SUCCESS )
-      {
-        return RET_ERROR_APC_TASK_SPAWN;
-      }
+      DbgPrint("test_apc() : regular, rx-self\n");
+      status = test_apc_impl<kapc::regular, sending_apc_to_thread_self>(tests, 1);
     }
-    if ( RET_SUCCESS != status )
+    if ( RET_SUCCESS == status )
     {
-      return status;
+      DbgPrint("test_apc() : special, rx-thread\n");
+      status = test_apc_impl<kapc::special, sending_apc_to_another_thread>(tests, 1);
     }
-
+    if ( RET_SUCCESS == status )
     {
-      sending_apc_to_separate_thread task;
-      if ( task.start(test_funcs, status) != RET_SUCCESS )
-      {
-        return RET_ERROR_APC_TASK_SPAWN;
-      }
+      DbgPrint("test_apc() : regular, rx-thread\n");
+      status = test_apc_impl<kapc::regular, sending_apc_to_another_thread>(tests, 1);
     }
-    if ( RET_SUCCESS != status )
-    {
-      return status;
-    }
-
     return status;
   }
 
 
-  //  simultaneously spawned APC-receiving threads
-  int test_apc_mt(testFT test_funcs[])
+  int test_apc_mt(testFT tests[])
   {
-    typedef sending_apc_to_separate_thread sending_apc;
-
-    int status[APC_NUM] = { RET_ERROR_UNEXPECTED };
+    using aux_::kapc;
+    std::size_t const task_num = aux_::get_number_processors() * APC_FACTOR;
+    DbgPrint("test_apc_mt() : task_num=%d\n", unsigned(task_num));
+    if ( task_num > 1 )
     {
-      sending_apc tasks[APC_NUM];
-      for ( int idx = 0 ; idx < APC_NUM ; ++idx )
+      DbgPrint("test_apc_mt() : special, rx-self\n");
+      int status = test_apc_impl<kapc::special, sending_apc_to_thread_self>(tests, task_num);
+      if ( RET_SUCCESS == status )
       {
-        if ( tasks[idx].start(test_funcs, status[idx]) != RET_SUCCESS )
-        {
-          return RET_ERROR_APC_TASK_SPAWN;
-        }
+        DbgPrint("test_apc_mt() : regular, rx-self\n");
+        status = test_apc_impl<kapc::regular, sending_apc_to_thread_self>(tests, task_num);
       }
-    }
-    for ( int idx = 0 ; idx < APC_NUM ; ++idx )
-    {
-      if ( RET_SUCCESS != status[idx] )
+      if ( RET_SUCCESS == status )
       {
-        return status[idx];
+        DbgPrint("test_apc_mt() : special, rx-thread\n");
+        status = test_apc_impl<kapc::special, sending_apc_to_another_thread>(tests, task_num);
       }
+      if ( RET_SUCCESS == status )
+      {
+        DbgPrint("test_apc_mt() : regular, rx-thread\n");
+        status = test_apc_impl<kapc::regular, sending_apc_to_another_thread>(tests, task_num);
+      }
+      return status;
     }
     return RET_SUCCESS;
   }
 
-}  //  namespace cpprtl_tests
+}  // namespace cpprtl_tests
 

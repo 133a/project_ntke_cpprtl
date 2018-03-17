@@ -1,202 +1,173 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
 
 
 #include "ntddk.include.h"
+#include <cstddef>
 #include <new>
+#include "thread_type.h"
+#include "aux_cpu.h"
+#include "aux_scoped_ptr.h"
+#include "aux_task.h"
 #include "tests_aux.h"
 #include "test_thread.h"
-#include "thread_type.h"
 
 
-#ifndef TEST_GSTATIC  //  if global/static init-ors are not available
-namespace  
+namespace cpprtl_tests
 {
-  class thread_bunch
+  enum
   {
-    static int                ret_values [cpprtl_tests::THR_NUM];
-    static aux_::thread_type* threads    [cpprtl_tests::THR_NUM];  //  using 'thread_t*' instead of just 'thread_t' 'cos if the current cpprtl lacks the static values ctoring/dtoring support
+    THREAD_FACTOR = 8
+  };
 
-    thread_bunch();  //  static class
+
+  enum
+  {
+    RET_ERROR_THREAD_ALLOC         = -1401
+  , RET_ERROR_THREAD_SPAWN         = -1402
+  , RET_ERROR_THREAD_TASK_SPAWN    = -1403
+  };
+
+
+  class thread_adapter
+  {
+    int&    res;
+    testFT  ftest;
 
   public:
-    static void start(cpprtl_tests::testFT func)
+    thread_adapter(testFT f, int& i)
+      : res   ( i )
+      , ftest ( f )
+    {}
+
+    void operator()() const
     {
-      for (int i = 0; i < cpprtl_tests::THR_NUM; ++i)
+      ftest(res);
+    }
+  };
+
+
+  class thread_task
+    : public aux_::task_bunch<aux_::thread_type>
+  {
+    typedef aux_::task_bunch<aux_::thread_type> base_type;
+
+  private:
+    aux_::scoped_array_ptr<int> task_ret;
+
+  private:
+    void operator[](std::size_t) {}
+
+  public:
+    thread_task()
+      : task_ret ( 0 )
+    {}
+
+    ~thread_task()
+    {
+      acquire();
+    }
+
+    bool spawn(std::size_t const& n, testFT f)
+    {
+      task_num = n;
+      spawned = 0;
+      task.reset(new(std::nothrow) task_type[task_num]);
+      task_ret.reset(new(std::nothrow) int[task_num]);
+      if ( !task_ret.get() || !task_ret.get() )
       {
-        ret_values[i] = cpprtl_tests::RET_ERROR_THREAD_NOT_STARTED;
+        status = RET_ERROR_THREAD_ALLOC;
+        return false;
       }
-      for (int i = 0; i < cpprtl_tests::THR_NUM; ++i)
+      for ( spawned = 0 ; spawned < task_num ; ++spawned )
       {
-        if ( ! threads[i] )
-        {
-          threads[i] = new thread_type();  // the default new is 'NonPagedPool'
-        }
+        task_ret[spawned] = RET_ERROR_UNEXPECTED;
         if 
         (
         #ifdef NTKE_KTHREAD
-          ! NT_SUCCESS ( threads[i]->spawn(typeaux::functee(func, typeaux::make_ref(ret_values[i]))) )
+          ! NT_SUCCESS ( task[spawned].spawn(typeaux::functee(f, typeaux::make_ref(task_ret[spawned]))) )
         #else
-          ! NT_SUCCESS ( threads[i]->spawn(cpprtl_tests::testFT_adapter(func, ret_values[i])) )
+          ! NT_SUCCESS ( task[spawned].spawn(thread_adapter(f, task_ret[spawned])) )
         #endif
         )
         {
-          throw cpprtl_tests::test_error(cpprtl_tests::RET_ERROR_THREAD_SPAWN);
+          status = RET_ERROR_THREAD_SPAWN;
+          return false;
         }
       }
+      status = RET_SUCCESS;
+      return true;
     }
 
-    static void clear()
+    void acquire()
     {
-      for (int i = 0; i < cpprtl_tests::THR_NUM; ++i)
+      while ( spawned > 0 )
       {
-        delete threads[i];
-        threads[i] = 0;
+        --spawned;
+        task[spawned].acquire(STATUS_SUCCESS);
+        task[spawned].detach();
       }
     }
 
-    static void acquire()
+    int const& result(std::size_t const& idx) const
     {
-      for (int i = 0; i < cpprtl_tests::THR_NUM; ++i)
+      return task_ret[idx];
+    }
+
+  };
+
+
+  int test_thread_impl(testFT tests[], std::size_t const& task_num)
+  {
+    for ( unsigned i = 0 ; tests[i] ; ++i )
+    {
+      DbgPrint("test_thread_impl() : spawning threads[%u] for test[%u]\n", unsigned(task_num), i);
+      thread_task task;
+      if ( !task.spawn(task_num, tests[i]) )
       {
-        if ( threads[i] )
+        return RET_ERROR_THREAD_TASK_SPAWN;
+      }
+      task.acquire();
+
+      for ( unsigned k = 0 ; k < task_num ; ++k )
+      {
+        if ( RET_SUCCESS != task.result(k) )
         {
-          threads[i]->acquire(STATUS_SUCCESS);
-          threads[i]->detach();
+          DbgPrint("test_thread_impl() ERROR : test[%u]=%i at thread[%u]\n", i, task.result(k), k);
+          return task.result(k);
         }
       }
     }
+    DbgPrint("test_thread_impl() : 0\n");
+    return RET_SUCCESS;
+  }
 
-    static int const& ret_value(int const& idx)
-    {
-      return ret_values[idx];
-    }
-  };
-  int                thread_bunch::ret_values [cpprtl_tests::THR_NUM];
-  aux_::thread_type* thread_bunch::threads    [cpprtl_tests::THR_NUM] = { 0 };
-}
-
-#else  // TEST_GSTATIC - if ntke_cpprtl with global/static init-ors is used
-
-namespace
-{
-  class thread_bunch
-  {
-    static int                ret_values [cpprtl_tests::THR_NUM];
-    static aux_::thread_type  threads    [cpprtl_tests::THR_NUM];
-
-    thread_bunch();  //  static class
-
-  public:
-    static void start(cpprtl_tests::testFT func)
-    {
-      for (int i = 0; i < cpprtl_tests::THR_NUM; ++i)
-      {
-        ret_values[i] = cpprtl_tests::RET_ERROR_THREAD_NOT_STARTED;
-      }
-      for (int i = 0; i < cpprtl_tests::THR_NUM; ++i)
-      {
-        if 
-        (
-        #ifdef NTKE_KTHREAD
-          ! NT_SUCCESS ( threads[i].spawn(typeaux::functee(func, typeaux::make_ref(ret_values[i]))) )
-        #else
-          ! NT_SUCCESS ( threads[i].spawn(cpprtl_tests::testFT_adapter(func, ret_values[i])) )
-        #endif
-        )
-        {
-          throw cpprtl_tests::test_error(cpprtl_tests::RET_ERROR_THREAD_SPAWN);
-        }
-      }
-    }
-
-    static void clear()
-    {
-      return;
-    }
-
-    static void acquire()
-    {
-      for (int i = 0; i < cpprtl_tests::THR_NUM; ++i)
-      {
-        threads[i].acquire(STATUS_SUCCESS);
-        threads[i].detach();
-      }
-    }
-
-    static int const& ret_value(int const& idx)
-    {
-      return ret_values[idx];
-    }
-  };
-  int               thread_bunch::ret_values [cpprtl_tests::THR_NUM];
-  aux_::thread_type thread_bunch::threads    [cpprtl_tests::THR_NUM];
-}
-#endif  // TEST_GSTATIC
-
-
-namespace
-{
-  struct thread_bunch_auto_release
-  {
-    ~thread_bunch_auto_release()
-    {
-      thread_bunch::clear();
-    }
-  };
-
-  struct thread_bunch_auto_acquire
-  {
-    ~thread_bunch_auto_acquire()
-    {
-      thread_bunch::acquire();
-    }
-  };
-}
+}  // namespace cpprtl_tests
 
 
 namespace cpprtl_tests
 {
 
-  int test_thread(testFT test_funcs[])
+  int test_thread(testFT tests[])
   {
-    DbgPrint("spawning kthreads %d\n", THR_NUM);
-    try
+    DbgPrint("test_thread()\n");
+    return test_thread_impl(tests, 1);
+  }
+
+
+  int test_thread_mt(testFT tests[])
+  {
+    std::size_t const task_num = aux_::get_number_processors() * THREAD_FACTOR;
+    DbgPrint("test_thread_mt() : task_num=%u\n", unsigned(task_num));
+    if ( task_num > 1 )
     {
-      thread_bunch_auto_release threads_release;
-      for ( int i = 0 ; test_funcs[i] ; ++i )
-      {
-        {
-          thread_bunch_auto_acquire threads_acquire;
-          thread_bunch::start(test_funcs[i]);
-        }
-        for ( int j = 0 ; j < THR_NUM ; ++j )
-        {
-          if ( RET_SUCCESS != thread_bunch::ret_value(j) )
-          {
-            DbgPrint("cpprtl_tests::test_thread() : test_func %d ret %d from thread &d\n", i, thread_bunch::ret_value(j), j);
-            return thread_bunch::ret_value(j);
-          }
-        }
-      }
-    }
-    catch ( test_error const& te )
-    {
-      return te.get();
-    }
-    catch ( std::bad_alloc& )  //  if 'new thread_t()' is failed
-    {
-      return RET_ERROR_BAD_ALLOC;
-    }
-    catch ( ... )
-    {
-      return RET_ERROR_UNEXPECTED;
+      return test_thread_impl(tests, task_num);
     }
     return RET_SUCCESS;
   }
 
-}  //  namespace cpprtl_tests
+}  // namespace cpprtl_tests
 

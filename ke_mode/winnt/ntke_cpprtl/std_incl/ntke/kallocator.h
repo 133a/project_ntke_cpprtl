@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -10,7 +10,7 @@
 
 
 #if defined (_MSC_VER) && (_MSC_VER <= 1300)
-#  define NO_TEMPLATE_PARTIAL_SPECIALIZATION 1  //  get the ddk2600 compiler unfool
+#  define NO_TEMPLATE_PARTIAL_SPECIALIZATION 1  // get the ddk2600 compiler unfool
 #endif
 
 
@@ -21,7 +21,7 @@
 
 
 #if defined (max)
-#  undef max  //  neutralize if this annoyer has penetrated into the scope
+#  undef max  // neutralize if this annoyer has penetrated into the scope
 #endif
 
 
@@ -133,8 +133,8 @@ namespace internal_
 #endif
 
 
-}  //  namespace internal_
-}  //  namespace ntke
+}  // namespace internal_
+}  // namespace ntke
 
 
 
@@ -242,8 +242,8 @@ namespace ntke
   }
 
 
-}  //  namespace ntke
+}  // namespace ntke
 
 
-#endif // include guard
+#endif  // include guard
 

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -111,23 +111,34 @@ namespace
   class array_iterator_base
   {
   protected:
-    void*       const&  array;
-    size_type   const&  obj_size;
-    index_type  const&  arr_size;
-    index_type          current;
+    void*      const  array;
+    size_type  const  obj_size;
+    size_type  const  array_len;
+    size_type         current;
 
     array_iterator_base
     (
-      void*       const& arr
-    , size_type   const& obj_sz
-    , index_type  const& arr_sz
+      void*      const&  arr
+    , size_type  const&  obj_sz
+    , size_type  const&  arr_len
+    , size_type  const&  cur
     )
-      : array    ( arr )
-      , obj_size ( obj_sz )
-      , arr_size ( arr_sz )
-      , current  ( -1 )
+      : array     ( arr )
+      , obj_size  ( obj_sz )
+      , array_len ( arr_len )
+      , current   ( cur )
     {}
 
+  public:
+    bool valid() const
+    {
+      return current < array_len;
+    }
+
+    void* get() const
+    {
+      return reinterpret_cast<void*>(reinterpret_cast<size_type>(array) + current * obj_size);
+    }
   };
 
 
@@ -137,35 +148,22 @@ namespace
   public:
     fwd_array_iterator
     (
-      void*       const& arr
-    , size_type   const& obj_sz
-    , index_type  const& arr_sz
+      void*      const&  arr
+    , size_type  const&  obj_sz
+    , size_type  const&  arr_len
     )
-      : array_iterator_base ( arr, obj_sz, arr_sz )
+      : array_iterator_base ( arr, obj_sz, arr_len, 0 )
+    {}
+
+    void next()
     {
-      reset();
+      ++current;
     }
 
-    void reset()
+    void prev()
     {
-      current = 0;  // valid values [1:arr_size]
+      --current;
     }
-
-    bool next()
-    {
-      return ++current <= arr_size;
-    }
-
-    bool prev()
-    {
-      return --current > 0;
-    }
-
-    void* get() const
-    {
-      return reinterpret_cast<void*>(reinterpret_cast<size_type>(array) + (current - 1) * obj_size);
-    }
-
   };
 
 
@@ -175,35 +173,22 @@ namespace
   public:
     rev_array_iterator
     (
-      void*       const& arr
-    , size_type   const& obj_sz
-    , index_type  const& arr_sz
+      void*      const&  arr
+    , size_type  const&  obj_sz
+    , size_type  const&  arr_len
     )
-      : array_iterator_base ( arr, obj_sz, arr_sz )
+      : array_iterator_base ( arr, obj_sz, arr_len, arr_len - 1 )
+    {}
+
+    void next()
     {
-      reset();
+      --current;
     }
 
-    void reset()
+    void prev()
     {
-      current = arr_size + 1;  // valid values [1:arr_size]
+      ++current;
     }
-
-    bool next()
-    {
-      return --current > 0;
-    }
-
-    bool prev()
-    {
-      return ++current <= arr_size;
-    }
-
-    void* get() const
-    {
-      return reinterpret_cast<void*>(reinterpret_cast<size_type>(array) + (arr_size - current) * obj_size);
-    }
-
   };
 
 
@@ -237,25 +222,25 @@ namespace
 (
   void*       array
 , size_type   obj_size
-, index_type  arr_size
+, index_type  array_len
 , dtor_ft     dtor
 )
 {
-  rev_array_iterator arr_iter(array, obj_size, arr_size);
+  rev_array_iterator arr(array, obj_size, array_len);
   try
   {
-    while ( arr_iter.next() )
+    for ( ; arr.valid() ; arr.next() )
     {
-      dtor_thunk(dtor, arr_iter.get());
+      dtor_thunk(dtor, arr.get());
     }
   }
   catch (...)
   {
     try
     {
-      while ( arr_iter.next() )  // skip the throwed array element
+      for ( arr.next() ; arr.valid() ; arr.next() )  // skip the throwed array element
       {
-        dtor_thunk(dtor, arr_iter.get());
+        dtor_thunk(dtor, arr.get());
       }
     }
     catch (...)
@@ -278,26 +263,26 @@ namespace
 (
   void*       array
 , size_type   obj_size
-, index_type  arr_size
+, index_type  array_len
 , ctor_ft     ctor
 , dtor_ft     dtor
 )
 {
-  fwd_array_iterator arr_iter(array, obj_size, arr_size);
+  fwd_array_iterator arr(array, obj_size, array_len);
   try
   {
-    while ( arr_iter.next() )
+    for ( ; arr.valid() ; arr.next() )
     {
-      ctor_thunk(ctor, arr_iter.get());
+      ctor_thunk(ctor, arr.get());
     }
   }
   catch (...)
   {
     try
     {
-      while ( arr_iter.prev() )
+      for ( arr.prev() ; arr.valid() ; arr.prev() )  // skip the throwed array element
       {
-        dtor_thunk(dtor, arr_iter.get());
+        dtor_thunk(dtor, arr.get());
       }
     }
     catch (...)
@@ -322,26 +307,26 @@ namespace
 (
   void*       array
 , size_type   obj_size
-, index_type  arr_size
+, index_type  array_len
 , ctor_ft     ctor_vb
 , dtor_ft     dtor
 )
 {
-  fwd_array_iterator arr_iter(array, obj_size, arr_size);
+  fwd_array_iterator arr(array, obj_size, array_len);
   try
   {
-    while ( arr_iter.next() )
+    for ( ; arr.valid() ; arr.next() )
     {
-      ctor_vb_thunk(ctor_vb, arr_iter.get());
+      ctor_vb_thunk(ctor_vb, arr.get());
     }
   }
   catch (...)
   {
     try
     {
-      while ( arr_iter.prev() )
+      for ( arr.prev() ; arr.valid() ; arr.prev() )  // skip the throwed array element
       {
-        dtor_thunk(dtor, arr_iter.get());
+        dtor_thunk(dtor, arr.get());
       }
     }
     catch (...)
@@ -365,31 +350,31 @@ namespace
   void*       dst_array
 , void*       src_array
 , size_type   obj_size
-, index_type  arr_size
+, index_type  array_len
 , cctor_ft    cctor
 , dtor_ft     dtor
 )
 {
-  fwd_array_iterator dst_iter(dst_array, obj_size, arr_size);
+  fwd_array_iterator dst(dst_array, obj_size, array_len);
   try
   {
     for
     (
-      fwd_array_iterator src_iter(src_array, obj_size, arr_size)
-    ; dst_iter.next() , src_iter.next()
-    ;
+      fwd_array_iterator src(src_array, obj_size, array_len)
+    ; dst.valid()
+    ; dst.next() , src.next()
     )
     {
-      cctor_thunk(cctor, dst_iter.get(), src_iter.get());
+      cctor_thunk(cctor, dst.get(), src.get());
     }
   }
   catch (...)
   {
     try
     {
-      while ( dst_iter.prev() )
+      for ( dst.prev() ; dst.valid() ; dst.prev() )  // skip the throwed array element
       {
-        dtor_thunk(dtor, dst_iter.get());
+        dtor_thunk(dtor, dst.get());
       }
     }
     catch (...)
@@ -415,31 +400,31 @@ namespace
   void*       dst_array
 , void*       src_array
 , size_type   obj_size
-, index_type  arr_size
+, index_type  array_len
 , cctor_ft    cctor_vb
 , dtor_ft     dtor
 )
 {
-  fwd_array_iterator dst_iter(dst_array, obj_size, arr_size);
+  fwd_array_iterator dst(dst_array, obj_size, array_len);
   try
   {
     for
     (
-      fwd_array_iterator src_iter(src_array, obj_size, arr_size)
-    ; dst_iter.next() , src_iter.next()
-    ; 
+      fwd_array_iterator src(src_array, obj_size, array_len)
+    ; dst.valid()
+    ; dst.next() , src.next()
     )
     {
-      cctor_vb_thunk(cctor_vb, dst_iter.get(), src_iter.get());
+      cctor_vb_thunk(cctor_vb, dst.get(), src.get());
     }
   }
   catch (...)
   {
     try
     {
-      while ( dst_iter.prev() )
+      for ( dst.prev() ; dst.valid() ; dst.prev() )  // skip the throwed array element
       {
-        dtor_thunk(dtor, dst_iter.get());
+        dtor_thunk(dtor, dst.get());
       }
     }
     catch (...)

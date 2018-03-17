@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -34,21 +34,21 @@ namespace
 
   void ff_throw(context& ctx)
   {
-    exc_test t1(ctx, MAGIC_VALUE11_2);
+    eh_test t1(ctx, MAGIC_VALUE11_2);
     try
     {
-      exc_test t2(ctx, MAGIC_VALUE11_2);
-      throw ; // !
+      eh_test t2(ctx, MAGIC_VALUE11_2);
+      throw ;  // !
     }
     catch (int&)
     {
-      exc_test t3(ctx, MAGIC_VALUE11_2);
+      eh_test t3(ctx, MAGIC_VALUE11_2);
       ctx.state = UNEXPECTED_CATCH2;
     }
-    catch (exc_test& ex)
+    catch (eh_test& ex)
     {
-      exc_test t4(ctx, MAGIC_VALUE11_2);
-      exc_test t5(ctx, MAGIC_VALUE11_2);
+      eh_test t4(ctx, MAGIC_VALUE11_2);
+      eh_test t5(ctx, MAGIC_VALUE11_2);
       ctx.state = ex.i;
     }
   }
@@ -63,23 +63,23 @@ namespace cpprtl { namespace test { namespace eh
   {
     context ctx(MAGIC_VALUE11);
     {
-      exc_test t1(ctx, MAGIC_VALUE11_2);
+      eh_test t1(ctx, MAGIC_VALUE11_2);
       try
       {
-        exc_test t2(ctx, MAGIC_VALUE11_2);
-        throw exc_test(ctx, MAGIC_VALUE11);   //  this magic value is expected to be catched in ff_throw() and captured in context::state
+        eh_test t2(ctx, MAGIC_VALUE11_2);
+        throw eh_test(ctx, MAGIC_VALUE11);   // this magic value is expected to be catched in ff_throw() and captured in context::state
       }
-      catch (exc_test&)
+      catch (eh_test&)
       {
-        exc_test t3(ctx, MAGIC_VALUE11_2);
+        eh_test t3(ctx, MAGIC_VALUE11_2);
         try 
         {
-          exc_test t4(ctx, MAGIC_VALUE11_2);
+          eh_test t4(ctx, MAGIC_VALUE11_2);
           ff_throw(ctx);
         }
-        catch (exc_test&)
+        catch (eh_test&)
         {
-          exc_test t5(ctx, MAGIC_VALUE11_2);
+          eh_test t5(ctx, MAGIC_VALUE11_2);
           ctx.state = UNEXPECTED_CATCH1;
         }
       }

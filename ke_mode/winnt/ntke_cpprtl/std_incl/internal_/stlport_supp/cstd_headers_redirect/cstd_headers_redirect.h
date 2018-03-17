@@ -2,13 +2,13 @@
 #define CSTD_HEADERS_REDIRECT_H_
 
 
-// this redirection is required for the toolsets based on msvc2015 and higher(?)
+// this redirection is required for the toolsets based on msvc2015 and higher
 // due to the CRT C-std include files were splitted into separate locations (legacy vs ucrt)
 
 
 #if defined DDK_VER  // ddk/wdk toolset
 
-#  if  DDK_VER == 10240  // wdk10
+#  if  DDK_VER >= 10240  // wdk10 ewdk16299-km
 #    define NTKE_INCLUDE_DDK_CRT_PATH    ../include
 #    define NTKE_INCLUDE_DDK_UCRT_PATH   ../ucrt
 #  else
@@ -17,7 +17,7 @@
 
 #else                // msvc toolset
 
-#  if  defined (_MSC_VER) && (_MSC_VER == 1900)  // msvc2015
+#  if  defined (_MSC_VER) && (_MSC_VER >= 1900)  // >=msvc2015
 #    define NTKE_INCLUDE_DDK_CRT_PATH    ../include
 #    define NTKE_INCLUDE_DDK_UCRT_PATH   ../ucrt
 #  else

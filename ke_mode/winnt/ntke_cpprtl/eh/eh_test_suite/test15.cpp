@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -147,7 +147,7 @@ namespace cpprtl { namespace test { namespace eh
       }
       catch (exc_base00& e)
       {
-        //  we can do the cast 'cos the object is caught by ref and the derived object is certainly known to be in place
+        // we can do the cast 'cos the object is caught by ref and the derived object is certainly known to be in place
         ctx.state += (static_cast<inh_test const&>(e)).i;
       }
       catch ( ... )

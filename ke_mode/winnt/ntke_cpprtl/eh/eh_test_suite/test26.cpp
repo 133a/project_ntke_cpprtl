@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -37,12 +37,12 @@ namespace
   {
     try
     {
-      exc_test et(ctx);
+      eh_test et(ctx);
       throw;
     }
-    catch (exc_test const& ex)
+    catch (eh_test const& ex)
     {
-      exc_test et(ctx);
+      eh_test et(ctx);
       ctx.state += ex.i;
     }
     catch ( ... )
@@ -55,12 +55,12 @@ namespace
   {
     try
     {
-      exc_test et(ctx);
-      throw exc_test(ctx, SPECIAL_EXCEPTION26);
+      eh_test et(ctx);
+      throw eh_test(ctx, SPECIAL_EXCEPTION26);
     }
-    catch (exc_test const& ex)
+    catch (eh_test const& ex)
     {
-      exc_test et(ctx);
+      eh_test et(ctx);
       ctx.state += ex.i;
       f26_1(ctx);
       throw;
@@ -73,14 +73,14 @@ namespace
 
   void f26_3(context& ctx)
   {
-    exc_test et1(ctx, UNEXPECTED_VALUE26);
-    exc_test et2(ctx, UNEXPECTED_VALUE26);
-    exc_test et3(ctx, UNEXPECTED_VALUE26);
-    exc_test et4(ctx, UNEXPECTED_VALUE26);
-    exc_test et5(ctx, UNEXPECTED_VALUE26);
-    exc_test et6(ctx, UNEXPECTED_VALUE26);
-    exc_test et7(ctx, UNEXPECTED_VALUE26);
-    exc_test et8(ctx, UNEXPECTED_VALUE26);
+    eh_test et1(ctx, UNEXPECTED_VALUE26);
+    eh_test et2(ctx, UNEXPECTED_VALUE26);
+    eh_test et3(ctx, UNEXPECTED_VALUE26);
+    eh_test et4(ctx, UNEXPECTED_VALUE26);
+    eh_test et5(ctx, UNEXPECTED_VALUE26);
+    eh_test et6(ctx, UNEXPECTED_VALUE26);
+    eh_test et7(ctx, UNEXPECTED_VALUE26);
+    eh_test et8(ctx, UNEXPECTED_VALUE26);
   }
 
 }
@@ -91,14 +91,14 @@ namespace cpprtl { namespace test { namespace eh
 
   int test26()
   {
-    context ctx ( SPECIAL_EXCEPTION26 * 3 );  //  3 catches are expected
+    context ctx ( SPECIAL_EXCEPTION26 * 3 );  // 3 catches are expected
     ctx.state = EH_OK;
 
     try
     {
       f26_2(ctx);
     }
-    catch (exc_test const& ex)
+    catch (eh_test const& ex)
     {
       f26_3(ctx);
       ctx.state += ex.i;

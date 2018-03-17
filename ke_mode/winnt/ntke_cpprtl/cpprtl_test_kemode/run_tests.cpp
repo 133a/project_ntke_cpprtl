@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@ namespace
 {
   enum
   {
-    CYCLE_COUNT          = 128          //  memento DPC_WATCHDOG_VIOLATION at >=nt6.2 when running at DISPATCH_LEVEL.
+    CYCLE_COUNT          = 128          // memento DPC_WATCHDOG_VIOLATION at >=nt6.2 when running at DISPATCH_LEVEL.
   , CYCLE_COUNT_WORKITEM = CYCLE_COUNT
   , CYCLE_COUNT_DPC      = CYCLE_COUNT
   , CYCLE_COUNT_APC      = CYCLE_COUNT
@@ -40,7 +40,7 @@ namespace
 namespace
 {
 
-  // wrapper for static ctoring/dtoring tests, not for run in thread, moreover invoke it only once 'cos the right result depends on a static state of the test lib
+  // wrapper for static ctoring/dtoring tests, not for run in threads, moreover invoke it only once 'cos the right result depends on a static state of the test lib
   void test_gstatic(int& res)
   {
     res = cpprtl_tests::RET_SUCCESS;
@@ -50,7 +50,7 @@ namespace
   }
 
 
-  //  cycling wrapper for eh thread-safe tests
+  // cycling wrapper for eh thread-safe tests
   template <unsigned CYCLE_CNT>
   void test_eh_thread_safe(int& res)
   {
@@ -64,7 +64,7 @@ namespace
   }
 
 
-  //  cycling wrapper for eh thread-unsafe tests
+  // cycling wrapper for eh thread-unsafe tests
   template <unsigned CYCLE_CNT>
   void test_eh_thread_unsafe(int& res)
   {
@@ -78,7 +78,7 @@ namespace
   }
 
 
-  //  cycling wrapper for rtti thread-safe tests
+  // cycling wrapper for rtti thread-safe tests
   template <unsigned CYCLE_CNT>
   void test_rtti_thread_safe(int& res)
   {
@@ -92,7 +92,7 @@ namespace
   }
 
 
-  //  cycling wrapper for stl tests
+  // cycling wrapper for stl tests
   template <unsigned CYCLE_CNT>
   void test_stl(int& res)
   {
@@ -105,7 +105,7 @@ namespace
   #endif
   }
 
-}  //  namespace
+}  // namespace
 
 
 namespace
@@ -181,12 +181,22 @@ namespace
   cpprtl_tests::testFT test_funcs_thread[] =
   {
     test_eh_thread_safe    <CYCLE_COUNT_THREAD * FACTOR_EH_MT>
+  , test_eh_thread_unsafe  <CYCLE_COUNT_THREAD * FACTOR_EH_ST>
   , test_rtti_thread_safe  <CYCLE_COUNT_THREAD * FACTOR_RTTI>
   , test_stl               <CYCLE_COUNT_THREAD * FACTOR_STL>
   , 0  //  keep last
   };
 
-}  //  namespace
+
+  cpprtl_tests::testFT test_funcs_thread_mt[] =
+  {
+    test_eh_thread_safe    <CYCLE_COUNT_THREAD * FACTOR_EH_MT>
+  , test_rtti_thread_safe  <CYCLE_COUNT_THREAD * FACTOR_RTTI>
+  , test_stl               <CYCLE_COUNT_THREAD * FACTOR_STL>
+  , 0  //  keep last
+  };
+
+}  // namespace
 
 
 
@@ -207,7 +217,7 @@ namespace cpprtl_tests
     }
 
 
-  ////  run in the main thread at various IRQLs
+  //// run in the main thread at various IRQLs
     {
       int res = test_irql(test_funcs_irql);
       if ( RET_SUCCESS != res )
@@ -217,7 +227,7 @@ namespace cpprtl_tests
     }
 
 
-  ////  run in a queued work item
+  //// run in a queued work item
   #ifdef TEST_WORKITEM
     {
       int res = test_workitem(test_funcs_workitem);
@@ -231,10 +241,10 @@ namespace cpprtl_tests
         return res;
       }
     }
-  #endif  //  TEST_WORKITEM
+  #endif  // TEST_WORKITEM
 
 
-  ////  run in a DPC
+  //// run in a DPC
   #ifdef TEST_DPC
     {
       int res = test_dpc(test_funcs_dpc);
@@ -248,10 +258,10 @@ namespace cpprtl_tests
         return res;
       }
     }
-  #endif  //  TEST_DPC
+  #endif  // TEST_DPC
 
 
-  ////  run in a kAPC
+  //// run in a kAPC
   #ifdef TEST_APC
     {
       int res = test_apc(test_funcs_apc);
@@ -265,10 +275,10 @@ namespace cpprtl_tests
         return res;
       }
     }
-  #endif  //  TEST_APC
+  #endif  // TEST_APC
 
 
-  ////  run in kernel threads  
+  //// run in kernel threads  
   #ifdef TEST_THREADS
     {
       int res = test_thread(test_funcs_thread);
@@ -276,12 +286,17 @@ namespace cpprtl_tests
       {
         return res;
       }
+      res = test_thread_mt(test_funcs_thread_mt);
+      if ( RET_SUCCESS != res )
+      {
+        return res;
+      }
     }
-  #endif  //  TEST_THREADS
+  #endif  // TEST_THREADS
 
 
     return RET_SUCCESS;
   }
 
-}  //  namespace cpprtl_tests
+}  // namespace cpprtl_tests
 

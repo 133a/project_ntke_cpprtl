@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -21,15 +21,15 @@ namespace eh
 #pragma warning(disable:4731)  //  frame pointer register 'ebp' modified by inline assembly code
 #endif //_MSC_VER
 
-  continuation_ft aux_::funclet::invoke(aux_::funclet* const f, exception_registration const* const exc_reg)
+  continuation_ft aux_::funclet::invoke(aux_::funclet* const f, exception_registration const& exc_reg)
   {
-    ::size_t const frame_base = exc_reg->x86_ebp();
+    ::size_t const frame_base = exc_reg.frame_pointer();
     __asm
     {
       mov   eax , f
 
       // modify registers by 'xor' to point the compiler for saving them at the function prolog
-      // TODO check if only the x86::ecx and x86::ebp saving is necessary
+      // TODO check if only the x86.ecx and x86.ebp saving is necessary
       xor   esi , esi
       xor   edi , edi
       xor   ebx , ebx
@@ -41,7 +41,7 @@ namespace eh
       call  eax
       pop   ebp
     }
-    // return x86::eax - 'funclet* f' if the funclet being actually called has nothing to return
+    // return x86.eax - 'funclet* f' if the funclet being actually called has nothing to return
   }
 
 #ifdef _MSC_VER
@@ -54,10 +54,10 @@ namespace eh
 #pragma warning(disable:4731)    //  frame pointer register 'ebp' modified by inline assembly code
 #endif //_MSC_VER
 
-  void aux_::continuation::invoke(aux_::continuation* const c, exception_registration const* const exc_reg)
+  void aux_::continuation::invoke(aux_::continuation* const c, exception_registration const& exc_reg)
   {
-    ::size_t const frame_base = exc_reg->x86_ebp();
-    ::size_t const stack_ptr  = exc_reg->x86_esp();
+    ::size_t const frame_base = exc_reg.frame_pointer();
+    ::size_t const stack_ptr  = exc_reg.stack_pointer();
     __asm
     {
       // unlinking the current exception_registration (if any) is expected to be done by the caller of this function
@@ -80,7 +80,7 @@ namespace eh
 #endif //_MSC_VER
 
 
-}  //  namespace eh
-}  //  namespace msvc_internal_data
-}  //  namespace cpprtl
+}  // namespace eh
+}  // namespace msvc_internal_data
+}  // namespace cpprtl
 

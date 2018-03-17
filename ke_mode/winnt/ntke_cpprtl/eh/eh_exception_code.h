@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -35,10 +35,11 @@ namespace eh
     EXCEPTION_SUBCODE_DTOR_THROW,
     EXCEPTION_SUBCODE_ARRAY_UNWIND_DTOR_THROW,
     EXCEPTION_SUBCODE_STD_TERMINATE,
+    EXCEPTION_SUBCODE_STD_TERMINATE_INTERNAL,
   };
 
-}  //  namespace eh
-}  //  namespace cpprtl
+}  // namespace eh
+}  // namespace cpprtl
 
 
 #endif  // include guard

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -128,6 +128,6 @@ namespace msvc_internal_data_aux
   = &msvc_internal_data::eh::catchable_type::cctor_vb;
 
 
-}  //  namespace msvc_internal_data_aux
-}  //  namespace cpprtl
+}  // namespace msvc_internal_data_aux
+}  // namespace cpprtl
 

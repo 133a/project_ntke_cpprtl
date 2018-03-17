@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -52,8 +52,6 @@ namespace cpprtl
 namespace rtti
 {
 
-  // typedef int bad_cast_t;
-  // typedef int bad_typeid_t;
   typedef ::std::bad_cast     bad_cast_t;
   typedef ::std::bad_typeid   bad_typeid_t;
 
@@ -101,7 +99,7 @@ namespace rtti
     }
 
 
-    bool check() const  //  TODO ?
+    bool check() const  // TODO ?
     {
       return locator && ptr;
     }
@@ -526,6 +524,6 @@ namespace rtti
   }
 
 
-}  //  namespace rtti
-}  //  namespace cpprtl
+}  // namespace rtti
+}  // namespace cpprtl
 

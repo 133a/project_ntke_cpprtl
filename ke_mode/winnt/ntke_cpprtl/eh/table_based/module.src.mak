@@ -9,21 +9,28 @@ module.sources = \
 module.sources.x64 = \
     eh_stack_walker.cpp \
     eh_execute_handler.x64.asm \
-    eh_restore_context.x64.asm \
-    eh_invoke_funclet.x64.asm
+    eh_invoke_funclet.x64.asm \
+    eh_restore_context.x64.asm
 
 
 module.sources.arm = \
     eh_stack_walker.cpp \
-    eh_invoke_funclet.arm.asm \
-    eh_execute_handler.arm.asm
+    eh_execute_handler.arm.asm \
+    eh_invoke_funclet.arm.asm
 
 
-ifndef module.path.base
-$(error $(module.name) module.path.base is not defined)
+module.sources.arm64 = \
+    eh_stack_walker.cpp \
+    eh_execute_handler.arm64.asm \
+    eh_invoke_funclet.arm64.asm \
+    eh_restore_context.arm64.asm
+
+
+ifndef module.dir.base
+  $(error define module.dir.base for $(module.name))
 endif
 
 
-module.path.include  = $(module.path.base)  $(module.path.base)/table_based  $(module.path.base)/table_based/_$(target.arch)  $(project.dir.root)/ke_mode/winnt/ntke_cpprtl
-module.path.sources  = $(module.path.base)  $(module.path.base)/table_based  $(module.path.base)/table_based/_$(target.arch)
+module.dir.include  = $(module.dir.base)  $(module.dir.base)/table_based  $(module.dir.base)/table_based/_$(target.arch)  $(project.dir.root)/ke_mode/winnt/ntke_cpprtl
+module.dir.sources  = $(module.dir.base)  $(module.dir.base)/table_based  $(module.dir.base)/table_based/_$(target.arch)
 

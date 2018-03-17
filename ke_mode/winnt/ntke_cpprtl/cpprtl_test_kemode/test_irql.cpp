@@ -1,69 +1,48 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
 
 
 #include "ntddk.include.h"
+#include <cstddef>
+#include "aux_irql.h"
 #include "tests_aux.h"
 #include "test_irql.h"
 
 
 namespace
 {
-
-  class auto_irql_raiser  // simple scope-based IRQL controller
-  {
-    KIRQL saved_irql;
-
-  public:
-
-    explicit auto_irql_raiser(KIRQL const& new_irql)
-    {
-      ASSERT ( KeGetCurrentIrql() <= new_irql );  // KeRaiseIrql()
-      KeRaiseIrql(new_irql, &saved_irql);
-    }
-
-    ~auto_irql_raiser()
-    {
-      KeLowerIrql(saved_irql);  //  any IRQL 
-    }
-
-  private:  //  what for a copying can be needed ?
-    auto_irql_raiser(auto_irql_raiser const&);
-    auto_irql_raiser& operator=(auto_irql_raiser const&);
-  };
-
-
-
   KIRQL test_at_irql[] = 
   {
     PASSIVE_LEVEL
   , APC_LEVEL
   , DISPATCH_LEVEL
   };
-
 }
 
 
 namespace cpprtl_tests
 {
 
-  int test_irql(testFT test_funcs[])  ////  run in the current thread at various IRQLs
+  //  run in the current thread at various IRQLs
+  int test_irql(testFT tests[])
   {
-    KIRQL const current_irql = KeGetCurrentIrql();
+    DbgPrint("test_irql()\n");
+    KIRQL const initial_irql = KeGetCurrentIrql();
     try
     {
       for ( unsigned k = 0 ; k < sizeof(test_at_irql) / sizeof(test_at_irql[0]) ; ++k )
       {
-        auto_irql_raiser auto_level(test_at_irql[k]);
-        for ( int i = 0, res = RET_ERROR_UNEXPECTED ; test_funcs[i] ; ++i )
+        aux_::auto_irql_raiser irql(test_at_irql[k]);
+        for ( unsigned i = 0 ; tests[i] ; ++i )
         {
-          test_funcs[i](res);
+          int res = RET_ERROR_UNEXPECTED;
+          tests[i](res);
+          DbgPrint("test_irql() : test[%u]=%i at IRQL=%u\n", i, res, unsigned(KeGetCurrentIrql()));  // DbgPrint() IRQL < DIRQL
           if ( RET_SUCCESS != res )
           {
-            DbgPrint("cpprtl_tests::test_irql() : test_func %d ret %d at IRQL %d\n", i, res, int(KeGetCurrentIrql()));
             return res;
           }
         }
@@ -71,12 +50,12 @@ namespace cpprtl_tests
     }
     catch ( ... )
     {
-      ASSERT ( KeGetCurrentIrql() == current_irql );
+      ASSERT ( KeGetCurrentIrql() == initial_irql );
       return RET_ERROR_UNEXPECTED;
     }
-    ASSERT ( KeGetCurrentIrql() == current_irql );  //  check the auto_irql_raiser has us put at the initial state
+    ASSERT ( KeGetCurrentIrql() == initial_irql );  // check the auto_irql_raiser has us put at the initial level
     return RET_SUCCESS;
   }
 
-}  //  namespace cpprtl_tests
+}  // namespace cpprtl_tests
 

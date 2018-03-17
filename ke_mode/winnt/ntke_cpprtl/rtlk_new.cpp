@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2016 project_ntke_cpprtl
+////    copyright (c) 2012-2017 project_ntke_cpprtl
 ////    mailto:kt133a@seznam.cz
 ////    license: the MIT license
 /////////////////////////////////////////////////////////////////////////////
@@ -212,12 +212,12 @@ void __cdecl operator delete[](void*, void*) throw()
 ////////////////////////////////////////////////////////////////
 ////  msvc2015 specific sized delete operators
 #if ( _MSC_VER >= 1900 )  
-void  __cdecl operator delete(void* ptr, std::size_t) throw()
+void __cdecl operator delete(void* ptr, std::size_t) throw()
 {
   return ::operator delete(ptr);
 }
 
-void  __cdecl operator delete[](void* ptr, std::size_t) throw()
+void __cdecl operator delete[](void* ptr, std::size_t) throw()
 {
   return ::operator delete(ptr);
 }
