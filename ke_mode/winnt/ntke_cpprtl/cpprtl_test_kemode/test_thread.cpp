@@ -8,12 +8,11 @@
 #include "ntddk.include.h"
 #include <cstddef>
 #include <new>
-#include "thread_type.h"
 #include "aux_cpu.h"
-#include "aux_scoped_ptr.h"
 #include "aux_task.h"
 #include "tests_aux.h"
 #include "test_thread.h"
+#include "thread_type.h"
 
 
 namespace cpprtl_tests
@@ -26,105 +25,85 @@ namespace cpprtl_tests
 
   enum
   {
-    RET_ERROR_THREAD_ALLOC         = -1401
-  , RET_ERROR_THREAD_SPAWN         = -1402
-  , RET_ERROR_THREAD_TASK_SPAWN    = -1403
+    RET_ERROR_THREAD_TASK_SPAWN  = -1401
   };
 
 
-  class thread_adapter
+  template <typename PAYLOAD>
+  class kthread
   {
-    int&    res;
-    testFT  ftest;
+    typedef PAYLOAD payload_type;
 
-  public:
-    thread_adapter(testFT f, int& i)
-      : res   ( i )
-      , ftest ( f )
-    {}
-
-    void operator()() const
+    template <typename PAYLOAD>
+    class payload_transfer
     {
-      ftest(res);
-    }
-  };
+      typedef PAYLOAD payload_type;
+      payload_type& payload;
 
+    public:
+      explicit payload_transfer(payload_type& pld)
+        : payload ( pld )
+      {}
 
-  class thread_task
-    : public aux_::task_bunch<aux_::thread_type>
-  {
-    typedef aux_::task_bunch<aux_::thread_type> base_type;
+      void operator()()
+      {
+        return payload();
+      }
+    };
 
   private:
-    aux_::scoped_array_ptr<int> task_ret;
-
-  private:
-    void operator[](std::size_t) {}
+    bool          spawned;
+    thread_type   thread;
+    payload_type  payload;
 
   public:
-    thread_task()
-      : task_ret ( 0 )
+    kthread()
+      : spawned ( false )
     {}
 
-    ~thread_task()
+    ~kthread()
     {
       acquire();
     }
 
-    bool spawn(std::size_t const& n, testFT f)
+    template <typename PLD>
+    bool spawn(PLD const& pld, size_t const& = 0)
     {
-      task_num = n;
-      spawned = 0;
-      task.reset(new(std::nothrow) task_type[task_num]);
-      task_ret.reset(new(std::nothrow) int[task_num]);
-      if ( !task_ret.get() || !task_ret.get() )
+      bool result = false;
+      if ( !spawned )
       {
-        status = RET_ERROR_THREAD_ALLOC;
-        return false;
+        payload = pld;
+        result = spawned = NT_SUCCESS(thread.spawn(payload_transfer<payload_type>(payload)));
       }
-      for ( spawned = 0 ; spawned < task_num ; ++spawned )
-      {
-        task_ret[spawned] = RET_ERROR_UNEXPECTED;
-        if 
-        (
-        #ifdef NTKE_KTHREAD
-          ! NT_SUCCESS ( task[spawned].spawn(typeaux::functee(f, typeaux::make_ref(task_ret[spawned]))) )
-        #else
-          ! NT_SUCCESS ( task[spawned].spawn(thread_adapter(f, task_ret[spawned])) )
-        #endif
-        )
-        {
-          status = RET_ERROR_THREAD_SPAWN;
-          return false;
-        }
-      }
-      status = RET_SUCCESS;
-      return true;
+      return result;
     }
 
     void acquire()
     {
-      while ( spawned > 0 )
-      {
-        --spawned;
-        task[spawned].acquire(STATUS_SUCCESS);
-        task[spawned].detach();
-      }
+      thread.acquire(STATUS_SUCCESS);
+      thread.detach();
+      spawned = false;
     }
 
-    int const& result(std::size_t const& idx) const
+    payload_type const& get_payload() const
     {
-      return task_ret[idx];
+      return payload;
     }
-
   };
 
+}  // namespace cpprtl_tests
+
+
+namespace cpprtl_tests
+{
 
   int test_thread_impl(testFT tests[], std::size_t const& task_num)
   {
+    typedef aux_::task_bunch<kthread<test_payload> > thread_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
     {
       DbgPrint("test_thread_impl() : spawning threads[%u] for test[%u]\n", unsigned(task_num), i);
+
       thread_task task;
       if ( !task.spawn(task_num, tests[i]) )
       {
@@ -134,10 +113,11 @@ namespace cpprtl_tests
 
       for ( unsigned k = 0 ; k < task_num ; ++k )
       {
-        if ( RET_SUCCESS != task.result(k) )
+        int const result = task[k].get_payload().result();
+        if ( RET_SUCCESS != result )
         {
-          DbgPrint("test_thread_impl() ERROR : test[%u]=%i at thread[%u]\n", i, task.result(k), k);
-          return task.result(k);
+          DbgPrint("test_thread_impl() ERROR : test[%u]=%i at thread[%u]\n", i, result, k);
+          return result;
         }
       }
     }
@@ -145,11 +125,6 @@ namespace cpprtl_tests
     return RET_SUCCESS;
   }
 
-}  // namespace cpprtl_tests
-
-
-namespace cpprtl_tests
-{
 
   int test_thread(testFT tests[])
   {

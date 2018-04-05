@@ -8,12 +8,12 @@
 #include "ntddk.include.h"
 #include <cstddef>
 #include <new>
-#include "tests_aux.h"
-#include "aux_dpc.h"
 #include "aux_cpu.h"
+#include "aux_dpc.h"
 #include "aux_irql.h"
 #include "aux_sync.h"
 #include "aux_task.h"
+#include "tests_aux.h"
 #include "test_dpc.h"
 
 
@@ -26,30 +26,31 @@ namespace cpprtl_tests
 
   enum
   {
-    RET_ERROR_DPC_ALLOC         = -1201
-  , RET_ERROR_DPC_SPAWN         = -1202
-  , RET_ERROR_DPC_TASK_SPAWN    = -1203
+    RET_ERROR_DPC_TASK_SPAWN  = -1201
   };
 
 
+  template <typename PAYLOAD>
   class kdpc
     : public aux_::kdpc
   {
+    typedef PAYLOAD                   payload_type;
     typedef aux_::spin_lock           lock_type;
     typedef aux_::auto_spin_lock      auto_lock_type;
     typedef aux_::dpc_auto_spin_lock  dpc_auto_lock_type;
 
+    enum { DONT_SET_PROCESSOR = -1 };
+
   private:       
     lock_type     lock;
     aux_::kevent  evt;
-    int           res;
-    testFT        ftest;
+    bool          spawned;
+    payload_type  pld;
 
   public:
     kdpc()
-      : evt    ( false, aux_::kevent::MANUAL_RESET )
-      , res    ( RET_ERROR_UNEXPECTED )
-      , ftest  ( 0 )
+      : evt     ( false, aux_::kevent::MANUAL_RESET )
+      , spawned ( false )
     {}
 
     virtual ~kdpc()
@@ -57,120 +58,76 @@ namespace cpprtl_tests
       auto_lock_type lck(lock);
     }
 
-    BOOLEAN spawn(testFT f)
+    template <typename PLD>
+    bool spawn(PLD const& p, std::size_t const& idx = DONT_SET_PROCESSOR)
     {
-      bool do_enqueue = false;
+      auto_lock_type lck(lock);
+      if ( !spawned )
       {
-        auto_lock_type lck(lock);
-        if ( 0 == ftest )
+        pld = p;
+        evt.reset();
+        if ( idx != DONT_SET_PROCESSOR )
         {
-          evt.reset();
-          res = RET_ERROR_UNEXPECTED;
-          ftest = f;
-          do_enqueue = true;
+          set_processor(static_cast<CHAR>(idx % aux_::get_number_processors()));
         }
+        return spawned = enqueue(0, 0) == TRUE;
       }
-      if ( do_enqueue )
-      {
-        return enqueue(0, 0);
-      }
-      return FALSE;
+      return false;
     }
 
-    NTSTATUS acquire()
+    void acquire()
     {
-      return evt.acquire(STATUS_SUCCESS);
+      evt.acquire(STATUS_SUCCESS);
     }
 
-    int result() const
+    payload_type const& get_payload() const
     {
-      return res;
+      return pld;
     }
 
   protected:
     virtual void payload(void*, void*)
     {
       DbgPrint("kdpc::payload() %u\n", unsigned(aux_::get_current_processor()));
-      ftest(res);
+      pld();
       {
         dpc_auto_lock_type lck(lock);
-        ftest = 0;
+        spawned = false;
         evt.set();
       }
     }
 
   };
 
+}  // namespace cpprtl_tests
 
-  class dpc_task
-    : public aux_::task_bunch<kdpc>
-  {
-    typedef aux_::task_bunch<kdpc> base_type;
 
-  public:
-    dpc_task()
-    {}
-
-    ~dpc_task()
-    {
-      acquire();
-    }
-
-    bool spawn(std::size_t const& n, testFT f)
-    {
-      task_num = n;
-      spawned = 0;
-      task.reset(new(std::nothrow) task_type[task_num]);
-      if ( !task.get() )
-      {
-        status = RET_ERROR_DPC_ALLOC;
-      }
-
-      {
-        ULONG const cpu_num = aux_::get_number_processors();
-        aux_::auto_irql_raiser irql(DISPATCH_LEVEL);
-        for ( spawned = 0 ; spawned < task_num ; ++spawned )
-        {
-          task[spawned].set_processor(static_cast<CHAR>(spawned % cpu_num));
-          if ( !task[spawned].spawn(f) )
-          {
-            status = RET_ERROR_DPC_SPAWN;
-            return false;
-          }
-        }
-      }
-      status = RET_SUCCESS;
-      return true;
-    }
-
-    void acquire()
-    {
-      while ( spawned > 0 )
-      {
-        task[--spawned].acquire();
-      }
-    }
-  };
-
+namespace cpprtl_tests
+{
 
   int test_dpc_impl(testFT tests[], std::size_t const& task_num)
   {
+    typedef aux_::task_bunch<kdpc<test_payload> > dpc_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
     {
       DbgPrint("test_dpc_impl() : spawning kdpcs[%u] for test[%u]\n", unsigned(task_num), i);
       dpc_task task;
-      if ( !task.spawn(task_num, tests[i]) )
       {
-        return RET_ERROR_DPC_TASK_SPAWN;
+        aux_::auto_irql_raiser irql(DISPATCH_LEVEL);
+        if ( !task.spawn(task_num, tests[i]) )
+        {
+          return RET_ERROR_DPC_TASK_SPAWN;
+        }
       }
       task.acquire();
 
       for ( unsigned k = 0 ; k < task_num ; ++k )
       {
-        if ( RET_SUCCESS != task[k].result() )
+        int const result = task[k].get_payload().result();
+        if ( RET_SUCCESS != result )
         {
-          DbgPrint("test_dpc_impl() ERROR : test[%u]=%i at kdpc[%u]\n", i, task[k].result(), k);
-          return task[k].result();
+          DbgPrint("test_dpc_impl() ERROR : test[%u]=%i at kdpc[%u]\n", i, result, k);
+          return result;
         }
       }
     }
@@ -178,12 +135,7 @@ namespace cpprtl_tests
     return RET_SUCCESS;
   }
 
-}  // namespace cpprtl_tests
 
-
-
-namespace cpprtl_tests
-{
   int test_dpc(testFT tests[])
   {
     DbgPrint("test_dpc()\n");

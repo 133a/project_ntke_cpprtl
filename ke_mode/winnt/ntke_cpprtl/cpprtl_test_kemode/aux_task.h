@@ -19,28 +19,51 @@ namespace aux_
   template <typename TASK>
   class task_bunch
   {
-  protected:
     typedef TASK task_type;
 
-    scoped_array_ptr<task_type>  task;
-    std::size_t                  task_num;
+    scoped_array_ptr<task_type>  tasks;
     std::size_t                  spawned;
-    int                          status;
 
+  public:
     task_bunch()
-      : task      ( 0 )
-      , task_num  ( 0 )
-      , spawned   ( 0 )
-      , status    ( -1 )
+      : tasks   ( 0 )
+      , spawned ( 0 )
     {}
 
     ~task_bunch()
-    {}
+    {
+      acquire();
+    }
 
-  public:
+    template <typename PAYLOAD>
+    bool spawn(std::size_t const& task_num, PAYLOAD const& payload)
+    {
+      tasks.reset(new(std::nothrow) task_type[task_num]);
+      if ( !tasks.get() )
+      {
+        return false;
+      }
+      for ( spawned = 0 ; spawned < task_num ; ++spawned )
+      {
+        if ( !tasks[spawned].spawn(payload, task_num > 1 ? spawned : -1) )
+        {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    void acquire()
+    {
+      while ( spawned > 0 )
+      {
+        tasks[--spawned].acquire();
+      }
+    }
+
     task_type const& operator[](std::size_t const& idx) const
     {
-      return task[idx];
+      return tasks[idx];
     }
   };
 

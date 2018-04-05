@@ -279,7 +279,7 @@ namespace cpprtl_tests
 
 
   //// run in kernel threads  
-  #ifdef TEST_THREADS
+  #ifdef TEST_THREAD
     {
       int res = test_thread(test_funcs_thread);
       if ( RET_SUCCESS != res )
@@ -292,7 +292,7 @@ namespace cpprtl_tests
         return res;
       }
     }
-  #endif  // TEST_THREADS
+  #endif  // TEST_THREAD
 
 
     return RET_SUCCESS;

@@ -101,11 +101,11 @@ namespace aux_
   protected:
     kapc() {}
 
-    template <typename APC_TYPE>
-    BOOLEAN enqueue(APC_TYPE const& apc_type, PKTHREAD kt, void* norm_ctx, void* sys_ctx1, void* sys_ctx2)
+    template <typename APC_MODE>
+    BOOLEAN enqueue(APC_MODE const& apc_mode, PKTHREAD kt, void* norm_ctx, void* sys_ctx1, void* sys_ctx2)
     {
-      init_apc(apc_type, kt, norm_ctx);
-      ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
+      init_apc(apc_mode, kt, norm_ctx);
+      ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );
       return KeInsertQueueApc(static_cast<KAPC*>(this), sys_ctx1, sys_ctx2, 0);
     }
 

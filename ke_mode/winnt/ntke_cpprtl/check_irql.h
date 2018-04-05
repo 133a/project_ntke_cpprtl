@@ -10,11 +10,11 @@
 
 
 #ifdef NT_KERNEL_MODE
-    #define IRQL_CHECK(REL_TO_VAL) ASSERT(KeGetCurrentIrql() REL_TO_VAL);
-    #define IRQL_REL(REL_TO_VAL) (KeGetCurrentIrql() REL_TO_VAL)
+    #define IRQL_CHECK(COMPARE_TO_VAL) ASSERT(KeGetCurrentIrql() COMPARE_TO_VAL);
+    #define IRQL_IS(COMPARE_TO_VAL) (KeGetCurrentIrql() COMPARE_TO_VAL)
 #else
-    #define IRQL_CHECK(REL_TO_VAL)
-    #define IRQL_REL(REL_TO_VAL) (true)
+    #define IRQL_CHECK(COMPARE_TO_VAL)
+    #define IRQL_IS(COMPARE_TO_VAL) (true)
 #endif  // NT_KERNEL_MODE
 
 

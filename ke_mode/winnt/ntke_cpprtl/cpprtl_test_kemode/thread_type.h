@@ -11,21 +11,21 @@
 
 #ifdef  NTKE_KTHREAD
 #  include <ntke/kthread.h>
-#  include <type_aux/functee.h>
-#  include <type_aux/ref_holder.h>
 #else
 #  include "aux_thread.h"
 #endif
 
 
-namespace aux_
+namespace cpprtl_tests
 {
-#ifdef NTKE_KTHREAD  // choose threads to be used
+  //  choose threads to be used
+#ifdef NTKE_KTHREAD
   typedef ntke::kthread thread_type;
 #else
   typedef aux_::kthread thread_type;
 #endif
-}
+
+}  // namespace cpprtl_tests
 
 
 #endif  // include guard

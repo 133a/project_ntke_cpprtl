@@ -3,7 +3,7 @@ module.name    = cpprtl_test
 
  
 module.definitions   += TEST_GSTATIC TEST_EH TEST_RTTI TEST_STL \
-                        TEST_WORKITEM TEST_DPC TEST_APC TEST_THREADS
+                        TEST_WORKITEM TEST_DPC TEST_APC TEST_THREAD
 
 
 module.dir.include    = $(project.dir.root)/ke_mode/winnt  \
@@ -14,9 +14,9 @@ module.sources        = main.cpp \
                         run_tests.cpp \
                         test_irql.cpp \
                         test_workitem.cpp \
-                        test_thread.cpp \
                         test_dpc.cpp \
-                        test_apc.cpp
+                        test_apc.cpp \
+                        test_thread.cpp
 
 module.entry_point    = DriverEntry # should be overridden by ntke_cpprtl.lib.mak
 

@@ -56,7 +56,7 @@ namespace
 
 
   typedef aux_::test_object<int>                                  int_obj;
-  typedef std::vector<int_obj>                                    int_obj_vector;  // the default stl allocator is suggested to use the nonpaged memory
+  typedef std::vector<int_obj>                                    int_obj_vector;  // the default stl allocator is supposed to use the nonpaged memory
   typedef std::vector<int_obj, aux_::int_obj_nonpaged_allocator>  int_obj_nonpaged_vector;
   typedef std::vector<int_obj, aux_::int_obj_paged_allocator>     int_obj_paged_vector;
 }
@@ -102,7 +102,7 @@ namespace cpprtl { namespace test { namespace stl
         }
         while ( false );
 
-      ////  testing the vector with the default (np) allocator
+      ////  testing a vector with the default np-allocator
         for ( int i = TEST_VECTOR_MIN_ELEMENT ; i < TEST_VECTOR_SIZE ; ++i )
         {
           if ( i % 2 )
@@ -154,7 +154,7 @@ namespace cpprtl { namespace test { namespace stl
         }
 
 
-      ////  the vector with the explicit np-allocator
+      ////  a vector with the explicit np-allocator
         int_obj_nonpaged_vector test_vec3(TEST_VECTOR_SIZE, int_obj(ctx, -1));
         if ( TEST_VECTOR_SIZE != test_vec3.size() )
         {
@@ -181,8 +181,8 @@ namespace cpprtl { namespace test { namespace stl
           throw aux_::test_error(TEST_VECTOR_NOT_EQUAL);
         }
 
-      ////  the vector with the explicit paged-allocator
-        if ( IRQL_REL( ==PASSIVE_LEVEL ) )
+      ////  a vector with the explicit paged-allocator
+        if ( IRQL_IS(==PASSIVE_LEVEL) )
         {
           int_obj_paged_vector test_vec5;
           std::copy(test_vec4.begin(), test_vec4.end(), std::back_inserter(test_vec5));

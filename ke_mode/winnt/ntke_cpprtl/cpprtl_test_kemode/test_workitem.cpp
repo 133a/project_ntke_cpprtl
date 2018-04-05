@@ -26,29 +26,28 @@ namespace cpprtl_tests
 
   enum
   {
-    RET_ERROR_WORKITEM_ALLOC         = -1101
-  , RET_ERROR_WORKITEM_SPAWN         = -1102
-  , RET_ERROR_WORKITEM_TASK_SPAWN    = -1103
+    RET_ERROR_WORKITEM_TASK_SPAWN  = -1101
   };
 
 
+  template <typename PAYLOAD>
   class work_item
     : public aux_::work_item
   {
-    typedef aux_::spin_lock       lock_type;
-    typedef aux_::auto_spin_lock  auto_lock_type;
+    typedef PAYLOAD           payload_type;
+    typedef aux_::kmutex      lock_type;
+    typedef aux_::auto_mutex  auto_lock_type;
 
   private:
     lock_type     lock;
     aux_::kevent  evt;
-    int           status;
-    testFT        ftest;
+    bool          spawned;
+    payload_type  pld;
 
   public:
     work_item()
-      : evt     ( false, aux_::kevent::MANUAL_RESET )
-      , status  ( RET_ERROR_UNEXPECTED )
-      , ftest   ( 0 )
+      : evt      ( false, aux_::kevent::MANUAL_RESET )
+      , spawned  ( false )
     {}
 
     virtual ~work_item()
@@ -56,100 +55,53 @@ namespace cpprtl_tests
       auto_lock_type lck(lock);
     }
 
-    BOOLEAN spawn(testFT f)
+    template <typename PLD>
+    bool spawn(PLD const& p, std::size_t const& = 0)
     {
-      bool do_enqueue = false;
+      auto_lock_type lck(lock);
+      if ( !spawned )
       {
-        auto_lock_type lck(lock);
-        if ( 0 == ftest )
-        {
-          evt.reset();
-          status = RET_ERROR_UNEXPECTED;
-          ftest = f;
-          do_enqueue = true;
-        }
-      }
-      if ( do_enqueue )
-      {
+        pld = p;
+        evt.reset();
         enqueue();
-        return TRUE;
+        return spawned = true;
       }
-      return FALSE;
+      return false;
     }
 
-    NTSTATUS acquire()
+    void acquire()
     {
-      return evt.acquire(STATUS_SUCCESS);
+      evt.acquire(STATUS_SUCCESS);
     }
 
-    int result() const
+    payload_type const& get_payload() const
     {
-      return status;
+      return pld;
     }
 
   protected:
     virtual void payload()
     {
       DbgPrint("work_item::payload() %p\n", KeGetCurrentThread());
-      ftest(status);
+      pld();
       {
         auto_lock_type lck(lock);
-        ftest = 0;
+        spawned = false;
         evt.set();
       }
     }
 
   };
 
+}  // namespace cpprtl_tests
 
-  class work_item_task
-    : public aux_::task_bunch<work_item>
-  {
-    typedef aux_::task_bunch<work_item> base_type;
 
-  public:
-    work_item_task()
-    {}
-
-    ~work_item_task()
-    {
-      acquire();
-    }
-
-    bool spawn(std::size_t const& n, testFT f)
-    {
-      task_num = n;
-      spawned = 0;
-      task.reset(new(std::nothrow) task_type[task_num]);
-      if ( !task.get() )
-      {
-        status = RET_ERROR_WORKITEM_ALLOC;
-        return false;
-      }
-      for ( spawned = 0 ; spawned < task_num ; ++spawned )
-      {
-        if ( !task[spawned].spawn(f) )
-        {
-          status = RET_ERROR_WORKITEM_SPAWN;
-          return false;
-        }
-      }
-      status = RET_SUCCESS;
-      return true;
-    }
-
-    void acquire()
-    {
-      while ( spawned > 0 )
-      {
-        task[--spawned].acquire();
-      }
-    }
-  };
-
+namespace cpprtl_tests
+{
 
   int test_workitem_impl(testFT tests[], std::size_t const& task_num)
   {
+    typedef aux_::task_bunch<work_item<test_payload> > work_item_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
     {
       DbgPrint("test_workitem_impl() : spawning work_items[%u] for test[%u]\n", unsigned(task_num), i);
@@ -162,10 +114,11 @@ namespace cpprtl_tests
 
       for ( unsigned k = 0 ; k < task_num ; ++k )
       {
-        if ( RET_SUCCESS != task[k].result() )
+        int const result = task[k].get_payload().result();
+        if ( RET_SUCCESS != result )
         {
-          DbgPrint("test_workitem_impl() ERROR : test[%u]=%i at work_item[%u]\n", i, task[k].result(), k);
-          return task[k].result();
+          DbgPrint("test_workitem_impl() ERROR : test[%u]=%i at work_item[%u]\n", i, result, k);
+          return result;
         }
       }
     }
@@ -173,11 +126,6 @@ namespace cpprtl_tests
     return RET_SUCCESS;
   }
 
-}  // namespace cpprtl_tests
-
-
-namespace cpprtl_tests
-{
 
   int test_workitem(testFT tests[])
   {

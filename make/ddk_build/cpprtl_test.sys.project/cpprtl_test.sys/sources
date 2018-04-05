@@ -9,7 +9,7 @@ TARGETTYPE = DRIVER
 TARGETNAME = cpprtl_test
 
 
-USER_C_FLAGS  =  $(USER_C_FLAGS) /DTEST_GSTATIC /DTEST_EH /DTEST_RTTI /DTEST_STL /DTEST_THREADS /DTEST_WORKITEM /DTEST_DPC /DTEST_APC
+USER_C_FLAGS  =  $(USER_C_FLAGS) /DTEST_GSTATIC /DTEST_EH /DTEST_RTTI /DTEST_STL /DTEST_WORKITEM /DTEST_DPC /DTEST_APC /DTEST_THREAD
 
 
 TARGETLIBS = \
@@ -28,10 +28,10 @@ SOURCES =  \
     aux_cpu.cpp  \
     run_tests.cpp  \
     test_irql.cpp  \
-    test_thread.cpp  \
     test_workitem.cpp  \
     test_dpc.cpp  \
-    test_apc.cpp
+    test_apc.cpp  \
+    test_thread.cpp
 
 
 INCLUDES =  \
