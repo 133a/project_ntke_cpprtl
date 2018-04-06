@@ -11,8 +11,8 @@
 #include "aux_cpu.h"
 #include "aux_dpc.h"
 #include "aux_irql.h"
-#include "aux_sync.h"
 #include "aux_task.h"
+#include "sync_type.h"
 #include "tests_aux.h"
 #include "test_dpc.h"
 
@@ -34,22 +34,22 @@ namespace cpprtl_tests
   class kdpc
     : public aux_::kdpc
   {
-    typedef PAYLOAD                   payload_type;
-    typedef aux_::spin_lock           lock_type;
-    typedef aux_::auto_spin_lock      auto_lock_type;
-    typedef aux_::dpc_auto_spin_lock  dpc_auto_lock_type;
+    typedef PAYLOAD                  payload_type;
+    typedef spin_lock_type           lock_type;
+    typedef auto_spin_lock_type      auto_lock_type;
+    typedef dpc_auto_spin_lock_type  dpc_auto_lock_type;
 
     enum { DONT_SET_PROCESSOR = -1 };
 
   private:       
     lock_type     lock;
-    aux_::kevent  evt;
+    event_type    evt;
     bool          spawned;
     payload_type  pld;
 
   public:
     kdpc()
-      : evt     ( false, aux_::kevent::MANUAL_RESET )
+      : evt     ( false, event_type::MANUAL_RESET )
       , spawned ( false )
     {}
 

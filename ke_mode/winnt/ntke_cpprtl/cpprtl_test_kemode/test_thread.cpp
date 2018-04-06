@@ -34,14 +34,12 @@ namespace cpprtl_tests
   {
     typedef PAYLOAD payload_type;
 
-    template <typename PAYLOAD>
-    class payload_transfer
+    class transfer
     {
-      typedef PAYLOAD payload_type;
       payload_type& payload;
 
     public:
-      explicit payload_transfer(payload_type& pld)
+      explicit transfer(payload_type& pld)
         : payload ( pld )
       {}
 
@@ -73,7 +71,7 @@ namespace cpprtl_tests
       if ( !spawned )
       {
         payload = pld;
-        result = spawned = NT_SUCCESS(thread.spawn(payload_transfer<payload_type>(payload)));
+        result = spawned = NT_SUCCESS(thread.spawn(transfer(payload)));
       }
       return result;
     }

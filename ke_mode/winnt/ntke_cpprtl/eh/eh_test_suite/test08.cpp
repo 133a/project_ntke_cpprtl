@@ -41,9 +41,9 @@ namespace
 
     #  if   defined     ( __ICL )                            //  for icl
     #    if    defined  ( _M_X64 ) || defined ( _M_AMD64 )   //    x64 eh lib is used with icl
-            NESTED_THROW_LIMIT8     = 8,                     //      '10'- stack overrun (x64) ('9' kAPC)
+            NESTED_THROW_LIMIT8     = 7,                     //      '10'- stack overrun (x64) ('9' kAPC)
     #    elif  defined  ( _M_IX86 )                          //    x86 eh lib is used with icl
-            NESTED_THROW_LIMIT8     = 15,                    //      '16'- stack overrun (x86)
+            NESTED_THROW_LIMIT8     = 14,                    //      '16'- stack overrun (x86)
     #    else
     #       error check $(target.arch)
     #    endif
@@ -52,9 +52,9 @@ namespace
     #    if    defined  ( _M_X64 ) || defined ( _M_AMD64 )   //    x64 eh lib is used with mscl
             NESTED_THROW_LIMIT8     = 7,                     //      '9'- stack overrun (x64) ('8' kAPC)
     #    elif  defined  ( _M_IX86 )                          //    x86 eh lib is used with mscl
-            NESTED_THROW_LIMIT8     = 18,                    //      '19'- stack overrun (x86)
+            NESTED_THROW_LIMIT8     = 16,                    //      '19'- stack overrun (x86)
     #    elif  defined  ( _M_ARM )                           //    arm eh lib is used with mscl
-            NESTED_THROW_LIMIT8     = 9,                     //      '10'- stack overrun (arm PANIC_STACK_SWITCH)
+            NESTED_THROW_LIMIT8     = 8,                     //      '10'- stack overrun (arm PANIC_STACK_SWITCH)
     #    else
     #       error check $(target.arch)
     #    endif                                             

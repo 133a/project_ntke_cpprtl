@@ -53,8 +53,8 @@ namespace
     RAISE20                   = 0xE0000000 + 20,
 
 #ifdef NT_KERNEL_MODE
-  // here we just get stack overflow if too many nested raises occures in kernel mode
-    NESTED_RAISE_STATUS_LIMIT20      = 32,
+  // here we just get stack overflow if too many nested raises (nearly 32) occures in kernel mode
+    NESTED_RAISE_STATUS_LIMIT20      = 24,
 #else
   // feel more free to make nested raises in a user mode process
     NESTED_RAISE_STATUS_LIMIT20      = 256,

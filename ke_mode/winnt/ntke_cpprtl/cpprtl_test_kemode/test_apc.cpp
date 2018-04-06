@@ -10,11 +10,11 @@
 #include <new>
 #include "aux_apc.h"
 #include "aux_cpu.h"
-#include "aux_sync.h"
 #include "aux_task.h"
+#include "sync_type.h"
+#include "thread_type.h"
 #include "tests_aux.h"
 #include "test_apc.h"
-#include "thread_type.h"
 
 
 namespace cpprtl_tests
@@ -35,20 +35,20 @@ namespace cpprtl_tests
   class kapc
     : public aux_::kapc
   {
-    typedef PAYLOAD                    payload_type;
-    typedef aux_::fast_mutex           lock_type;
-    typedef aux_::auto_fast_mutex      auto_lock_type;
-    typedef aux_::apc_auto_fast_mutex  apc_auto_lock_type;
+    typedef PAYLOAD                   payload_type;
+    typedef fast_mutex_type           lock_type;
+    typedef auto_fast_mutex_type      auto_lock_type;
+    typedef apc_auto_fast_mutex_type  apc_auto_lock_type;
 
   private:
     lock_type     lock;
-    aux_::kevent  evt;
+    event_type    evt;
     bool          spawned;
     payload_type  payload;
 
   public:
     kapc()
-      : evt     ( false, aux_::kevent::MANUAL_RESET )
+      : evt     ( false, event_type::MANUAL_RESET )
       , spawned ( false )
     {}
 
@@ -130,10 +130,10 @@ namespace cpprtl_tests
 
   class apc_receiver
   {
-    aux_::kevent& evt;
+    event_type& evt;
 
   public:
-    explicit apc_receiver(aux_::kevent& e)
+    explicit apc_receiver(event_type& e)
       : evt ( e )
     {}
 
@@ -236,15 +236,15 @@ namespace cpprtl_tests
     typedef APC_MODE            apc_mode;
 
   private:       
-    thread_type   kt_rx;
-    thread_type   kt_tx;
-    aux_::kevent  stop_evt;
-    apc_type      apc;
-    int           st;
+    thread_type  kt_rx;
+    thread_type  kt_tx;
+    event_type   stop_evt;
+    apc_type     apc;
+    int          st;
 
   public:
     sending_apc_to_another_thread()
-      : stop_evt ( false, aux_::kevent::MANUAL_RESET )
+      : stop_evt ( false, event_type::MANUAL_RESET )
       , st ( RET_ERROR_UNEXPECTED )
     {}
 
@@ -359,21 +359,21 @@ namespace cpprtl_tests
     DbgPrint("test_apc_mt() : task_num=%d\n", unsigned(task_num));
     if ( task_num > 1 )
     {
-      DbgPrint("test_apc_mt() : special, rx-self\n");
+      DbgPrint("test_apc_mt() : special, self-rx\n");
       int status = test_apc_impl<sending_apc_to_thread_self<test_payload, kapc::special> >(tests, task_num);
       if ( RET_SUCCESS == status )
       {
-        DbgPrint("test_apc_mt() : regular, rx-self\n");
+        DbgPrint("test_apc_mt() : regular, self-rx\n");
         status = test_apc_impl<sending_apc_to_thread_self<test_payload, kapc::regular> >(tests, task_num);
       }
       if ( RET_SUCCESS == status )
       {
-        DbgPrint("test_apc_mt() : special, rx-thread\n");
+        DbgPrint("test_apc_mt() : special, thread-rx\n");
         status = test_apc_impl<sending_apc_to_another_thread<test_payload, kapc::special> >(tests, task_num);
       }
       if ( RET_SUCCESS == status )
       {
-        DbgPrint("test_apc_mt() : regular, rx-thread\n");
+        DbgPrint("test_apc_mt() : regular, thread-rx\n");
         status = test_apc_impl<sending_apc_to_another_thread<test_payload, kapc::regular> >(tests, task_num);
       }
       return status;

@@ -8,7 +8,7 @@
 /////////////////////////////////////////////
 ////
 ////  testing a try-ctach class constructing scope (function-try-block)
-////  MT-safe  UM ('cos of a stack overflow in Ke due to 2 rethrows)
+////  MT-safe
 /////////////////////////////////////////////
 
 

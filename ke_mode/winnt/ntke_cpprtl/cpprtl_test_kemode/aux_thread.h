@@ -19,19 +19,20 @@ namespace aux_
   namespace internal_
   {
 
-    template <typename FUNC>
-    class thread_func_wrapper
+    template <typename PAYLOAD>
+    class thread_launcher
     {
     private:
-      typedef thread_func_wrapper self_type;
+      typedef PAYLOAD          payload_type;
+      typedef thread_launcher  self_type;
 
       kevent evt;
-      FUNC const& func;
+      payload_type const& payload;
 
     public:
-      thread_func_wrapper(FUNC const& f)
-        : evt  ( false, kevent::MANUAL_RESET )
-        , func ( f )
+      thread_launcher(payload_type const& pld)
+        : evt     ( false, kevent::MANUAL_RESET )
+        , payload ( pld )
       {}
 
       void acquire()
@@ -39,15 +40,15 @@ namespace aux_
         evt.acquire(STATUS_SUCCESS);
       }
 
-      static void kthread_start_func(void* arg)
+      static void thread_start(void* arg)
       {
         ASSERT ( arg );
         ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
         KeSetPriorityThread(KeGetCurrentThread(), LOW_REALTIME_PRIORITY);  // KeGetCurrentThread() at any IRQL
-        self_type& wrapper = *reinterpret_cast<self_type*>(arg);
-        FUNC func = wrapper.func;
-        wrapper.evt.set();
-        func();
+        self_type& launcher = *reinterpret_cast<self_type*>(arg);
+        payload_type payload = launcher.payload;
+        launcher.evt.set();
+        payload();
         ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
         PsTerminateSystemThread(STATUS_SUCCESS);
       }
@@ -114,8 +115,8 @@ namespace aux_
     }
 
 
-    template <typename FUNC>
-    NTSTATUS spawn(FUNC const& func)
+    template <typename PAYLOAD>
+    NTSTATUS spawn(PAYLOAD const& payload)
     {
       NTSTATUS status = STATUS_UNSUCCESSFUL;
       if ( !thr )
@@ -124,26 +125,26 @@ namespace aux_
         OBJECT_ATTRIBUTES oa;
         InitializeObjectAttributes(&oa, 0, OBJ_KERNEL_HANDLE, 0, 0);
     
-        internal_::thread_func_wrapper<FUNC> tfw(func);
+        typedef internal_::thread_launcher<PAYLOAD> thread_launcher_type;
+        thread_launcher_type launcher(payload);
         ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
-        status = 
-          PsCreateSystemThread
-          (
-            &hthread
-          , THREAD_ALL_ACCESS
-          , &oa
-          , 0
-          , 0
-          , &internal_::thread_func_wrapper<FUNC>::kthread_start_func
-          , reinterpret_cast<void*>(&tfw)
-          );
+        status = PsCreateSystemThread
+        (
+          &hthread
+        , THREAD_ALL_ACCESS
+        , &oa
+        , 0
+        , 0
+        , &thread_launcher_type::thread_start
+        , reinterpret_cast<void*>(&launcher)
+        );
         if ( NT_SUCCESS(status) )
         {
           ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
           ObReferenceObjectByHandle(hthread, THREAD_ALL_ACCESS, 0, KernelMode, reinterpret_cast<PVOID*>(&thr), 0);
           ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
           ZwClose(hthread);
-          tfw.acquire();
+          launcher.acquire();
         }
       }
       return status;

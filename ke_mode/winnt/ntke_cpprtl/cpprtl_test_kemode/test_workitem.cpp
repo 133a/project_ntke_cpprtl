@@ -9,9 +9,9 @@
 #include <cstddef>
 #include <new>
 #include "aux_cpu.h"
-#include "aux_sync.h"
 #include "aux_task.h"
 #include "aux_workitem.h"
+#include "sync_type.h"
 #include "tests_aux.h"
 #include "test_workitem.h"
 
@@ -34,19 +34,19 @@ namespace cpprtl_tests
   class work_item
     : public aux_::work_item
   {
-    typedef PAYLOAD           payload_type;
-    typedef aux_::kmutex      lock_type;
-    typedef aux_::auto_mutex  auto_lock_type;
+    typedef PAYLOAD          payload_type;
+    typedef mutex_type       lock_type;
+    typedef auto_mutex_type  auto_lock_type;
 
   private:
     lock_type     lock;
-    aux_::kevent  evt;
+    event_type    evt;
     bool          spawned;
     payload_type  pld;
 
   public:
     work_item()
-      : evt      ( false, aux_::kevent::MANUAL_RESET )
+      : evt      ( false, event_type::MANUAL_RESET )
       , spawned  ( false )
     {}
 

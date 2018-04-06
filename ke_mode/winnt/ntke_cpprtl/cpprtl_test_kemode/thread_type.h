@@ -9,7 +9,7 @@
 #define THREAD_TYPE_H_
 
 
-#ifdef  NTKE_KTHREAD
+#ifdef NTKE_LIB
 #  include <ntke/kthread.h>
 #else
 #  include "aux_thread.h"
@@ -19,7 +19,7 @@
 namespace cpprtl_tests
 {
   //  choose threads to be used
-#ifdef NTKE_KTHREAD
+#ifdef NTKE_LIB
   typedef ntke::kthread thread_type;
 #else
   typedef aux_::kthread thread_type;
