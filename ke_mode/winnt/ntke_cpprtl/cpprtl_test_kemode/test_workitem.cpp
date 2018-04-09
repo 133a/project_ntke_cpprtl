@@ -99,7 +99,7 @@ namespace cpprtl_tests
 namespace cpprtl_tests
 {
 
-  int test_workitem_impl(testFT tests[], std::size_t const& task_num)
+  int test_workitem_impl(test_type const tests[], std::size_t const& task_num)
   {
     typedef aux_::task_bunch<work_item<test_payload> > work_item_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
@@ -127,14 +127,14 @@ namespace cpprtl_tests
   }
 
 
-  int test_workitem(testFT tests[])
+  int test_workitem(test_type const tests[])
   {
     DbgPrint("test_workitem()\n");
     return test_workitem_impl(tests, 1);
   }
 
 
-  int test_workitem_mt(testFT tests[])
+  int test_workitem_mt(test_type const tests[])
   {
     std::size_t const task_num = aux_::get_number_processors() * WORKITEM_FACTOR;
     DbgPrint("test_workitem_mt() : task_num=%u\n", unsigned(task_num));

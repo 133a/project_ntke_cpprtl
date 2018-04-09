@@ -19,18 +19,13 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    SPECIAL_EXCEPTION17       = 17,
-    MAGIC_VALUE17             = 101,
+    EH_OK                = 0,
+    UNEXPECTED_CATCH1    = -2,
+    UNEXPECTED_CATCH2    = -3,
+    SPECIAL_EXCEPTION17  = 17,
+    MAGIC_VALUE17        = 101,
   };
-}
 
-
-namespace
-{
 
   class base00
   {
@@ -102,7 +97,7 @@ namespace
     }
   };
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -123,7 +118,7 @@ namespace cpprtl { namespace test { namespace eh
         ctx.state = UNEXPECTED_CATCH2;
       }
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH1;
     }

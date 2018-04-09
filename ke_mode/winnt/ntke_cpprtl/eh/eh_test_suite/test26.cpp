@@ -19,19 +19,14 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    UNEXPECTED_CATCH3         = -4,
-    SPECIAL_EXCEPTION26       = 26,
-    UNEXPECTED_VALUE26        = -111,
+    EH_OK                = 0,
+    UNEXPECTED_CATCH1    = -2,
+    UNEXPECTED_CATCH2    = -3,
+    UNEXPECTED_CATCH3    = -4,
+    SPECIAL_EXCEPTION26  = 26,
+    UNEXPECTED_VALUE26   = -111,
   };
-}
 
-
-namespace
-{
 
   void f26_1(context& ctx)
   {
@@ -45,7 +40,7 @@ namespace
       eh_test et(ctx);
       ctx.state += ex.i;
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH3;
     }
@@ -65,7 +60,7 @@ namespace
       f26_1(ctx);
       throw;
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH2;
     }
@@ -83,7 +78,7 @@ namespace
     eh_test et8(ctx, UNEXPECTED_VALUE26);
   }
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -91,9 +86,8 @@ namespace cpprtl { namespace test { namespace eh
 
   int test26()
   {
-    context ctx ( SPECIAL_EXCEPTION26 * 3 );  // 3 catches are expected
+    context ctx(SPECIAL_EXCEPTION26 * 3);  // 3 catches are expected
     ctx.state = EH_OK;
-
     try
     {
       f26_2(ctx);
@@ -103,11 +97,10 @@ namespace cpprtl { namespace test { namespace eh
       f26_3(ctx);
       ctx.state += ex.i;
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH1;
     }
-
     return ctx.balance();
   }
 

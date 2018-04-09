@@ -105,7 +105,7 @@ namespace cpprtl_tests
 namespace cpprtl_tests
 {
 
-  int test_dpc_impl(testFT tests[], std::size_t const& task_num)
+  int test_dpc_impl(test_type const tests[], std::size_t const& task_num)
   {
     typedef aux_::task_bunch<kdpc<test_payload> > dpc_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
@@ -136,14 +136,14 @@ namespace cpprtl_tests
   }
 
 
-  int test_dpc(testFT tests[])
+  int test_dpc(test_type const tests[])
   {
     DbgPrint("test_dpc()\n");
     return test_dpc_impl(tests, 1);
   }
 
 
-  int test_dpc_mt(testFT tests[])
+  int test_dpc_mt(test_type const tests[])
   {
     std::size_t const task_num = aux_::get_number_processors() * DPC_FACTOR;
     DbgPrint("test_dpc_mt() : task_num=%u\n", unsigned(task_num));

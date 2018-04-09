@@ -19,21 +19,16 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    MAGIC_CTOR                = 11,
-    MAGIC_VBCTOR              = 12,
-    MAGIC_DTOR                = 13,
-    MAGIC_VBDTOR              = 14,
-    SPECIAL_EXCEPTION18       = 18,
+    EH_OK                = 0,
+    UNEXPECTED_CATCH1    = -2,
+    UNEXPECTED_CATCH2    = -3,
+    MAGIC_CTOR           = 11,
+    MAGIC_VBCTOR         = 12,
+    MAGIC_DTOR           = 13,
+    MAGIC_VBDTOR         = 14,
+    SPECIAL_EXCEPTION18  = 18,
   };
-}
 
-
-namespace
-{
 
   class base00
   {
@@ -121,7 +116,7 @@ namespace
       ++ctx.ctor_count;
       ++ctx.xtor_count;
       ctx.state += MAGIC_CTOR;
-   }
+    }
 
     ~cvtest18()
     {
@@ -131,7 +126,7 @@ namespace
     }
   };
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -152,7 +147,7 @@ namespace cpprtl { namespace test { namespace eh
         ctx.state = UNEXPECTED_CATCH2;
       }
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH1;
     }

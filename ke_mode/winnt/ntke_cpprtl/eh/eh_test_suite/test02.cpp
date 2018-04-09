@@ -19,17 +19,13 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
+    EH_OK = 0,
   };
-}
 
 
-namespace
-{
-  int       const int02    = 356;
-  char      const char02   = 'a';
-  unsigned  const uint02   = 897;
+  int      const  int02  = 356;
+  char     const  char02 = 'a';
+  unsigned const  uint02 = 897;
 }
 
 
@@ -38,7 +34,7 @@ namespace cpprtl { namespace test { namespace eh
 
   int test02()
   {
-    context ctx(int02 + char02 + uint02);
+    context ctx(int02 + char02 + uint02);  // 3 catches are expected
     ctx.state = EH_OK;
   
     try

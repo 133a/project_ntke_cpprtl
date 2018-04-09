@@ -14,8 +14,8 @@
 
 namespace cpprtl_tests
 {
-  int test_thread    (testFT []);
-  int test_thread_mt (testFT []);
+  int test_thread    (test_type const []);
+  int test_thread_mt (test_type const []);
 }
 
 

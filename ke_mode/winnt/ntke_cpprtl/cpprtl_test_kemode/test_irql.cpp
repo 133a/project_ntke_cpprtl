@@ -20,6 +20,11 @@ namespace
   , APC_LEVEL
   , DISPATCH_LEVEL
   };
+
+  enum
+  {
+    RET_ERROR_INCORRECT_IRQL = -1001
+  };
 }
 
 
@@ -27,10 +32,25 @@ namespace cpprtl_tests
 {
 
   //  run in the current thread at various IRQLs
-  int test_irql(testFT tests[])
+  int test_irql(test_type const tests[])
   {
     DbgPrint("test_irql()\n");
     KIRQL const initial_irql = KeGetCurrentIrql();
+
+    {
+      aux_::auto_irql_raiser irql(DISPATCH_LEVEL);
+      if ( KeGetCurrentIrql() != DISPATCH_LEVEL )  // check the auto_irql_raiser has us up
+      {
+        KeLowerIrql(initial_irql);  // any IRQL
+        return RET_ERROR_INCORRECT_IRQL;
+      }
+    }
+    if ( KeGetCurrentIrql() != initial_irql )  // check the auto_irql_raiser has us put at the initial level
+    {
+      KeLowerIrql(initial_irql);  // any IRQL
+      return RET_ERROR_INCORRECT_IRQL;
+    }
+
     try
     {
       for ( unsigned k = 0 ; k < sizeof(test_at_irql) / sizeof(test_at_irql[0]) ; ++k )
@@ -48,12 +68,13 @@ namespace cpprtl_tests
         }
       }
     }
-    catch ( ... )
+    catch (...)
     {
       ASSERT ( KeGetCurrentIrql() == initial_irql );
       return RET_ERROR_UNEXPECTED;
     }
-    ASSERT ( KeGetCurrentIrql() == initial_irql );  // check the auto_irql_raiser has us put at the initial level
+
+    ASSERT ( KeGetCurrentIrql() == initial_irql );
     return RET_SUCCESS;
   }
 

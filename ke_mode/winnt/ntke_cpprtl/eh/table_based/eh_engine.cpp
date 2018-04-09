@@ -297,7 +297,7 @@ namespace eh_type
       0 == *catch_typeinfo
     ||
       0 == catch_typeinfo->name
-    )  // ( ... ) check
+    )  // (...) check
     {
       return true;
     }

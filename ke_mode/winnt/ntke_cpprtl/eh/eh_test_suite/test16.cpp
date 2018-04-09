@@ -29,18 +29,13 @@ namespace
 
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    CATCH1                    = 101,
-    CATCH_SEH                 = CATCH1,
-    MAGIC_VALUE16             = 123,
+    EH_OK              = 0,
+    UNEXPECTED_CATCH1  = -2,
+    CATCH1             = 101,
+    CATCH_SEH          = CATCH1,
+    MAGIC_VALUE16      = 123,
   };
-}  
 
-
-namespace
-{
 
   void ff_seh_access_violation()
   {
@@ -53,11 +48,11 @@ namespace
   void ff_seh_zero_division()
   {
   // zero division can't be catched by seh in ke-mode so let's just replace this by yet another access violation
-#ifndef NT_KERNEL_MODE
+  #ifndef NT_KERNEL_MODE
     int volatile i = MAGIC_VALUE16 / zero;
-#else
+  #else
     ff_seh_access_violation();
-#endif
+  #endif
   }
 
 
@@ -85,16 +80,15 @@ namespace cpprtl { namespace test { namespace eh
 
   int test16()
   {
-#ifdef NT_KERNEL_MODE
+  #ifdef NT_KERNEL_MODE
     if ( KeGetCurrentIrql() > PASSIVE_LEVEL )
     {
     //  in ke-mode the access violation at user space addresses is only allowed for IRQL==PASSIVE_LEVEL
       return 0;
     }
-#endif  // NT_KERNEL_MODE
+  #endif  // NT_KERNEL_MODE
 
-
-#ifdef _MSC_VER
+  #ifdef _MSC_VER
     context ctx(CATCH1);
     __try
     {
@@ -105,7 +99,7 @@ namespace cpprtl { namespace test { namespace eh
       ctx.state = CATCH_SEH;  // end up here with -EHs or (-EHa && NT_KERNEL_MODE && _M_ARM)
     }
     return ctx.balance();
-#endif  // _MSC_VER
+  #endif  // _MSC_VER
 
     return 0;
   }

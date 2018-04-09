@@ -19,15 +19,10 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    MAGIC_VALUE5              = 235,
+    EH_OK         = 0,
+    MAGIC_VALUE5  = 235,
   };
-}
 
-
-namespace
-{
 
   struct ctest05
     : protected eh_test
@@ -39,7 +34,6 @@ namespace
       ++ctx.xtor_count;
     }
 
-
     ctest05(ctest05 const& src)
       : eh_test  ( src )
     {
@@ -47,17 +41,15 @@ namespace
       ++ctx.xtor_count;
     }
 
-
     ~ctest05()
     {
       ctx.state += MAGIC_VALUE5;
       ++ctx.dtor_count;
       --ctx.xtor_count;
     }
-
   };
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh

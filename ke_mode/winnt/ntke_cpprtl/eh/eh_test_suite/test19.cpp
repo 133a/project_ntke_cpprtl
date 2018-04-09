@@ -19,13 +19,12 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    UNEXPECTED_CATCH3         = -4,
-    UNEXPECTED_CATCH4         = -5,
-    MAGIC_VALUE19             = 5648,
+    EH_OK              = 0,
+    UNEXPECTED_CATCH1  = -2,
+    UNEXPECTED_CATCH2  = -3,
+    UNEXPECTED_CATCH3  = -4,
+    UNEXPECTED_CATCH4  = -5,
+    MAGIC_VALUE19      = 5648,
   };
 }
 
@@ -61,7 +60,7 @@ namespace cpprtl { namespace test { namespace eh
               eh_test et(ctx);
               ctx.state = ex.i;
             }
-            catch ( ... )
+            catch (...)
             {
               ctx.state = UNEXPECTED_CATCH4;
             }
@@ -71,12 +70,12 @@ namespace cpprtl { namespace test { namespace eh
             ctx.state = UNEXPECTED_CATCH3;
           }
         }
-        catch ( ... )
+        catch (...)
         {
           ctx.state = UNEXPECTED_CATCH2;
         }
       }
-      catch ( ... )
+      catch (...)
       {
         ctx.state = UNEXPECTED_CATCH1;
       }

@@ -24,39 +24,25 @@ namespace
     WRONG_STATE               = -2,
     MAGIC_VALUE6              = 236,
   };
-}
 
-
-namespace
-{
 
   struct ctest06
     : protected eh_test
   {
     ctest06(context& c) 
       : eh_test ( c )
-    {
-    }
-
+    {}
 
     ctest06(ctest06 const& src)
       : eh_test ( src )
-    {
-    }
-
+    {}
 
     ~ctest06()
     {
       ctx.state += MAGIC_VALUE6;
     }
-
   };
 
-}
-
-
-namespace
-{
 
   int f2(context& ctx)
   {
@@ -71,7 +57,7 @@ namespace
     return f2(ctx);
   }
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh

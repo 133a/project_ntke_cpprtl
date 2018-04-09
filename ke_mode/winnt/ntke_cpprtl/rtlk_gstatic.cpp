@@ -42,7 +42,7 @@
 namespace
 {
 
-  class pf_storage  //  atexit-ed funclets storage
+  class pf_storage  // atexit-ed funclets storage
   {
   public:
     enum { PF_STOR_SZ = 1024 };  // TODO make it customizable by the rtl client
@@ -57,7 +57,8 @@ namespace
       idx = 0;
     }
 
-    cpprtl::gstatic::pf_t put(cpprtl::gstatic::pf_t pf)  //  make sure the 'pf_arr' and 'idx' are thread-safely accessed 'cos put() can be invoked from the different threads by atexit()
+    // make sure the 'pf_arr' and 'idx' are thread-safely accessed 'cos put() can be invoked from the different threads by atexit()
+    cpprtl::gstatic::pf_t put(cpprtl::gstatic::pf_t pf)
     {
       LONG const i = InterlockedExchangeAdd(&idx, 1);
       if ( PF_STOR_SZ > i )
@@ -67,7 +68,8 @@ namespace
       return 0;
     }
 
-    void unwind()   //  not thread-safe 'cos it is called at the driver unload point assuming all other driver's threads have been acquired
+    // thread-unsafe 'cos it is called at the driver unload point assuming all other driver's threads have been acquired
+    void unwind()
     {
       NTSTATUS status = STATUS_SUCCESS;
       for ( --idx ; idx >= 0 ; --idx )
@@ -91,7 +93,8 @@ namespace
   pf_stor;
 
 
-  NTSTATUS invoke_pf(cpprtl::gstatic::pf_t* from, cpprtl::gstatic::pf_t* const to)  // returns a status for not to end up with a bugcheck while driver loading if possible
+  // returns a status for not to end up with a bugcheck while driver loading if possible
+  NTSTATUS invoke_pf(cpprtl::gstatic::pf_t* from, cpprtl::gstatic::pf_t* const to)
   {
     NTSTATUS status = STATUS_SUCCESS;
     for ( ; from < to ; ++from )
@@ -136,7 +139,7 @@ namespace gstatic
 }  // namespace cpprtl
 
 
-extern "C" int __cdecl atexit(cpprtl::gstatic::pf_t pf)  //  mscl internally pre-declared
+extern "C" int __cdecl atexit(cpprtl::gstatic::pf_t pf)  // mscl internally pre-declared
 {
   return 0 != pf_stor.put(pf);
 }

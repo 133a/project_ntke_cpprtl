@@ -15,37 +15,36 @@
 namespace cpprtl
 {
 
-  namespace msvc_internal_data
-  {
-    namespace rtti
-    {
-      struct type_descriptor;
-    }
-  }
-
-
+namespace msvc_internal_data
+{
   namespace rtti
   {
-    namespace aux_ { struct cpp_obj; }
-    typedef aux_::cpp_obj const*   pcobj_t;
-    typedef aux_::cpp_obj*         pobj_t;
+    struct type_descriptor;
+  }
+}
 
 
-    void* dynamic_cast_impl
-    (
-      pcobj_t     src_obj
-    , long        vfdelta
-    , msvc_internal_data::rtti::type_descriptor  const&  src_type
-    , msvc_internal_data::rtti::type_descriptor  const&  dst_type
-    , bool        is_ref
-    );
+namespace rtti
+{
+  namespace aux_ { struct cpp_obj; }
+  typedef aux_::cpp_obj const*  pcobj_t;
+  typedef aux_::cpp_obj*        pobj_t;
 
-    void* typeid_impl(pcobj_t src_obj);
 
-    void* cast_to_void_impl(pcobj_t src_obj);
+  void* dynamic_cast_impl
+  (
+    pcobj_t                                           src_obj
+  , long                                              vfdelta
+  , msvc_internal_data::rtti::type_descriptor const&  src_type
+  , msvc_internal_data::rtti::type_descriptor const&  dst_type
+  , bool                                              is_ref
+  );
 
-  }  // namespace rtti
+  void* typeid_impl(pcobj_t src_obj);
 
+  void* cast_to_void_impl(pcobj_t src_obj);
+
+}  // namespace rtti
 }  // namespace cpprtl
 
 

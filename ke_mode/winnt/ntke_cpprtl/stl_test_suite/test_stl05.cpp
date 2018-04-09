@@ -24,16 +24,16 @@ namespace
 {
   enum
   {
-    UNEXPECTED_ERROR             = -1
-  , UNEXPECTED_STD_EXCEPTION     = -2
-  , UNEXPECTED_STD_BAD_ALLOC     = -3
-  , TEST_ERROR_BAD_BALANCE       = -4
-  , TEST_ERROR_NONEMPTY_PTR      = -5
-  , TEST_ERROR_EMPTY_PTR         = -6
-  , TEST_ERROR_WRONG_OWNER       = -7
-  , TEST_ERROR_WRONG_VALUE       = -8
+    UNEXPECTED_ERROR          = -1
+  , UNEXPECTED_STD_EXCEPTION  = -2
+  , UNEXPECTED_STD_BAD_ALLOC  = -3
+  , TEST_ERROR_BAD_BALANCE    = -4
+  , TEST_ERROR_NONEMPTY_PTR   = -5
+  , TEST_ERROR_EMPTY_PTR      = -6
+  , TEST_ERROR_WRONG_OWNER    = -7
+  , TEST_ERROR_WRONG_VALUE    = -8
 
-  , INTOBJ_DEFAULT_VALUE         = 11
+  , INTOBJ_DEFAULT_VALUE      = 11
   };
 
 
@@ -56,8 +56,9 @@ namespace cpprtl { namespace test { namespace stl
         int_obj_ptr au1;
         if
         (
-             au1.get()
-          || au1.operator->()
+          au1.get()
+        ||
+          au1.operator->()
         )
         {
           throw aux_::test_error(TEST_ERROR_NONEMPTY_PTR);
@@ -66,8 +67,9 @@ namespace cpprtl { namespace test { namespace stl
         au1.reset(new int_obj(ctx, INTOBJ_DEFAULT_VALUE * 2));
         if
         (
-             !au1.get()
-          || !au1.operator->()
+          !au1.get()
+        ||
+          !au1.operator->()
         )
         {
           throw aux_::test_error(TEST_ERROR_EMPTY_PTR);
@@ -77,18 +79,22 @@ namespace cpprtl { namespace test { namespace stl
         int_obj_ptr au2 = au1;
         if
         (
-             au1.get()
-          || au1.operator->()
-          || !au2.get()
-          || !au2.operator->()
+          au1.get()
+        ||
+          au1.operator->()
+        ||
+          !au2.get()
+        ||
+          !au2.operator->()
         )
         {
           throw aux_::test_error(TEST_ERROR_WRONG_OWNER);
         }
         if
         (
-             INTOBJ_DEFAULT_VALUE != au2->value()
-          || INTOBJ_DEFAULT_VALUE != (*au2).value()
+          INTOBJ_DEFAULT_VALUE != au2->value()
+        ||
+          INTOBJ_DEFAULT_VALUE != (*au2).value()
         )
         {
           throw aux_::test_error(TEST_ERROR_WRONG_VALUE);
@@ -100,19 +106,19 @@ namespace cpprtl { namespace test { namespace stl
         throw aux_::test_error(TEST_ERROR_BAD_BALANCE);
       }
     }
-    catch ( aux_::test_error const& t )
+    catch (aux_::test_error const& t)
     {
       state = t.err;
     }
-    catch ( std::bad_alloc& )
+    catch (std::bad_alloc&)
     {
       state = UNEXPECTED_STD_BAD_ALLOC;
     }
-    catch ( std::exception& )
+    catch (std::exception&)
     {
       state = UNEXPECTED_STD_EXCEPTION;
     }
-    catch ( ... )
+    catch (...)
     {
       state = UNEXPECTED_ERROR;
     }

@@ -102,7 +102,6 @@ namespace aux_
       return status;
     }
 
-
     NTSTATUS acquire(NTSTATUS const& acq_st)
     {
       NTSTATUS st = STATUS_UNSUCCESSFUL;
@@ -114,7 +113,6 @@ namespace aux_
       return st;
     }
 
-
     template <typename PAYLOAD>
     NTSTATUS spawn(PAYLOAD const& payload)
     {
@@ -125,8 +123,8 @@ namespace aux_
         OBJECT_ATTRIBUTES oa;
         InitializeObjectAttributes(&oa, 0, OBJ_KERNEL_HANDLE, 0, 0);
     
-        typedef internal_::thread_launcher<PAYLOAD> thread_launcher_type;
-        thread_launcher_type launcher(payload);
+        typedef internal_::thread_launcher<PAYLOAD> launcher_type;
+        launcher_type launcher(payload);
         ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
         status = PsCreateSystemThread
         (
@@ -135,7 +133,7 @@ namespace aux_
         , &oa
         , 0
         , 0
-        , &thread_launcher_type::thread_start
+        , &launcher_type::thread_start
         , reinterpret_cast<void*>(&launcher)
         );
         if ( NT_SUCCESS(status) )

@@ -20,28 +20,28 @@ namespace cpprtl_tests
   };
 
 
-  typedef void (*testFT)(int&);  // tests interface
+  typedef void (*test_type)(int&);  // tests interface
 
 
   class test_payload
   {
-    int     res;
-    testFT  ftest;
+    int        res;
+    test_type  test;
 
   public:
     test_payload()
-      : res   ( RET_ERROR_UNEXPECTED )
-      , ftest ( 0 )
+      : res  ( RET_ERROR_UNEXPECTED )
+      , test ( 0 )
     {}
 
-    test_payload(testFT f)
-      : res   ( RET_ERROR_UNEXPECTED )
-      , ftest ( f )
+    test_payload(test_type t)
+      : res  ( RET_ERROR_UNEXPECTED )
+      , test ( t )
     {}
 
     void operator()()
     {
-      ftest(res);
+      test(res);
     }
 
     int result() const

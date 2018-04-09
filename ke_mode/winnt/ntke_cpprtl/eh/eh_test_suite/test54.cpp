@@ -41,11 +41,8 @@ namespace
 
   static bool throw_ctor_vb  = false;
   static bool throw_cctor_vb = false;
-}
 
 
-namespace
-{
   class base54
   {
   public:
@@ -113,7 +110,7 @@ namespace
     array_of_cvtest54 array;
   };
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -132,10 +129,8 @@ namespace cpprtl { namespace test { namespace eh
     throw_cctor_vb  = false;
 
     int res = UNEXPECTED_ERROR;
-
     try
     {
-
       try
       {
       // this scope invokes '__ehvec_ctor_vb' and '__ehvec_dtor'
@@ -149,15 +144,17 @@ namespace cpprtl { namespace test { namespace eh
       {
         if ( i != SPECIAL_EXCEPTION )
         {
-          return i;
+          return SPECIAL_EXCEPTION;
         }
+        res = EH_OK;
       }
-      catch ( ... )
+      catch (...)
       {
         return UNEXPECTED_ERROR;
       }
 
-#ifndef __ICL  // icl suddenly doesn't make use of '__ehvec_copy_ctor_vb' so let's just skip the following test scope
+    #ifndef __ICL  // icl suddenly doesn't make use of '__ehvec_copy_ctor_vb' so let's just skip the following test scope
+      res = UNEXPECTED_ERROR;
       try
       {
       // this scope invokes '__ehvec_ctor_vb' and '__ehvec_copy_ctor_vb' and '__ehvec_dtor'
@@ -172,22 +169,20 @@ namespace cpprtl { namespace test { namespace eh
       {
         if ( i != SPECIAL_EXCEPTION )
         {
-          return i;
+          return SPECIAL_EXCEPTION;
         }
+        res = EH_OK;
       }
-      catch ( ... )
+      catch (...)
       {
         return UNEXPECTED_ERROR;
       }
-#endif
-
-      res = EH_OK;
+    #endif
     }
-    catch ( ... )
+    catch (...)
     {
       return UNEXPECTED_ERROR;
     }
-  
     return res | ( xtor_count54 + (ctor_count54 + cctor_count54 + vctor_count54 + vcctor_count54 - dtor_count54 - vdtor_count54) );
   }
 

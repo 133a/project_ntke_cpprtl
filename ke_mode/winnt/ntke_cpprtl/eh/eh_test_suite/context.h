@@ -90,10 +90,9 @@ namespace
       ++ctx.dtor_count;
       --ctx.xtor_count;
     }
-
   };
 
-}
+}  // namespace
 
 #endif  // include guard
 

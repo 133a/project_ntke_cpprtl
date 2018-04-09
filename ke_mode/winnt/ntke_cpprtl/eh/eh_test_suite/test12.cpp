@@ -19,18 +19,13 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    UNEXPECTED_CATCH3         = -4,
-    MAGIC_VALUE12             = 8459,
+    EH_OK              = 0,
+    UNEXPECTED_CATCH1  = -2,
+    UNEXPECTED_CATCH2  = -3,
+    UNEXPECTED_CATCH3  = -4,
+    MAGIC_VALUE12      = 8459,
   };
-}
 
-
-namespace
-{
 
   void ff_throw2(context& ctx)
   {
@@ -84,7 +79,7 @@ namespace
     }
   }
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh

@@ -236,19 +236,19 @@ namespace cpprtl { namespace test { namespace stl
         throw aux_::test_error(TEST_ERROR_BAD_BALANCE);
       }
     }
-    catch ( aux_::test_error const& t )
+    catch (aux_::test_error const& t)
     {
       state = t.err;
     }
-    catch ( std::bad_alloc& )
+    catch (std::bad_alloc&)
     {
       state = UNEXPECTED_STD_BAD_ALLOC;
     }
-    catch ( std::exception& )
+    catch (std::exception&)
     {
       state = UNEXPECTED_STD_EXCEPTION;
     }
-    catch ( ... )
+    catch (...)
     {
       state = UNEXPECTED_ERROR;
     }

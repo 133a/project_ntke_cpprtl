@@ -19,18 +19,13 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    MAGIC_VALUE11             = 4543,
-    MAGIC_VALUE11_2           = 378,
+    EH_OK              = 0,
+    UNEXPECTED_CATCH1  = -2,
+    UNEXPECTED_CATCH2  = -3,
+    MAGIC_VALUE11      = 4543,
+    MAGIC_VALUE11_2    = 378,
   };
-}
 
-
-namespace
-{
 
   void ff_throw(context& ctx)
   {
@@ -53,7 +48,7 @@ namespace
     }
   }
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -67,7 +62,7 @@ namespace cpprtl { namespace test { namespace eh
       try
       {
         eh_test t2(ctx, MAGIC_VALUE11_2);
-        throw eh_test(ctx, MAGIC_VALUE11);   // this magic value is expected to be catched in ff_throw() and captured in context::state
+        throw eh_test(ctx, MAGIC_VALUE11);  // this magic value is expected to be catched in ff_throw() and captured in context::state
       }
       catch (eh_test&)
       {

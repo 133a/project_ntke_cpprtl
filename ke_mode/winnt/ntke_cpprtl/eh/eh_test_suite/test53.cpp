@@ -39,11 +39,7 @@ namespace
 
   static bool throw_ctor     = false;
   static bool throw_cctor    = false;
-}
 
-
-namespace
-{
 
   class ctest53
   {
@@ -85,7 +81,7 @@ namespace
     array_of_ctest53 array;
   };
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -101,10 +97,8 @@ namespace cpprtl { namespace test { namespace eh
     throw_cctor     = false;
 
     int res = UNEXPECTED_ERROR;
-
     try
     {
-
       try
       {
       // this scope invokes '__ehvec_ctor' and '__ehvec_dtor'
@@ -118,15 +112,17 @@ namespace cpprtl { namespace test { namespace eh
       {
         if ( i != SPECIAL_EXCEPTION )
         {
-          return i;
+          return SPECIAL_EXCEPTION;
         }
+        res = EH_OK;
       }
-      catch ( ... )
+      catch (...)
       {
         return UNEXPECTED_ERROR;
       }
 
-#ifndef __ICL  // icl suddenly doesn't make use of '__ehvec_copy_ctor' so let's just skip the following test scope
+    #ifndef __ICL  // icl suddenly doesn't make use of '__ehvec_copy_ctor' so let's just skip the following test scope
+      res = UNEXPECTED_ERROR;
       try
       {
       // this scope invokes '__ehvec_ctor' and '__ehvec_copy_ctor' and '__ehvec_dtor'
@@ -141,22 +137,20 @@ namespace cpprtl { namespace test { namespace eh
       {
         if ( i != SPECIAL_EXCEPTION )
         {
-          return i;
+          return SPECIAL_EXCEPTION;
         }
+        res = EH_OK;
       }
-      catch ( ... )
+      catch (...)
       {
         return UNEXPECTED_ERROR;
       }
-#endif
-
-      res = EH_OK;
+    #endif
     }
-    catch ( ... )
+    catch (...)
     {
       return UNEXPECTED_ERROR;
     }
-  
     return res | ( xtor_count53 + (ctor_count53 + cctor_count53 - dtor_count53) );
   }
 

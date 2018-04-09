@@ -95,7 +95,7 @@ namespace cpprtl_tests
 namespace cpprtl_tests
 {
 
-  int test_thread_impl(testFT tests[], std::size_t const& task_num)
+  int test_thread_impl(test_type const tests[], std::size_t const& task_num)
   {
     typedef aux_::task_bunch<kthread<test_payload> > thread_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
@@ -124,14 +124,14 @@ namespace cpprtl_tests
   }
 
 
-  int test_thread(testFT tests[])
+  int test_thread(test_type const tests[])
   {
     DbgPrint("test_thread()\n");
     return test_thread_impl(tests, 1);
   }
 
 
-  int test_thread_mt(testFT tests[])
+  int test_thread_mt(test_type const tests[])
   {
     std::size_t const task_num = aux_::get_number_processors() * THREAD_FACTOR;
     DbgPrint("test_thread_mt() : task_num=%u\n", unsigned(task_num));

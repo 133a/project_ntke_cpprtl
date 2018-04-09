@@ -23,12 +23,12 @@ namespace
 {
   enum
   {
-    UNEXPECTED_ERROR             = -1
-  , UNEXPECTED_STD_EXCEPTION     = -2
-  , UNEXPECTED_STD_BAD_ALLOC     = -3
-  , ERROR_OVERSIZED_STRING1      = -4
-  , ERROR_OVERSIZED_STRING2      = -5
-  , ERROR_OUT_OF_RANGE_FAILED    = -6
+    UNEXPECTED_ERROR           = -1
+  , UNEXPECTED_STD_EXCEPTION   = -2
+  , UNEXPECTED_STD_BAD_ALLOC   = -3
+  , ERROR_OVERSIZED_STRING1    = -4
+  , ERROR_OVERSIZED_STRING2    = -5
+  , ERROR_OUT_OF_RANGE_FAILED  = -6
   };
 }
 
@@ -48,9 +48,9 @@ namespace cpprtl { namespace test { namespace stl
           std::string oversized_str(std::string::size_type(-1), 'X');
           throw aux_::test_error(ERROR_OVERSIZED_STRING1);
         }
-        catch ( std::length_error& )
+        catch (std::length_error&)
         {
-          break;  //  test is passed;
+          break;  // test is passed;
         }
         throw aux_::test_error(UNEXPECTED_ERROR);
       }
@@ -65,9 +65,9 @@ namespace cpprtl { namespace test { namespace stl
             std::wstring::value_type ch = empty_str.at(empty_str.size());
             throw aux_::test_error(ERROR_OUT_OF_RANGE_FAILED);
           }
-          catch ( std::out_of_range& )
+          catch (std::out_of_range&)
           {
-            break;  //  test is passed;
+            break;  // test is passed;
           }
           throw aux_::test_error(UNEXPECTED_ERROR);
         }
@@ -79,9 +79,9 @@ namespace cpprtl { namespace test { namespace stl
             empty_str.reserve(empty_str.max_size() + 1);
             throw aux_::test_error(ERROR_OVERSIZED_STRING2);
           }
-          catch ( std::length_error& )
+          catch (std::length_error&)
           {
-            break;  //  test is passed;
+            break;  // test is passed;
           }
           throw aux_::test_error(UNEXPECTED_ERROR);
         }
@@ -89,19 +89,19 @@ namespace cpprtl { namespace test { namespace stl
       }
 
     }
-    catch ( aux_::test_error const& t )
+    catch (aux_::test_error const& t)
     {
       state = t.err;
     }
-    catch ( std::bad_alloc& )
+    catch (std::bad_alloc&)
     {
       state = UNEXPECTED_STD_BAD_ALLOC;
     }
-    catch ( std::exception& )
+    catch (std::exception&)
     {
       state = UNEXPECTED_STD_EXCEPTION;
     }
-    catch ( ... )
+    catch (...)
     {
       state = UNEXPECTED_ERROR;
     }

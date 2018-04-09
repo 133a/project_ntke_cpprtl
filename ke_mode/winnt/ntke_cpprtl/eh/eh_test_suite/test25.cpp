@@ -19,17 +19,13 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    SPECIAL_EXCEPTION25       = 25,
-    RECURSION_COUNT25         = 16,
+    EH_OK                = 0,
+    UNEXPECTED_CATCH1    = -2,
+    SPECIAL_EXCEPTION25  = 25,
+    RECURSION_COUNT25    = 16,
   };
-}
 
 
-namespace
-{
   void f25(context& ctx)
   {
     eh_test et(ctx);
@@ -41,7 +37,7 @@ namespace
     f25(ctx);
   }
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -51,7 +47,6 @@ namespace cpprtl { namespace test { namespace eh
   {
     context ctx ( RECURSION_COUNT25 + SPECIAL_EXCEPTION25 );  //
     ctx.state = EH_OK;
-
     try
     {
       eh_test et(ctx);
@@ -61,11 +56,10 @@ namespace cpprtl { namespace test { namespace eh
     {
       ctx.state += i;
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH1;
     }
-
     return ctx.balance();
   }
 

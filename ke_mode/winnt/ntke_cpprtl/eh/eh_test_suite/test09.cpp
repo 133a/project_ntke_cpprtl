@@ -19,17 +19,12 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    THROW09                   = 123,
+    EH_OK              = 0,
+    UNEXPECTED_CATCH1  = -2,
+    UNEXPECTED_CATCH2  = -3,
+    THROW09            = 123,
   };
-}
 
-
-namespace
-{
 
   void ff_throw(context& ctx)
   {

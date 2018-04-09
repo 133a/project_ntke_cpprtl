@@ -23,11 +23,11 @@ namespace
 
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    THROW_WORKS_IMPROPERLY    = -2,
-    UNEXISTED_IS_CATCHED      = -3,
-    UNEXPECTED_EXCEPTION_CODE = -4,
+    EH_OK                      = 0,
+    EH_CONTEXT_DEFAULT         = -1,
+    THROW_WORKS_IMPROPERLY     = -2,
+    UNEXISTED_IS_CATCHED       = -3,
+    UNEXPECTED_EXCEPTION_CODE  = -4,
   };
 
 
@@ -45,7 +45,7 @@ namespace
     return UNEXISTED_IS_CATCHED; 
   }
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -54,7 +54,7 @@ namespace cpprtl { namespace test { namespace eh
   int test00()
   {
 
-#ifdef _MSC_VER   // cpp-exceptions are built upon the seh so we can do the trick following
+#ifdef _MSC_VER   // cpp-exceptions are built upon seh so we can do the trick following
     context ctx(EH_OK);
     __try
     {
@@ -64,8 +64,9 @@ namespace cpprtl { namespace test { namespace eh
     {
       if 
       (
-           cpprtl::eh::EXCEPTION_CODE_CPP      == GetExceptionCode()
-        || cpprtl::eh::EXCEPTION_CODE_MSFTCPP  == GetExceptionCode() 
+        cpprtl::eh::EXCEPTION_CODE_CPP == GetExceptionCode()
+      ||
+        cpprtl::eh::EXCEPTION_CODE_MSFTCPP == GetExceptionCode() 
       )
       {
         ctx.state = EH_OK;  // cpp exception would be propagated here

@@ -14,8 +14,8 @@
 
 namespace cpprtl_tests
 {
-  int test_dpc    (testFT []);
-  int test_dpc_mt (testFT []);
+  int test_dpc    (test_type const []);
+  int test_dpc_mt (test_type const []);
 }
 
 

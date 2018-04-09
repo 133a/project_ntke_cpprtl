@@ -20,7 +20,11 @@
 namespace
 {
 
-  bool operator==(cpprtl::msvc_internal_data::rtti::type_descriptor const& lhs, cpprtl::msvc_internal_data::rtti::type_descriptor const& rhs)
+  bool operator==
+  (
+    cpprtl::msvc_internal_data::rtti::type_descriptor const& lhs
+  , cpprtl::msvc_internal_data::rtti::type_descriptor const& rhs
+  )
   {
     return &lhs == &rhs || cpprtl::rtti::aux_::strzcmp(&lhs.name, &rhs.name);
   }
@@ -59,7 +63,7 @@ namespace rtti
   pcobj_t pointer_cast(pcobj_t const complete_obj, msvc_internal_data::rtti::subtype_cast_info const& cast_info)
   {
     ::size_t ptr = reinterpret_cast< ::size_t>(complete_obj);
-    if (cast_info.vbase_table_offset >= 0)
+    if ( cast_info.vbase_table_offset >= 0 )
     {
       ptr += cast_info.vbase_table_offset;
       ptr += *reinterpret_cast<int*>(*reinterpret_cast< ::size_t*>(ptr) + cast_info.vbase_disp_offset);
@@ -79,7 +83,7 @@ namespace rtti
   {
     msvc_internal_data::rtti::complete_object_locator const* pcol = get_complete_object_locator(src_obj);
     ::size_t complete_obj = reinterpret_cast< ::size_t>(src_obj) - pcol->offset;
-    if (pcol->cd_offset)
+    if ( pcol->cd_offset )
     {
       complete_obj -= (reinterpret_cast< ::size_t>(src_obj) - pcol->cd_offset);
     }
@@ -95,9 +99,7 @@ namespace rtti
     complete_object(pcobj_t src)
       : locator(get_complete_object_locator(src))
       , ptr(get_complete_object(src))
-    {
-    }
-
+    {}
 
     bool check() const  // TODO ?
     {
@@ -120,18 +122,18 @@ namespace rtti
   {
     // checks for downcast (base to derived). upcasts are expected to be resolved at compile time
     class_hierarchy ch(complete_obj.locator, image_base);
-    for (base_class_iterator dst_bc(*base_class_array(*ch, image_base), *ch, image_base); dst_bc.valid(); dst_bc.next())
+    for ( base_class_iterator dst_bc(*base_class_array(*ch, image_base), *ch, image_base); dst_bc.valid(); dst_bc.next() )
     {
-      if (dst_type_dsc == **base_class_type_descriptor(*dst_bc, image_base))
+      if ( dst_type_dsc == **base_class_type_descriptor(*dst_bc, image_base) )
       {
         base_class_iterator src_bc(dst_bc);
-        for (src_bc.next(); src_bc.valid(); src_bc.next())
+        for ( src_bc.next(); src_bc.valid(); src_bc.next() )
         {
-          if (src_bc->attributes & msvc_internal_data::rtti::BC_NOT_PUBLIC_BASE)
+          if ( src_bc->attributes & msvc_internal_data::rtti::BC_NOT_PUBLIC_BASE )
           {
             break;
           }
-          if (src_type_dsc == **base_class_type_descriptor(*src_bc, image_base))
+          if ( src_type_dsc == **base_class_type_descriptor(*src_bc, image_base) )
           {
             return *src_bc;
           }
@@ -155,7 +157,8 @@ namespace rtti
       msvc_internal_data::rtti::base_class_descriptor2 const* bc_ret = *dst;
       if 
       (
-        src->attributes &  msvc_internal_data::rtti::BC_NOT_VISIBLE  ||
+        src->attributes &  msvc_internal_data::rtti::BC_NOT_VISIBLE
+      ||
         dst->attributes & (msvc_internal_data::rtti::BC_NOT_VISIBLE | msvc_internal_data::rtti::BC_AMBIGUOUS)
       )
       {
@@ -183,9 +186,14 @@ namespace rtti
           }
         }
       }
-      else   // our base_class_descriptor2* is actually just an base_class_descriptor*
+      else  // our base_class_descriptor2* is actually just an base_class_descriptor*
       {
-        if ( dst.index() == 0  &&  (src->attributes & msvc_internal_data::rtti::BC_NOT_VISIBLE) )
+        if
+        (
+          dst.index() == 0
+        &&
+          (src->attributes & msvc_internal_data::rtti::BC_NOT_VISIBLE)
+        )
         {
           bc_ret = 0;
         }
@@ -201,11 +209,11 @@ namespace rtti
   /////////////////////////////////////////////////////////
   msvc_internal_data::rtti::base_class_descriptor2 const* dynamic_cast_multiple_inheritance
   (
-    complete_object                              const&  complete_obj
-  , ::size_t                                     const&  src_obj_offset
-  , msvc_internal_data::rtti::type_descriptor    const&  src_type_dsc
-  , msvc_internal_data::rtti::type_descriptor    const&  dst_type_dsc
-  , ::size_t                                     const&  image_base
+    complete_object                           const&  complete_obj
+  , ::size_t                                  const&  src_obj_offset
+  , msvc_internal_data::rtti::type_descriptor const&  src_type_dsc
+  , msvc_internal_data::rtti::type_descriptor const&  dst_type_dsc
+  , ::size_t                                  const&  image_base
   )
   {
     class_hierarchy ch(complete_obj.locator, image_base);
@@ -230,13 +238,14 @@ namespace rtti
 
       if
       (
-          src_type_dsc == **base_class_type_descriptor(*bc_iter, image_base)
-      &&  reinterpret_cast< ::size_t>(complete_obj.ptr) + src_obj_offset == reinterpret_cast< ::size_t>(pointer_cast(complete_obj.ptr, bc_iter->cast_info))
+        src_type_dsc == **base_class_type_descriptor(*bc_iter, image_base)
+      &&
+        reinterpret_cast< ::size_t>(complete_obj.ptr) + src_obj_offset == reinterpret_cast< ::size_t>(pointer_cast(complete_obj.ptr, bc_iter->cast_info))
       )
       {
         if ( dst_bc.valid() )
         {
-          if (bc_iter.index() - dst_bc.index() <= dst_bc->num_contained_bases)  // base-derived cast
+          if ( bc_iter.index() - dst_bc.index() <= dst_bc->num_contained_bases )  // base-derived cast
           {
             return mi_aux_::check_down_cast(bc_iter, dst_bc);
           }
@@ -270,13 +279,13 @@ namespace rtti
       ::size_t down_cast_dst_offset;
 
       vi_walker_state(complete_object const& co)
-        : complete_obj(co)
-        , down_cast_allowed(true)
-        , directly_public(false)
-        , cross_cast_src(0)
-        , cross_cast_dst(0)
-        , down_cast_dst(0)
-        , down_cast_dst_offset(0)
+        : complete_obj         ( co )
+        , down_cast_allowed    ( true )
+        , directly_public      ( false )
+        , cross_cast_src       ( 0 )
+        , cross_cast_dst       ( 0 )
+        , down_cast_dst        ( 0 )
+        , down_cast_dst_offset ( 0 )
       {}
     };
 
@@ -318,19 +327,29 @@ namespace rtti
             state.directly_public = !(src_in_dst->attributes & msvc_internal_data::rtti::BC_NOT_PUBLIC_BASE);
           }
         }
-        else   // our base_class_descriptor2* is actually just an base_class_descriptor*
+        else  // our base_class_descriptor2* is actually just an base_class_descriptor*
         {
-          if ( dst.index() == 0  &&  (src->attributes & msvc_internal_data::rtti::BC_NOT_VISIBLE) )
+          if
+          (
+            dst.index() == 0
+          && 
+            (src->attributes & msvc_internal_data::rtti::BC_NOT_VISIBLE)
+          )
           {
             state.down_cast_allowed = false;
           }
           state.directly_public = true;
         } 
 
-        if (state.down_cast_allowed && state.directly_public)
+        if ( state.down_cast_allowed && state.directly_public )
         {
           ::size_t const current_dst_offset = reinterpret_cast< ::size_t>(pointer_cast(state.complete_obj.ptr, dst->cast_info)) - reinterpret_cast< ::size_t>(state.complete_obj.ptr);
-          if (state.down_cast_dst && current_dst_offset != state.down_cast_dst_offset)
+          if
+          (
+            state.down_cast_dst
+          &&
+            current_dst_offset != state.down_cast_dst_offset
+          )
           {
             return false;  // ambiguous dst
           }
@@ -350,11 +369,11 @@ namespace rtti
   /////////////////////////////////////////////////////////
   msvc_internal_data::rtti::base_class_descriptor2 const* dynamic_cast_virtual_inheritance
   (
-    complete_object                             const&  complete_obj
-  , ::size_t                                    const&  src_obj_offset
-  , msvc_internal_data::rtti::type_descriptor   const&  src_type_dsc
-  , msvc_internal_data::rtti::type_descriptor   const&  dst_type_dsc
-  , ::size_t                                    const&  image_base
+    complete_object                           const&  complete_obj
+  , ::size_t                                  const&  src_obj_offset
+  , msvc_internal_data::rtti::type_descriptor const&  src_type_dsc
+  , msvc_internal_data::rtti::type_descriptor const&  dst_type_dsc
+  , ::size_t                                  const&  image_base
   )
   {
     vi_aux_::vi_walker_state vi_state(complete_obj);
@@ -375,8 +394,9 @@ namespace rtti
 
       if
       (
-          src_type_dsc == **base_class_type_descriptor(*bc_iter, image_base)
-      &&  reinterpret_cast< ::size_t>(complete_obj.ptr) + src_obj_offset == reinterpret_cast< ::size_t>(pointer_cast(complete_obj.ptr, bc_iter->cast_info))
+        src_type_dsc == **base_class_type_descriptor(*bc_iter, image_base)
+      &&
+        reinterpret_cast< ::size_t>(complete_obj.ptr) + src_obj_offset == reinterpret_cast< ::size_t>(pointer_cast(complete_obj.ptr, bc_iter->cast_info))
       )
       {
         if ( dst_bc.valid()  &&  bc_iter.index() - dst_bc.index() <= dst_bc->num_contained_bases )   // down-cast
@@ -393,12 +413,12 @@ namespace rtti
       }
     }
 
-    if (vi_state.down_cast_allowed && vi_state.down_cast_dst)
+    if ( vi_state.down_cast_allowed && vi_state.down_cast_dst )
     {
       return vi_state.down_cast_dst;
     }
 
-    if (vi_state.cross_cast_src && vi_state.cross_cast_dst)
+    if ( vi_state.cross_cast_src && vi_state.cross_cast_dst )
     {
       return vi_state.cross_cast_dst;
     }
@@ -410,21 +430,20 @@ namespace rtti
 ///////////////////////////////////////////////////////
   void* dynamic_cast_impl
   (
-    pcobj_t src_obj
-  , long vfdelta
-  , msvc_internal_data::rtti::type_descriptor const& src_type_dsc
-  , msvc_internal_data::rtti::type_descriptor const& dst_type_dsc
-  , bool is_ref
+    pcobj_t                                           src_obj
+  , long                                              vfdelta
+  , msvc_internal_data::rtti::type_descriptor const&  src_type_dsc
+  , msvc_internal_data::rtti::type_descriptor const&  dst_type_dsc
+  , bool                                              is_ref
   )
   {
     pcobj_t dst_obj = 0;
-
-    if (src_obj)
+    if ( src_obj )
     {
       __try
       {
         complete_object const complete_obj(src_obj);
-        if (complete_obj.check())
+        if ( complete_obj.check() )
         {
           reinterpret_cast< ::size_t&>(src_obj) -= vfdelta;
           cpprtl::image_base_t image_base = get_image_base(complete_obj.locator);
@@ -445,7 +464,7 @@ namespace rtti
             base_class = dynamic_cast_virtual_inheritance(complete_obj, src_obj_offset, src_type_dsc, dst_type_dsc, image_base);
           }
   
-          if (base_class)
+          if ( base_class )
           {
             dst_obj = pointer_cast(complete_obj.ptr, base_class->cast_info);
           }
@@ -453,11 +472,10 @@ namespace rtti
       }
       __except (exception_access_violation_seh_filter(GetExceptionCode()))
       {
-        // do avoid the nested exceptions for not to come to stack exhaustion in ke-mode
         dst_obj = 0;
       }
     }
-    if (is_ref && ! dst_obj)
+    if ( is_ref && !dst_obj )
     {
       throw bad_cast_t();
     }
@@ -469,12 +487,12 @@ namespace rtti
 ///////////////////////////////////////////////////////
   void* typeid_impl(pcobj_t src_obj)
   {
-    if (src_obj)
+    if ( src_obj )
     {
       __try
       {
         complete_object const complete_obj(src_obj);
-        if (complete_obj.check())
+        if ( complete_obj.check() )
         {
           ::size_t image_base = get_image_base(complete_obj.locator);
           complete_object_type_descriptor type_dsc(complete_obj.locator, image_base);
@@ -486,7 +504,6 @@ namespace rtti
       }
       __except (exception_access_violation_seh_filter(GetExceptionCode()))
       {
-      // do avoid the nested exceptions for not to come to stack exhaustion in ke-mode
       }
     }
     throw bad_typeid_t();
@@ -499,30 +516,23 @@ namespace rtti
   {
     pcobj_t dst_obj = 0;
     bool throw_bad_cast = false;
-    if (src_obj)
+    if ( src_obj )
     {
       __try
       {
         complete_object const complete_obj(src_obj);
-        if (complete_obj.check())
+        if ( complete_obj.check() )
         {
           dst_obj = complete_obj.ptr;
         }
       }
       __except (exception_access_violation_seh_filter(GetExceptionCode()))
       {
-      // do avoid the nested exceptions for not to come to stack exhaustion in ke-mode
-        throw_bad_cast = true;
+        throw bad_cast_t();
       }
     }
-    if ( throw_bad_cast )
-    {
-      throw bad_cast_t();
-    }
-
     return const_cast<pobj_t>(dst_obj);
   }
-
 
 }  // namespace rtti
 }  // namespace cpprtl

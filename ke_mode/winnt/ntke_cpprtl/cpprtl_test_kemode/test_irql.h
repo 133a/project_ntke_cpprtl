@@ -14,7 +14,7 @@
 
 namespace cpprtl_tests
 {
-  int test_irql(testFT []);
+  int test_irql(test_type const []);
 }
 
 

@@ -19,18 +19,13 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    UNEXPECTED_CATCH3         = -4,
-    MAGIC_VALUE15             = 8798,
+    EH_OK              = 0,
+    UNEXPECTED_CATCH1  = -2,
+    UNEXPECTED_CATCH2  = -3,
+    UNEXPECTED_CATCH3  = -4,
+    MAGIC_VALUE15      = 8798,
   };
-}
 
-
-namespace
-{
 
   class exc_base00
   {
@@ -95,7 +90,6 @@ namespace
   };
 
 
-
   struct inh_test
     : public exc_base01
   {
@@ -128,7 +122,7 @@ namespace
     }
   };
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -140,7 +134,6 @@ namespace cpprtl { namespace test { namespace eh
     ctx.state = EH_OK;
     try
     {
-
       try 
       {
         throw inh_test(ctx, MAGIC_VALUE15);
@@ -150,13 +143,11 @@ namespace cpprtl { namespace test { namespace eh
         // we can do the cast 'cos the object is caught by ref and the derived object is certainly known to be in place
         ctx.state += (static_cast<inh_test const&>(e)).i;
       }
-      catch ( ... )
+      catch (...)
       {
         ctx.state = UNEXPECTED_CATCH1;
         throw;
       }
-
-
 
       try 
       {
@@ -166,13 +157,11 @@ namespace cpprtl { namespace test { namespace eh
       {
         ctx.state += (static_cast<inh_test const&>(e)).i;
       }
-      catch ( ... )
+      catch (...)
       {
         ctx.state = UNEXPECTED_CATCH2;
         throw;
       }
-
-
 
       try 
       {
@@ -182,14 +171,13 @@ namespace cpprtl { namespace test { namespace eh
       {
         ctx.state += ex.i;
       }
-      catch ( ... )
+      catch (...)
       {
         ctx.state = UNEXPECTED_CATCH3;
         throw;
       }
-
     }
-    catch ( ... )
+    catch (...)
     {
     }
 

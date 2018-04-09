@@ -19,8 +19,7 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
+    EH_OK = 0,
   };
 }
 
@@ -30,13 +29,13 @@ namespace cpprtl { namespace test { namespace eh
 
   int test01()
   {
-    context ctx(EH_OK);
+    context ctx(EH_OK);  // EH_OK is expected
   
     try
     {
       throw 1;
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = EH_OK;
     }

@@ -206,8 +206,8 @@ namespace cpprtl_tests
     template <typename PLD>
     bool spawn(PLD const& pld, std::size_t const& = 0)
     {
-      typedef apc_transmitter<apc_type, apc_mode, PLD> apc_transmitter_type;
-      return NT_SUCCESS(kt.spawn(apc_transmitter_type(apc, st, pld, 0)));
+      typedef apc_transmitter<apc_type, apc_mode, PLD> apc_transmitter;
+      return NT_SUCCESS(kt.spawn(apc_transmitter(apc, st, pld, 0)));
     }
 
     void acquire()
@@ -256,13 +256,12 @@ namespace cpprtl_tests
     template <typename PLD>
     bool spawn(PLD const& pld, std::size_t const& = 0)
     {
-      typedef apc_receiver apc_receiver_type;
-      if ( !NT_SUCCESS(kt_rx.spawn(apc_receiver_type(stop_evt))) )
+      if ( !NT_SUCCESS(kt_rx.spawn(apc_receiver(stop_evt))) )
       {
         return false;
       }
-      typedef apc_transmitter<apc_type, apc_mode, PLD> apc_transmitter_type;
-      if ( !NT_SUCCESS(kt_tx.spawn(apc_transmitter_type(apc, st, pld, kt_rx.native_type()))) )
+      typedef apc_transmitter<apc_type, apc_mode, PLD> apc_transmitter;
+      if ( !NT_SUCCESS(kt_tx.spawn(apc_transmitter(apc, st, pld, kt_rx.native_type()))) )
       {
         return false;
       }
@@ -294,7 +293,7 @@ namespace cpprtl_tests
 {
 
   template <typename APC_TASK_TYPE>
-  int test_apc_impl(testFT tests[], std::size_t const& task_num)
+  int test_apc_impl(test_type const tests[], std::size_t const& task_num)
   {
     typedef aux_::task_bunch<APC_TASK_TYPE> apc_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
@@ -328,7 +327,7 @@ namespace cpprtl_tests
   }
 
 
-  int test_apc(testFT tests[])
+  int test_apc(test_type const tests[])
   {
     using aux_::kapc;
     DbgPrint("test_apc() : special, self-rx\n");
@@ -352,7 +351,7 @@ namespace cpprtl_tests
   }
 
 
-  int test_apc_mt(testFT tests[])
+  int test_apc_mt(test_type const tests[])
   {
     using aux_::kapc;
     std::size_t const task_num = aux_::get_number_processors() * APC_FACTOR;

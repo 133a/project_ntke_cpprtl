@@ -18,18 +18,15 @@ namespace
 extern "C"
 {
   // malloc() and free() are used by stlport 'class __Named_exception' to maintain the buffer containing a string with an exception-related data
-
   void* __cdecl malloc(size_t sz)
   {
     return cpprtl::heap::alloc(sz, NonPagedPool, rtl_memtag);
   }
 
-
   void __cdecl free(void* ptr)
   {
     return cpprtl::heap::dealloc(ptr);
   }
-
 }  // extern "C"
 
 

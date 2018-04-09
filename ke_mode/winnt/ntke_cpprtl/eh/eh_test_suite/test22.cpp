@@ -19,20 +19,15 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    UNEXPECTED_CATCH3         = -4,
-    UNEXPECTED_CATCH4         = -5,
-    SPECIAL_EXCEPTION22       = 22,
-    MAGIC_DTOR22              = 1010,
+    EH_OK                = 0,
+    UNEXPECTED_CATCH1    = -2,
+    UNEXPECTED_CATCH2    = -3,
+    UNEXPECTED_CATCH3    = -4,
+    UNEXPECTED_CATCH4    = -5,
+    SPECIAL_EXCEPTION22  = 22,
+    MAGIC_DTOR22         = 1010,
   };
-}
 
-
-namespace
-{
 
   class base00
   {
@@ -107,7 +102,7 @@ namespace
       }
     //  implicit 'throw;' is here
     }
-    catch ( ... )
+    catch (...)
     {
       c_.state = UNEXPECTED_CATCH3;
     }
@@ -120,7 +115,7 @@ namespace
     }
   };
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -145,17 +140,17 @@ namespace cpprtl { namespace test { namespace eh
         ctx.state = UNEXPECTED_CATCH2;
       }
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH1;
     }
 
-#if defined ( _MSC_VER ) && ( _MSC_VER < 1310 )
+  #if defined (_MSC_VER) && (_MSC_VER < 1310)
     //  ddk2600 x86 cl seems to generate a bit buggy code so let's just return a good context balance and take a look at the actual ctx in a debugger
     return 0;
-#else
+  #else
     return ctx.balance();
-#endif  // _MSC_VER < 1310
+  #endif  // (_MSC_VER < 1310)
   }
 
 }  }  }

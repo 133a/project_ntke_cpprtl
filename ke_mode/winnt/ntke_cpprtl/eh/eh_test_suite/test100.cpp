@@ -19,29 +19,23 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    UNEXPECTED_CATCH3         = -4,
-    UNEXPECTED_CATCH4         = -5,
-    UNEXPECTED_CATCH5         = -6,
-    UNEXPECTED_CATCH6         = -7,
-    SPECIAL_EXCEPTION100      = 100,
-    MAGIC_DTOR100             = 1010,
+    EH_OK                 = 0,
+    UNEXPECTED_CATCH1     = -2,
+    UNEXPECTED_CATCH2     = -3,
+    UNEXPECTED_CATCH3     = -4,
+    UNEXPECTED_CATCH4     = -5,
+    UNEXPECTED_CATCH5     = -6,
+    UNEXPECTED_CATCH6     = -7,
+    SPECIAL_EXCEPTION100  = 100,
+    MAGIC_DTOR100         = 1010,
   };
-}
 
-
-namespace
-{
 
   class base00
   {
     context& ctx;
 
   public:
-
     explicit base00(context& c_)
       : ctx  ( c_ )
     {
@@ -58,14 +52,12 @@ namespace
   };
 
 
-
   class base01
     : public base00
   {
     context& ctx;
 
   public:
-
     base01(context& c_)
     try
       : base00  ( c_ )
@@ -90,7 +82,7 @@ namespace
       }
       throw;
     }
-    catch ( ... )
+    catch (...)
     {
       c_.state = UNEXPECTED_CATCH5;
     }
@@ -131,7 +123,7 @@ namespace
       }
     //  implicit 'throw;' is here
     }
-    catch ( ... )
+    catch (...)
     {
       c_.state = UNEXPECTED_CATCH3;
     }
@@ -144,7 +136,7 @@ namespace
     }
   };
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -169,17 +161,17 @@ namespace cpprtl { namespace test { namespace eh
         ctx.state = UNEXPECTED_CATCH2;
       }
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH1;
     }
 
-#if defined ( _MSC_VER ) && ( _MSC_VER < 1310 )
+#if defined (_MSC_VER) && (_MSC_VER < 1310)
     //  ddk2600 x86 cl seems to generate a bit bugly unwinding code so let's just return a good context balance and see the actual ctx in debugger
     return 0;
 #else
     return ctx.balance();
-#endif  // _MSC_VER < 1310
+#endif  // (_MSC_VER < 1310)
   }
 
 }  }  }

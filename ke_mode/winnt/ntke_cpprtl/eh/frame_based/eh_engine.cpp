@@ -143,7 +143,7 @@ namespace eh_type
       0 == *catch_typeinfo
     ||
       0 == catch_typeinfo->name
-    )  // ( ... ) check
+    )  // (...) check
     {
       return true;
     }
@@ -153,7 +153,7 @@ namespace eh_type
       *catchable_typeinfo != *catch_typeinfo
     &&
       !aux_::strzcmp(&catchable_typeinfo->name, &catch_typeinfo->name)
-    ) // type_info equality check
+    )  // type_info equality check
     {
       return false;
     }

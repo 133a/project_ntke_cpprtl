@@ -79,10 +79,13 @@ namespace cpprtl { namespace test { namespace stl
         int_obj_vector test_vec1;
         if
         (
-          ! test_vec1.empty()
-          || test_vec1.size() != 0
-          || std::distance(test_vec1.begin(), test_vec1.end()) != 0
-          || std::distance(test_vec1.rbegin(), test_vec1.rend()) != 0
+          !test_vec1.empty()
+        ||
+          test_vec1.size() != 0
+        ||
+          std::distance(test_vec1.begin(), test_vec1.end()) != 0
+        ||
+          std::distance(test_vec1.rbegin(), test_vec1.rend()) != 0
         )
         {
           throw aux_::test_error(TEST_EMPTY_VECTOR_FAILED0);
@@ -94,7 +97,7 @@ namespace cpprtl { namespace test { namespace stl
             int_obj_vector::value_type v = test_vec1.at(0);
             throw aux_::test_error(TEST_OUT_OF_RANGE_FAILED);
           }
-          catch ( std::out_of_range& )
+          catch (std::out_of_range&)
           {
             break;  //  test is passed;
           }
@@ -198,19 +201,19 @@ namespace cpprtl { namespace test { namespace stl
         throw aux_::test_error(TEST_ERROR_BAD_BALANCE);
       }
     }
-    catch ( aux_::test_error const& t )
+    catch (aux_::test_error const& t)
     {
       state = t.err;
     }
-    catch ( std::bad_alloc& )
+    catch (std::bad_alloc&)
     {
       state = UNEXPECTED_STD_BAD_ALLOC;
     }
-    catch ( std::exception& )
+    catch (std::exception&)
     {
       state = UNEXPECTED_STD_EXCEPTION;
     }
-    catch ( ... )
+    catch (...)
     {
       state = UNEXPECTED_ERROR;
     }

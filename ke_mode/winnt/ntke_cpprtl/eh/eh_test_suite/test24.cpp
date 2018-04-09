@@ -19,13 +19,12 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH1         = -2,
-    UNEXPECTED_CATCH2         = -3,
-    UNEXPECTED_CATCH3         = -4,
-    SPECIAL_EXCEPTION24       = 24,
-    CYCLE_COUNT24             = 16,
+    EH_OK                = 0,
+    UNEXPECTED_CATCH1    = -2,
+    UNEXPECTED_CATCH2    = -3,
+    UNEXPECTED_CATCH3    = -4,
+    SPECIAL_EXCEPTION24  = 24,
+    CYCLE_COUNT24        = 16,
   };
 }
 
@@ -35,12 +34,10 @@ namespace cpprtl { namespace test { namespace eh
 
   int test24()
   {
-    context ctx ( CYCLE_COUNT24 );  //
+    context ctx(CYCLE_COUNT24);  //
     ctx.state = EH_OK;
-
     try
     {
-
       eh_test et(ctx);
       while ( ctx.state < CYCLE_COUNT24 )
       {
@@ -61,19 +58,17 @@ namespace cpprtl { namespace test { namespace eh
           ctx.state = UNEXPECTED_CATCH3;
           break;
         }
-        catch ( ... )
+        catch (...)
         {
           ctx.state = UNEXPECTED_CATCH2;
           break;
         }
       }
-
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH1;
     }
-
     return ctx.balance();
   }
 

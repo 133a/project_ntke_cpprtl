@@ -53,7 +53,7 @@ namespace
   //  , &test29
 
 
-#if !defined ( NT_KERNEL_MODE )  ||  !defined ( NTKE_EH_CONFIG_DO_NOT_USE_STACK_WALKER )   //  stack-consuming tests are meant
+#if !defined (NT_KERNEL_MODE) || !defined (NTKE_EH_CONFIG_DO_NOT_USE_STACK_WALKER)  // stack-consuming tests are meant
     , &test100
   //  , &test101
   //  , &test102

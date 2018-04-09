@@ -19,19 +19,14 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    UNEXPECTED_CATCH          = -2,
-    INIT07                    = 20,
-    THROW07                   = 30,
-    RETURN1                   = 111,
-    RETURN2                   = 232,
+    EH_OK             = 0,
+    UNEXPECTED_CATCH  = -2,
+    INIT07            = 20,
+    THROW07           = 30,
+    RETURN1           = 111,
+    RETURN2           = 232,
   };
-}
 
-
-namespace
-{
 
   int f2()
   {
@@ -53,7 +48,7 @@ namespace
     return RETURN1;
   }
 
-}
+}  // namespace
 
 
 namespace cpprtl { namespace test { namespace eh
@@ -61,18 +56,18 @@ namespace cpprtl { namespace test { namespace eh
 
   int test07()
   {
-    context ctx(INIT07 + THROW07) ;
+    context ctx(INIT07 + THROW07);
     ctx.state = INIT07;
   
     try
     {
       ctx.state = f1();
     }
-    catch (int i) // THROW07 is expected
+    catch (int i)  // THROW07 is expected
     {
       ctx.state += i;
     }
-    catch ( ... )
+    catch (...)
     {
       ctx.state = UNEXPECTED_CATCH; 
     }
