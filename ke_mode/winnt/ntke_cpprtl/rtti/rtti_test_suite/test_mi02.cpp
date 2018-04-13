@@ -81,7 +81,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   int test_mi02()
   {
-    int ret = 0;
+    int ret = RTTI_OK;
     derived d;
 
     try
@@ -135,7 +135,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   ////// down-casts
       // down-cast
-      ++ ret;
+      ++ret;
       {
         base002* const b002_sta = &d;
         base21* const b21_sta = &d;
@@ -150,7 +150,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // wrong down-cast
-      ++ ret;
+      ++ret;
       {
         base000* const b000_sta = (base000*)&d;
         base01* const b01_dyn = dynamic_cast<base01*>(b000_sta);
@@ -168,7 +168,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // down-cast
-      ++ ret;
+      ++ret;
       {
         base02* const b02_sta = (base02*)&d;
         base12* const b12_sta = (base12*)&d;
@@ -183,7 +183,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // wrong down-cast
-      ++ ret;
+      ++ret;
       {
         base00* const b00_sta = (base00*)&d;
         derived* const pd_dyn = dynamic_cast<derived*>(b00_sta);
@@ -198,7 +198,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   ////// left-right cross-casts
       // left-right cross-cast
-      ++ ret;
+      ++ret;
       {
         base001* const b001_sta = &d;
         base002* const b002_sta = &d;
@@ -212,7 +212,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // wrong left-right cross-cast
-      ++ ret;
+      ++ret;
       {
         base000* const b000_sta = (base000*)&d;
         base002* const b002_dyn = dynamic_cast<base002*>(b000_sta);
@@ -225,7 +225,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // left-right cross-cast
-      ++ ret;
+      ++ret;
       {
         base10* const b10_sta = &d;
         base32* const b32_sta = &d;
@@ -239,7 +239,7 @@ namespace cpprtl { namespace test { namespace rtti
 
 
       // wrong left-right cross-cast
-      ++ ret;
+      ++ret;
       {
         base00* const b00_sta = (base00*)&d;
         base22* const b22_dyn = dynamic_cast<base22*>(b00_sta);
@@ -253,7 +253,7 @@ namespace cpprtl { namespace test { namespace rtti
 
       // wrong left-right cross-cast
       // TODO icl fails
-      ++ ret;
+      ++ret;
 #ifndef __ICL
       {
         base30* const b30_sta = &d;
@@ -269,7 +269,7 @@ namespace cpprtl { namespace test { namespace rtti
    
   ////// right-left cross-casts
       // right-left cross-cast
-      ++ ret;
+      ++ret;
       {
         base002* const b002_sta = &d;
         base001* const b001_sta = &d;
@@ -283,7 +283,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // wrong right-left cross-cast
-      ++ ret;
+      ++ret;
       {
         base002* const b002_sta = (base002*)&d;
         base000* const b000_dyn = dynamic_cast<base000*>(b002_sta);
@@ -296,7 +296,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // right-left cross-cast
-      ++ ret;
+      ++ret;
       {
         base42* const b42_sta = &d;
         base21* const b21_sta = &d;
@@ -311,7 +311,7 @@ namespace cpprtl { namespace test { namespace rtti
 
       // wrong right-left cross-cast
       // TODO icl fails
-      ++ ret;
+      ++ret;
 #ifndef  __ICL
       {
         base02* const b02_sta = (base02*)&d;
@@ -326,7 +326,7 @@ namespace cpprtl { namespace test { namespace rtti
 
 
       // wrong right-left cross-cast
-      ++ ret;
+      ++ret;
       {
         base32* const b32_sta = &d;
         base00* const b00_dyn = dynamic_cast<base00*>(b32_sta);
@@ -338,7 +338,7 @@ namespace cpprtl { namespace test { namespace rtti
       }
 
 
-      ret = 0;  // one would get here only if tests were passed successfully
+      ret = RTTI_OK;  // one would get here only if tests passed successfully
     }
     catch (int& i)
     {
@@ -346,15 +346,15 @@ namespace cpprtl { namespace test { namespace rtti
     }
     catch (std::bad_cast&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_CAST;
     }
     catch (std::bad_typeid&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_TYPEID;
     }
     catch (...)
     {
-      ret = -ret;
+      ret += ERROR_UNEXPECTED;
     }
     return ret;
   }

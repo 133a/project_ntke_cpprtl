@@ -28,7 +28,7 @@
     LEAF_ENTRY _CPPRTL_execute_frame_handler_handler
 
         sub    r1 , r1, #offset_EHF              ; adjust the 'r1' to point to the 'EFH_frame'
-        ldr    r2 , [r1 , #EFH_Unwind]           ; check if the executor this handler responsible for was invoked while an unwinding phase
+        ldr    r2 , [r1 , #EFH_Unwind]           ; check if the executor this handler responsible for was invoked while the unwinding phase
         cbnz   r2 , EHunwind                     ; go to perform the preemption of the dispatcher context,
         ldr    r2 , [r0 , #ErExceptionFlags]     ; else check if the current exception record is 
         tst    r2 , #EXCEPTION_UNWIND            ; involved in the unwinding,
@@ -81,7 +81,7 @@ EHret
 
     ;  r0  EXCEPTION_RECORD*    -  the current exception record
     ;  r1  void*                -  the frame the language-specific handler to be invoked for
-    ;  r2  CONTEXT*             -  the context record (of the throwed function on dispatching, and of the function to be unwound while unwinding phase)
+    ;  r2  CONTEXT*             -  the context record (of the throwed function on dispatching, and of the function to be unwound while the unwinding phase)
     ;  r3  DISPATCHER_CONTEXT*  -  the current dispatching loop context
     NESTED_ENTRY _CPPRTL_execute_frame_handler , , _CPPRTL_execute_frame_handler_handler
 
@@ -92,7 +92,7 @@ EHret
         mov    lr , #0                        ; clear the
         str    lr , [sp , #EFH_Unwind]        ; unwind flag,
         ldr    lr , [r0 , #ErExceptionFlags]  ; detect the executor is being
-        tst    lr , #EXCEPTION_UNWIND         ; invoked at the dispatching or unwinding phase
+        tst    lr , #EXCEPTION_UNWIND         ; invoked aither at the dispatching or unwinding phase
         beq    EHexecute                      ; and
         mov    lr , #1                        ; save the flag on 
         str    lr , [sp , #EFH_Unwind]        ; the current stack frame.

@@ -19,11 +19,11 @@ namespace
 {
   enum
   {
-    EH_OK              = 0,
-    UNEXPECTED_CATCH1  = -2,
-    UNEXPECTED_CATCH2  = -3,
-    UNEXPECTED_CATCH3  = -4,
-    MAGIC_VALUE12      = 8459,
+    EH_OK              = 0
+  , MAGIC_VALUE12      = 120
+  , UNEXPECTED_CATCH1  = 121
+  , UNEXPECTED_CATCH2  = 122
+  , UNEXPECTED_CATCH3  = 123
   };
 
 

@@ -5,14 +5,16 @@
 /////////////////////////////////////////////////////////////////////////////
 
 
-#include <rtl_framework_specific_header.h>
+#ifdef NT_KERNEL_MODE
+#  include "ntddk.include.h"
+#endif
 
 
 namespace
 {
   enum
   {
-    TEST_CTOR = 5467,
+    TEST_CTOR = 201,
     TEST_DTOR,
   };
 
@@ -44,19 +46,17 @@ namespace
     }
   };
 
-  ctest         t001;
+  ctest         t201;
 }
-ctest           t002;
-static ctest    t003;
+ctest           t202;
+static ctest    t203;
 
 
 namespace cpprtl { namespace test { namespace gstatic
 {
-
   int test_gstatic02()
   {
-    return res - 3*TEST_CTOR ;
+    return res - 3*TEST_CTOR;
   }
-
 }  }  }
 

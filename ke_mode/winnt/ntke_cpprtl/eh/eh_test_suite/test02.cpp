@@ -19,13 +19,13 @@ namespace
 {
   enum
   {
-    EH_OK = 0,
+    EH_OK = 0
   };
 
 
   int      const  int02  = 356;
   char     const  char02 = 'a';
-  unsigned const  uint02 = 897;
+  unsigned const  uint02 = 789;
 }
 
 

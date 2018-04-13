@@ -57,7 +57,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   int test_mi03()
   {
-    int ret = 0;
+    int ret = RTTI_OK;
     derived d;
 
     try
@@ -106,7 +106,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   ////// down-casts
       // down-cast
-      ++ ret;
+      ++ret;
       {
         base20* const b20_sta = &d;
         base00* const b00_sta0 = b20_sta;
@@ -122,7 +122,7 @@ namespace cpprtl { namespace test { namespace rtti
     
       // wrong down-cast
       // TODO icl fails
-      ++ ret;
+      ++ret;
 #ifndef  __ICL
       {
         base32* const b32_sta = &d;
@@ -139,7 +139,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   ////// up-casts
       // compile-time up-cast
-      ++ ret;
+      ++ret;
       {
         base21* const b21_sta = &d;
         base00* const b00_sta1 = b21_sta;
@@ -155,7 +155,7 @@ namespace cpprtl { namespace test { namespace rtti
       // wrong up-cast
       // icl error: base class "<unnamed>::base100" is ambiguous
       // bcc64 error: ambiguous conversion from derived class '<anonymous>::base300' to base class '<anonymous>::base100'
-      ++ ret;
+      ++ret;
 #if !defined (__ICL) && !defined (__CODEGEARC__)
       {
         base300* const b300_sta = &d;
@@ -171,7 +171,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   ////// left-right cross-casts
       // left-right cross-cast
-      ++ ret;
+      ++ret;
       {
         base20* const b20_sta = &d;
         base00* const b00_sta0 = b20_sta;
@@ -187,7 +187,7 @@ namespace cpprtl { namespace test { namespace rtti
     
   ////// right-left cross-casts
       // right-left cross-cast
-      ++ ret;
+      ++ret;
       {
         base21* const b21_sta = &d;
         base00* const b00_sta1 = b21_sta;
@@ -204,7 +204,7 @@ namespace cpprtl { namespace test { namespace rtti
       // wrong right-left cross-cast
       // icl error #312: conversion to inaccessible base class "<unnamed>::base100" is not allowed
       // bcc64 error: cannot cast '<anonymous>::base22' to its private base class '<anonymous>::base100'
-      ++ ret;
+      ++ret;
 #if !defined (__ICL) && !defined (__CODEGEARC__)
       {
         base22* const b22_sta = &d;
@@ -220,7 +220,7 @@ namespace cpprtl { namespace test { namespace rtti
 
       // wrong right-left cross-cast
       // TODO icl fails
-      ++ ret;
+      ++ret;
 #ifndef  __ICL
       {
         base32* const b32_sta = &d;
@@ -235,7 +235,7 @@ namespace cpprtl { namespace test { namespace rtti
 #endif
 
 
-      ret = 0;  // one would get here only if tests were passed successfully
+      ret = RTTI_OK;  // one would get here only if tests passed successfully
     }
     catch (int& i)
     {
@@ -243,15 +243,15 @@ namespace cpprtl { namespace test { namespace rtti
     }
     catch (std::bad_cast&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_CAST;
     }
     catch (std::bad_typeid&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_TYPEID;
     }
     catch (...)
     {
-      ret = -ret;
+      ret += ERROR_UNEXPECTED;
     }
     return ret;
   }

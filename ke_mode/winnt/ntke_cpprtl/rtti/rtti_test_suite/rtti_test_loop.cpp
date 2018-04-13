@@ -11,10 +11,16 @@
 
 namespace
 {
+  enum
+  {
+    IDX_FACTOR = 10000000
+  };
+
+
   using namespace cpprtl::test::rtti;
 
 
-  test_ft* test_table_thread_safe[] =
+  test_ft* const test_table_thread_safe[] =
   {
     0
 
@@ -77,7 +83,7 @@ namespace cpprtl  { namespace test  { namespace rtti
         }
       }
     }
-    return res ? idx : 0;
+    return res ? idx * IDX_FACTOR + res : 0;
   }
 
 }  }  }

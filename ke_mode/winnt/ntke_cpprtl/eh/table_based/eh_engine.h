@@ -36,8 +36,8 @@ namespace cpprtl
         struct func_frame_t;
       } // namespace aux_
   
-      typedef aux_::frame_t* frame_ptr_t;                 // the frame of the throwing entity - the function or the catch-block-funclet
-      typedef aux_::func_frame_t* funcframe_ptr_t;        // the function frame
+      typedef aux_::frame_t* frame_ptr_t;           // the frame of the throwing entity - the function or the catch-block-funclet
+      typedef aux_::func_frame_t* funcframe_ptr_t;  // the function frame
 
 
       void throw_exception

@@ -55,14 +55,14 @@ namespace cpprtl { namespace test { namespace rtti
 
   int test_vi03()
   {
-    int ret = 0;
+    int ret = RTTI_OK;
     derived d;
 
     try
     {
 
   ////// cast to virtual base
-      ++ ret;
+      ++ret;
       {
         base000* const b000_dyn = dynamic_cast<base000*>(&d);
 
@@ -90,7 +90,7 @@ namespace cpprtl { namespace test { namespace rtti
 
 
   ////// cast to void* from virtual base
-      ++ ret;
+      ++ret;
       {
         derived* d_sta = &d;
         base000* const b000_dyn = dynamic_cast<base000*>(d_sta);
@@ -103,7 +103,7 @@ namespace cpprtl { namespace test { namespace rtti
 
 
   ////// cast-to-void*
-      ++ ret;
+      ++ret;
       {
         base20* const b20_sta     = &d;
         base21* const b21_sta     = &d;
@@ -132,7 +132,7 @@ namespace cpprtl { namespace test { namespace rtti
     
   ////// down-casts
       // down-cast
-      ++ ret;
+      ++ret;
       {
         base100* const b100_sta = (base20*)&d;
         derived* const pd_sta = &d;
@@ -146,7 +146,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // down-cast
-      ++ ret;
+      ++ret;
       {
         base100* const b100_sta = (base21*)&d;
         derived* const pd_sta = &d;
@@ -194,7 +194,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   ////// left-right cross-casts
       // left-right cross-cast
-      ++ ret;
+      ++ret;
       {
         base100* const b100_sta = (base20*)&d;
         base21* const b21_sta = &d;
@@ -209,7 +209,7 @@ namespace cpprtl { namespace test { namespace rtti
     
   ////// right-left cross-casts
       // right-left cross-cast
-      ++ ret;
+      ++ret;
       {
         base100* const b100_sta = (base21*)&d;
         base20* const b20_sta = &d;
@@ -221,7 +221,7 @@ namespace cpprtl { namespace test { namespace rtti
         }
       }
 
-      ret = 0;  // one would get here only if tests were passed successfully
+      ret = RTTI_OK;  // one would get here only if tests passed successfully
     }
     catch (int& i)
     {
@@ -229,15 +229,15 @@ namespace cpprtl { namespace test { namespace rtti
     }
     catch (std::bad_cast&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_CAST;
     }
     catch (std::bad_typeid&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_TYPEID;
     }
     catch (...)
     {
-      ret = -ret;
+      ret += ERROR_UNEXPECTED;
     }
     return ret;
   }

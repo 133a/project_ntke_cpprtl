@@ -19,7 +19,7 @@ namespace
 {
   enum
   {
-    EH_OK = 0,
+    EH_OK = 0
   };
 }
 

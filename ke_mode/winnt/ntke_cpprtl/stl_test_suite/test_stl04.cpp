@@ -30,25 +30,25 @@ namespace
 {
   enum
   {
-    UNEXPECTED_ERROR             = -1
-  , UNEXPECTED_STD_EXCEPTION     = -2
-  , UNEXPECTED_STD_BAD_ALLOC     = -3
-  , TEST_ERROR_BAD_BALANCE       = -4
-  , TEST_ERROR_UNEXPECTED_SIZE0  = -5
-  , TEST_ERROR_UNEXPECTED_SIZE1  = -6
-  , TEST_ERROR_UNEXPECTED_SIZE2  = -7
-  , TEST_ERROR_UNEXPECTED_SIZE3  = -8
-  , TEST_ERROR_UNEXPECTED_SIZE4  = -9
-  , TEST_ERROR_UNEXPECTED_SIZE5  = -10
-  , TEST_ERROR_WRONG_MIN         = -11
-  , TEST_ERROR_WRONG_MAX         = -12
-  , TEST_ERROR_FIND1             = -13
-  , TEST_ERROR_FIND2             = -14
-  , TEST_ERROR_FIND3             = -15
-  , TEST_ERROR_FIND4             = -16
-  , TEST_ERROR_WRONG_SUM         = -17
-  , TEST_EMPTY_MAP_FAILED0       = -18
-  , TEST_MAP_NOT_EQUAL           = -19
+    UNEXPECTED_ERROR             = 401
+  , UNEXPECTED_STD_EXCEPTION     = 402
+  , UNEXPECTED_STD_BAD_ALLOC     = 403
+  , TEST_ERROR_BAD_BALANCE       = 404
+  , TEST_ERROR_UNEXPECTED_SIZE0  = 405
+  , TEST_ERROR_UNEXPECTED_SIZE1  = 406
+  , TEST_ERROR_UNEXPECTED_SIZE2  = 407
+  , TEST_ERROR_UNEXPECTED_SIZE3  = 408
+  , TEST_ERROR_UNEXPECTED_SIZE4  = 409
+  , TEST_ERROR_UNEXPECTED_SIZE5  = 410
+  , TEST_ERROR_WRONG_MIN         = 411
+  , TEST_ERROR_WRONG_MAX         = 412
+  , TEST_ERROR_FIND1             = 413
+  , TEST_ERROR_FIND2             = 414
+  , TEST_ERROR_FIND3             = 415
+  , TEST_ERROR_FIND4             = 416
+  , TEST_ERROR_WRONG_SUM         = 417
+  , TEST_EMPTY_MAP_FAILED0       = 418
+  , TEST_MAP_NOT_EQUAL           = 419
 
   , TEST_MAP_SIZE                = 512
   , TEST_MAP_MIN_ELEMENT         = 0
@@ -193,7 +193,8 @@ namespace cpprtl { namespace test { namespace stl
         }
         if
         (
-          TEST_MAP_SUM !=
+          TEST_MAP_SUM
+        !=
           std::for_each
           (
             test_map3.begin()

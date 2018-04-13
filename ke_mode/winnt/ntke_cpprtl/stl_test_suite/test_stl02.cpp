@@ -29,24 +29,24 @@ namespace
 {
   enum
   {
-    UNEXPECTED_ERROR             = -1
-  , UNEXPECTED_STD_EXCEPTION     = -2
-  , UNEXPECTED_STD_BAD_ALLOC     = -3
-  , TEST_ERROR_BAD_BALANCE       = -4
-  , TEST_ERROR_UNEXPECTED_SIZE0  = -5
-  , TEST_ERROR_UNEXPECTED_SIZE1  = -6
-  , TEST_ERROR_UNEXPECTED_SIZE2  = -7
-  , TEST_ERROR_UNEXPECTED_SIZE3  = -8
-  , TEST_ERROR_UNEXPECTED_SIZE4  = -9
-  , TEST_ERROR_UNEXPECTED_SIZE5  = -10
-  , TEST_ERROR_WRONG_MIN         = -11
-  , TEST_ERROR_WRONG_MAX         = -12
-  , TEST_ERROR_FIND1             = -13
-  , TEST_ERROR_FIND2             = -14
-  , TEST_ERROR_WRONG_SUM         = -15
-  , TEST_EMPTY_VECTOR_FAILED0    = -16
-  , TEST_VECTOR_NOT_EQUAL        = -17
-  , TEST_OUT_OF_RANGE_FAILED     = -18
+    UNEXPECTED_ERROR             = 201
+  , UNEXPECTED_STD_EXCEPTION     = 202
+  , UNEXPECTED_STD_BAD_ALLOC     = 203
+  , TEST_ERROR_BAD_BALANCE       = 204
+  , TEST_ERROR_UNEXPECTED_SIZE0  = 205
+  , TEST_ERROR_UNEXPECTED_SIZE1  = 206
+  , TEST_ERROR_UNEXPECTED_SIZE2  = 207
+  , TEST_ERROR_UNEXPECTED_SIZE3  = 208
+  , TEST_ERROR_UNEXPECTED_SIZE4  = 209
+  , TEST_ERROR_UNEXPECTED_SIZE5  = 210
+  , TEST_ERROR_WRONG_MIN         = 211
+  , TEST_ERROR_WRONG_MAX         = 212
+  , TEST_ERROR_FIND1             = 213
+  , TEST_ERROR_FIND2             = 214
+  , TEST_ERROR_WRONG_SUM         = 215
+  , TEST_EMPTY_VECTOR_FAILED0    = 216
+  , TEST_VECTOR_NOT_EQUAL        = 217
+  , TEST_OUT_OF_RANGE_FAILED     = 218
 
   , TEST_VECTOR_SIZE             = 512
   , TEST_VECTOR_MIN_ELEMENT      = 0
@@ -99,7 +99,7 @@ namespace cpprtl { namespace test { namespace stl
           }
           catch (std::out_of_range&)
           {
-            break;  //  test is passed;
+            break;  // test is passed;
           }
           throw aux_::test_error(UNEXPECTED_ERROR);
         }
@@ -167,7 +167,8 @@ namespace cpprtl { namespace test { namespace stl
         std::random_shuffle(test_vec3.begin(), test_vec3.end());
         if
         (
-          TEST_VECTOR_SUM != 
+          TEST_VECTOR_SUM
+        != 
           std::for_each
           (
             test_vec3.begin()

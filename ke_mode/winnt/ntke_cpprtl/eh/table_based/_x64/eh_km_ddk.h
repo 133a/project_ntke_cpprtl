@@ -19,7 +19,6 @@
 #endif
 
 
-
 #ifndef    EXCEPTION_UNWINDING
 #define    EXCEPTION_UNWINDING        0x2
 #endif
@@ -45,7 +44,6 @@
 #endif
 
 
-
 #ifndef  UNW_FLAG_NHANDLER
 #define  UNW_FLAG_NHANDLER 0x0
 #endif
@@ -58,7 +56,6 @@
 #define  UNW_FLAG_UHANDLER 0x2
 #endif
     
-
 
 #ifndef    UNWIND_HISTORY_TABLE_SIZE
 #define    UNWIND_HISTORY_TABLE_SIZE 12
@@ -111,7 +108,6 @@ typedef struct _DISPATCHER_CONTEXT
   DWORD32                 Fill0;
 }
 DISPATCHER_CONTEXT;
-
 
 
 extern "C"
@@ -174,9 +170,7 @@ extern "C"
     EXCEPTION_RECORD  *  ExceptionRecord
   );
 
-
 }  // extern "C"
-
 
 
 #endif  // include guard

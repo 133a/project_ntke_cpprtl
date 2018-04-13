@@ -22,5 +22,17 @@
 #endif
 
 
+namespace
+{
+  enum
+  {
+    RTTI_OK           = 0
+  , ERROR_BAD_CAST    = 10000
+  , ERROR_BAD_TYPEID  = 20000
+  , ERROR_UNEXPECTED  = 30000
+  };
+}
+
+
 #endif  // include guard
 

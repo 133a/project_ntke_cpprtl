@@ -19,10 +19,10 @@ namespace
 {
   enum
   {
-    EH_OK                = 0,
-    UNEXPECTED_CATCH1    = -2,
-    SPECIAL_EXCEPTION25  = 25,
-    RECURSION_COUNT25    = 16,
+    EH_OK                = 0
+  , SPECIAL_EXCEPTION25  = 250
+  , UNEXPECTED_CATCH1    = 251
+  , RECURSION_COUNT25    = 16
   };
 
 

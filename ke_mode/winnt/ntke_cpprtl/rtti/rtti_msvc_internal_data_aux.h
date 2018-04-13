@@ -166,7 +166,7 @@ namespace rtti
   <
     msvc_internal_data::rtti::class_hierarchy_descriptor
   , msvc_internal_data::rtti::complete_object_locator
-  >::iterator                                                      class_hierarchy;
+  >::iterator                                              class_hierarchy;
 
 
   typedef
@@ -174,7 +174,7 @@ namespace rtti
   <
     msvc_internal_data::rtti::class_hierarchy_descriptor
   , msvc_internal_data::rtti::base_class_descriptor2
-  >::iterator                                                      base_class_hierarchy;
+  >::iterator                                              base_class_hierarchy;
 
 
   typedef
@@ -182,7 +182,7 @@ namespace rtti
   <
     msvc_internal_data::rtti::type_descriptor
   , msvc_internal_data::rtti::complete_object_locator
-  >::iterator                                                      complete_object_type_descriptor;
+  >::iterator                                              complete_object_type_descriptor;
 
 
   typedef
@@ -190,7 +190,7 @@ namespace rtti
   <
     msvc_internal_data::rtti::base_class_array_descriptor
   , msvc_internal_data::rtti::class_hierarchy_descriptor
-  >::iterator                                                      base_class_array;
+  >::iterator                                              base_class_array;
 
 
   typedef
@@ -199,7 +199,7 @@ namespace rtti
     msvc_internal_data::rtti::base_class_descriptor2
   , msvc_internal_data::rtti::base_class_array_descriptor
   , msvc_internal_data::rtti::class_hierarchy_descriptor
-  >::fwd_iterator                                                  base_class_iterator;
+  >::fwd_iterator                                          base_class_iterator;
 
 
   typedef
@@ -208,7 +208,7 @@ namespace rtti
     msvc_internal_data::rtti::base_class_descriptor2
   , msvc_internal_data::rtti::base_class_array_descriptor
   , msvc_internal_data::rtti::class_hierarchy_descriptor
-  >::rev_iterator                                                  base_class_rev_iterator;
+  >::rev_iterator                                          base_class_rev_iterator;
 
 
   typedef
@@ -216,7 +216,7 @@ namespace rtti
   <
     msvc_internal_data::rtti::type_descriptor
   , msvc_internal_data::rtti::base_class_descriptor2
-  >::iterator                                                      base_class_type_descriptor;
+  >::iterator                                              base_class_type_descriptor;
 
 }  // namespace rtti
 }  // namespace cpprtl

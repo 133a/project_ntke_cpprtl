@@ -11,16 +11,16 @@
 
 
 #if defined ( _MSC_VER )  &&  ( _MSC_VER < 1400 )  &&  defined ( _M_IX86 )
-   // '__thiscall' is considered reserved name but replaced by '__stdcall' if used in source
-   // using warn-level 2 to see it in cl output for being aware of the things may go wrong
+   // '__thiscall' is considered reserved name but replaced by '__stdcall' when used.
 #  define EHVEC_BY_ASM_THUNK 1
+   // using warn-level 2 for being aware of the things may go wrong
 #  pragma warning(2:4234)
 #endif
 
 
 namespace
 {
-#if ( _MSC_VER >= 1900 )  // msvc2015
+#if ( _MSC_VER >= 1900 )  // >=msvc2015
   typedef ::size_t  size_type;
   typedef ::size_t  index_type;
 #else

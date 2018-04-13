@@ -5,34 +5,35 @@
 /////////////////////////////////////////////////////////////////////////////
 
 
-#include <rtl_framework_specific_header.h>
+#ifdef NT_KERNEL_MODE
+#  include "ntddk.include.h"
+#endif
 
 
 namespace
 {
   enum
   {
-    TEST_LOOP = 67,
-    TEST_CTOR,
-    TEST_DTOR,
-    TEST_NUM,
+    TEST_LOOP = 301
+  , TEST_CTOR
+  , TEST_DTOR
+  , MAGIC_VALUE
   };
 
   int res = 0;
-  int const loop_check = TEST_LOOP * TEST_NUM ;
+  int const loop_check = TEST_LOOP * MAGIC_VALUE ;
 
 }
 
 
 namespace
 {
-  class ctest
+  struct ctest
   {
-  public:
-    int test_num;
+    int value;
 
     ctest()
-      : test_num(TEST_NUM)
+      : value ( MAGIC_VALUE )
     {
   #ifdef NT_KERNEL_MODE
       DbgPrint("test_gstatic03 ---> ctest::ctest()\n");
@@ -51,16 +52,16 @@ namespace
 
   int func_with_static_ctest()
   {
-    static ctest t000;
-    res += t000.test_num;
-    return t000.test_num;
+    static ctest t301;
+    res += t301.value;
+    return t301.value;
   }
 
 
-  int test_loop(int tl)
+  int test_loop(int const& tl)
   {
     int ret = 0;
-    for (int i = 0; i < tl; ++i)
+    for ( int i = 0; i < tl; ++i )
     {
       ret += func_with_static_ctest();
     }
@@ -71,12 +72,10 @@ namespace
 
 namespace cpprtl { namespace test { namespace gstatic
 {
-
   int test_gstatic03()
   {
     test_loop(TEST_LOOP);
     return res - TEST_CTOR - loop_check;
   }
-
 }  }  }
 

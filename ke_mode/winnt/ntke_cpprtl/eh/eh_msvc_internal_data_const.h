@@ -26,36 +26,36 @@ namespace eh
   // catchable_type->attributes
   enum
   {
-    EXCEP_SIMPLE_TYPE    = 1 << 0,
-    EXCEP_REFERENCE      = 1 << 1,
-    EXCEP_VIRTUAL_BASE   = 1 << 2,
+    EXCEP_SIMPLE_TYPE   = 1 << 0
+  , EXCEP_REFERENCE     = 1 << 1
+  , EXCEP_VIRTUAL_BASE  = 1 << 2
   };
 
 
   // exception_descriptor->attributes
   enum
   {
-    EXCEP_CONST     = 1 << 0,
-    EXCEP_VOLATILE  = 1 << 1,
+    EXCEP_CONST     = 1 << 0
+  , EXCEP_VOLATILE  = 1 << 1
   };
 
 
   // catch_descriptor->attributes
   enum
   {
-    CATCH_CONST       = 1 << 0,
-    CATCH_VOLATILE    = 1 << 1,
-    CATCH_UNALIGNED   = 1 << 2,
-    CATCH_REFERENCE   = 1 << 3,
+    CATCH_CONST      = 1 << 0
+  , CATCH_VOLATILE   = 1 << 1
+  , CATCH_UNALIGNED  = 1 << 2
+  , CATCH_REFERENCE  = 1 << 3
   };
 
 
   // func_descriptor->magic_number
   enum
   {
-    EH_VC6 = 0x19930520,
-    EH_VC7 = 0x19930521,
-    EH_VC8 = 0x19930522,
+    EH_VC6 = 0x19930520
+  , EH_VC7 = 0x19930521
+  , EH_VC8 = 0x19930522
   };
 
 
@@ -66,7 +66,6 @@ namespace eh
   };
 
 }  // namespace eh
-
 }  // namespace msvc_internal_data
 }  // namespace cpprtl
 

@@ -12,59 +12,62 @@
 /////////////////////////////////////////////////////////////////////////////
 
 
+#include "context_static.h"
+
+
 namespace
 {
   enum
   {
-    EH_OK               = 0,
-    UNEXPECTED_ERROR    = -1,
-    ARRAY_IS_CORRUPTED  = -2,
-    ARR_SZ              = 4,
+    EH_OK               = 0
+  , UNEXPECTED_CATCH_1  = 511
+  , UNEXPECTED_CATCH_2  = 512
+  , UNEXPECTED_CATCH_3  = 513
+  , UNEXPECTED_CATCH_4  = 514
+  , UNEXPECTED_CATCH_5  = 515
+  , ARRAY_IS_CORRUPTED  = 516
+  , ARRAY_OUT_OF_SCOPE  = 517
+  , ARR_SZ              = 32
   };
-
-
-  static int ctor_count51   = 0;
-  static int cctor_count51  = 0;
-  static int dtor_count51   = 0;
-  static int xtor_count51   = 0;
 
 
   class ctest51
   {
-    int i;
+    int volatile i51;
 
   public:
     ctest51()
-      : i ( ++ctor_count51 )
+      : i51 ( ++context::ctor_count )
     {
-      ++xtor_count51;
+      ++context::xtor_count;
     }
 
     ctest51(ctest51 const& src)
-      : i ( src.i )
+      : i51 ( src.i51 )
     {
-      ++cctor_count51;
-      ++xtor_count51;
+      ++context::cctor_count;
+      ++context::xtor_count;
     }
 
     ctest51& operator=(ctest51 const& src)
     {
       if ( this != &src)
       {
-        i = src.i;
+        i51 = src.i51;
       }
       return *this;
     }
 
     ~ctest51()
     {
-      ++dtor_count51;
-      --xtor_count51;
+      i51 = 0;
+      ++context::dtor_count;
+      --context::xtor_count;
     }
 
     int get() const
     {
-      return i;
+      return i51;
     }
   };
 
@@ -79,13 +82,17 @@ namespace
 
 
   template <typename T>
-  static void check(T arr[])
+  static void check(T const arr[])
   throw(...)
   {
-    unsigned sum = 0;
+    int sum = 0;
     for ( unsigned u = 0; u < ARR_SZ; ++u )
     {
       sum += arr[u].get();
+    }
+    if ( sum == 0 )
+    {
+      throw int(ARRAY_OUT_OF_SCOPE);
     }
     if ( sum != (arr[0].get() + arr[ARR_SZ-1].get()) * (ARR_SZ >> 1) )
     {
@@ -101,12 +108,9 @@ namespace cpprtl { namespace test { namespace eh
 
   int test51()
   {
-    ctor_count51    = 0;
-    cctor_count51   = 0;
-    dtor_count51    = 0;
-    xtor_count51    = 0;
-
+    context::init();
     int res = EH_OK;
+
     try
     {
       {
@@ -119,27 +123,86 @@ namespace cpprtl { namespace test { namespace eh
         }
         array_of_ctest51 array3;
         check(array3);
+
+        try
+        {
+          throw array3;
+        }
+      #if defined (_MSC_VER) && (_MSC_VER < 1310)  // ddk2600
+        catch (ctest51 const* const exc)
+      #else
+        catch (ctest51 const* const& exc)
+      #endif
+        {
+          check(exc);
+        }
+        catch (...)
+        {
+          return context::balance(UNEXPECTED_CATCH_2);
+        }
+
+        try
+        {
+          throw ctest51_array_holder();
+        }
+        catch (ctest51_array_holder const& exc)
+        {
+          check(exc.array);
+        }
+        catch (...)
+        {
+          return context::balance(UNEXPECTED_CATCH_3);
+        }
       }
     
-    #ifndef __ICL  // icl suddenly doesn't make use of '__ehvec_copy_ctor' so let's just skip the following test scope
+    // icl<icl15 seems not to handle '__ehvec_copy_ctor' duties properly, so let's just skip the following test scope
+    // icl>=icl15 generates some custom array copying code
+    #if !defined (__ICL) || (__ICL >= 1500)
       {
       // this scope invokes '__ehvec_ctor' and '__ehvec_copy_ctor' and '__ehvec_dtor'
         ctest51_array_holder holder1;
         check(holder1.array);
         ctest51_array_holder holder2(holder1);
         check(holder2.array);
+
+        try
+        {
+          throw holder1;
+        }
+        catch (ctest51_array_holder const/*&*/ exc)
+        {
+          check(exc.array);
+        }
+        catch (...)
+        {
+          return context::balance(UNEXPECTED_CATCH_4);
+        }
+
+        try
+        {
+          ctest51_array_holder arr;
+          throw arr;
+        }
+        catch (ctest51_array_holder const/*&*/ exc)
+        {
+          check(exc.array);
+        }
+        catch (...)
+        {
+          return context::balance(UNEXPECTED_CATCH_5);
+        }
       }
-    #endif
+    #endif  // __ICL
     }
-    catch (int const& i)  //  array check falls here if an inconsistency occured
+    catch (int const& i)  // array check falls here if an inconsistency occured
     {
       res = i;
     }
     catch (...)
     {
-      res = UNEXPECTED_ERROR;
+      res = UNEXPECTED_CATCH_1;
     }
-    return res | ( xtor_count51 + (ctor_count51 + cctor_count51 - dtor_count51) );
+    return context::balance(res);
   }
 
 }  }  }

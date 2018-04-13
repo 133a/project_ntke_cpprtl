@@ -59,11 +59,11 @@ EXECUTE_HANDLER_FRAME ends
     ;  r9   DISPATCHER_CONTEXT*  -  the dispatcher context of the new dispatching loop
     LEAF_ENTRY _CPPRTL_execute_frame_handler_handler, _TEXT
 
-        cmp    [rdx].EXECUTE_HANDLER_FRAME.Unwind  ,  0                               ; check if the executor this handler responsible for was invoked while an unwinding phase
+        cmp    [rdx].EXECUTE_HANDLER_FRAME.Unwind  ,  0                               ; check if the executor this handler responsible for was invoked while the unwinding phase
         jne    short EHunwind                                                         ; go to perform the preemption of the dispatcher context,
         mov    eax  ,  ExceptionContinueSearch                                        ; (anyway it's a default to return)
-        test   [rcx].EXCEPTION_RECORD.ExceptionFlags  ,  EXCEPTION_UNWIND             ; else check if the current exception record is involved in the unwinding
-        jnz    short EHret                                                            ; if so, when we are just to return the 'ContinueSearch'.
+        test   [rcx].EXCEPTION_RECORD.ExceptionFlags  ,  EXCEPTION_UNWIND             ; else check if the current exception record is involved in the unwinding.
+        jnz    short EHret                                                            ; if so, when we are just have to return the 'ContinueSearch'.
 
 EHnested:                                                                             ; here to process the nested exception:
         mov    rax  ,  [rdx].EXECUTE_HANDLER_FRAME.DspCtx                             ; get the saved dispatcher context from the previous executor frame,
@@ -112,7 +112,7 @@ EHret:
 
         mov    [rsp].EXECUTE_HANDLER_FRAME.DspCtx  ,  r9                    ; put the current dispatcher context on the stack to be accessed by the exception handler of this scope,
         mov    [rsp].EXECUTE_HANDLER_FRAME.Unwind  ,  0                     ; detect the executor is being
-        test   [rcx].EXCEPTION_RECORD.ExceptionFlags  ,  EXCEPTION_UNWIND   ; invoked at dispatching or unwinding phase
+        test   [rcx].EXCEPTION_RECORD.ExceptionFlags  ,  EXCEPTION_UNWIND   ; invoked either at dispatching or unwinding phase
         jz     short EHexecute                                              ; and
         mov    [rsp].EXECUTE_HANDLER_FRAME.Unwind  ,  1                     ; save the flag on the current stack frame
 

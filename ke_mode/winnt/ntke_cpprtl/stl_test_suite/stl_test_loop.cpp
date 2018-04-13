@@ -11,10 +11,16 @@
 
 namespace
 {
+  enum
+  {
+    IDX_FACTOR = 10000000
+  };
+
+
   using namespace cpprtl::test::stl;
 
 
-  test_ft* test_table_thread_safe[] =
+  test_ft* const test_table_thread_safe[] =
   {
     0
 
@@ -56,7 +62,7 @@ namespace cpprtl  { namespace test  { namespace stl
   int run()
   {
     unsigned idx = 0;
-    unsigned res = 0;
+    int res = 0;
     for ( ; idx < test_num_thread_safe() ; ++idx )
     {
       if ( test_table_thread_safe[idx] )
@@ -67,7 +73,7 @@ namespace cpprtl  { namespace test  { namespace stl
         }
       }
     }
-    return res ? idx : 0;
+    return res ? idx * IDX_FACTOR + res : 0;
   }
 
 }  }  }

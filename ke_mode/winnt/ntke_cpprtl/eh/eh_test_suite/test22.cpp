@@ -19,13 +19,13 @@ namespace
 {
   enum
   {
-    EH_OK                = 0,
-    UNEXPECTED_CATCH1    = -2,
-    UNEXPECTED_CATCH2    = -3,
-    UNEXPECTED_CATCH3    = -4,
-    UNEXPECTED_CATCH4    = -5,
-    SPECIAL_EXCEPTION22  = 22,
-    MAGIC_DTOR22         = 1010,
+    EH_OK                = 0
+  , SPECIAL_EXCEPTION22  = 220
+  , UNEXPECTED_CATCH1    = 221
+  , UNEXPECTED_CATCH2    = 222
+  , UNEXPECTED_CATCH3    = 223
+  , UNEXPECTED_CATCH4    = 224
+  , MAGIC_DTOR22         = 225
   };
 
 

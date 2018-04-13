@@ -19,10 +19,10 @@ namespace
 {
   enum
   {
-    EH_OK              = 0,
-    UNEXPECTED_CATCH1  = -2,
-    UNEXPECTED_CATCH2  = -3,
-    THROW09            = 123,
+    EH_OK              = 0
+  , UNEXPECTED_CATCH1  = 91
+  , UNEXPECTED_CATCH2  = 92
+  , THROW09            = 99
   };
 
 

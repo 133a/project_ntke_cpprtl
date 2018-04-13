@@ -18,14 +18,7 @@
 
 
 #ifdef NT_KERNEL_MODE
-# if DDK_VER < 6000
-  extern "C"
-  {
-    #include <ntddk.h>
-  }
-# else
-  #include <ntddk.h>
-# endif
+#  include "ntddk.include.h"
 #endif
 
 #include <excpt.h>
@@ -46,10 +39,10 @@ namespace
 {
   enum
   {
-    EH_OK              = 0,
-    UNEXPECTED_CATCH1  = -2,
-    UNEXPECTED_CATCH2  = -3,
-    RAISE20            = 0xE0000000 + 20,
+    EH_OK              = 0
+  , UNEXPECTED_CATCH1  = 201
+  , UNEXPECTED_CATCH2  = 202
+  , RAISE20            = 0xE0000000 + 20
   };
 
   enum

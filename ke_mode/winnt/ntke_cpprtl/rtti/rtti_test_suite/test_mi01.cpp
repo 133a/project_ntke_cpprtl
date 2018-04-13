@@ -69,7 +69,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   int test_mi01()
   {
-    int ret = 0;
+    int ret = RTTI_OK;
     derived d;
 
     try
@@ -110,7 +110,7 @@ namespace cpprtl { namespace test { namespace rtti
 
 
       // down-cast
-      ++ ret;
+      ++ret;
       {
         base00* const b00_sta = &d;
         derived* const pd_sta = &d;
@@ -124,7 +124,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // left-right cross-cast
-      ++ ret;
+      ++ret;
       {
         base20* const b20_sta = &d;
         base02* const b02_sta = &d;
@@ -138,7 +138,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // right-left cross-cast
-      ++ ret;
+      ++ret;
       {
         base22* const b22_sta = &d;
         base01* const b01_sta = &d;
@@ -150,7 +150,7 @@ namespace cpprtl { namespace test { namespace rtti
         }
       }
 
-      ret = 0;  // one would get here only if tests were passed successfully
+      ret = RTTI_OK;  // one would get here only if tests passed successfully
     }
     catch (int& i)
     {
@@ -158,15 +158,15 @@ namespace cpprtl { namespace test { namespace rtti
     }
     catch (std::bad_cast&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_CAST;
     }
     catch (std::bad_typeid&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_TYPEID;
     }
     catch (...)
     {
-      ret = -ret;
+      ret += ERROR_UNEXPECTED;
     }
     return ret;
   }

@@ -12,15 +12,12 @@
 /////////////////////////////////////////////
 
 
+#ifdef NT_KERNEL_MODE
+#  include "ntddk.include.h"
+#endif
+
 #include <excpt.h>
 #include "context.h"
-
-
-#ifdef NT_KERNEL_MODE
-  extern "C" unsigned char __stdcall KeGetCurrentIrql();
-  #define PASSIVE_LEVEL  0
-  #define APC_LEVEL      1
-#endif  // NT_KERNEL_MODE
 
 
 namespace
@@ -29,11 +26,11 @@ namespace
 
   enum
   {
-    EH_OK              = 0,
-    UNEXPECTED_CATCH1  = -2,
-    CATCH1             = 101,
-    CATCH_SEH          = CATCH1,
-    MAGIC_VALUE16      = 123,
+    EH_OK              = 0
+  , UNEXPECTED_CATCH1  = 161
+  , CATCH1             = 162
+  , CATCH_SEH          = CATCH1
+  , MAGIC_VALUE16      = 163
   };
 
 

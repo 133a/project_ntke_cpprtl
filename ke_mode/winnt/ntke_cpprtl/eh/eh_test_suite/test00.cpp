@@ -23,11 +23,10 @@ namespace
 
   enum
   {
-    EH_OK                      = 0,
-    EH_CONTEXT_DEFAULT         = -1,
-    THROW_WORKS_IMPROPERLY     = -2,
-    UNEXISTED_IS_CATCHED       = -3,
-    UNEXPECTED_EXCEPTION_CODE  = -4,
+    EH_OK                      = 0
+  , THROW_WORKS_IMPROPERLY     = 1
+  , UNEXISTED_IS_CATCHED       = 2
+  , UNEXPECTED_EXCEPTION_CODE  = 3
   };
 
 
@@ -53,8 +52,7 @@ namespace cpprtl { namespace test { namespace eh
 
   int test00()
   {
-
-#ifdef _MSC_VER   // cpp-exceptions are built upon seh so we can do the trick following
+#ifdef _MSC_VER  // cpp-exceptions are built upon seh so we can do the trick following
     context ctx(EH_OK);
     __try
     {
@@ -78,7 +76,6 @@ namespace cpprtl { namespace test { namespace eh
     }
     return ctx.balance();
 #endif  // _MSC_VER
-
     return 0;
   }
 

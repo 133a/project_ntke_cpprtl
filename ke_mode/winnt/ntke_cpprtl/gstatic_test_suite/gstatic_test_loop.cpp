@@ -11,10 +11,16 @@
 
 namespace
 {
+  enum
+  {
+    IDX_FACTOR = 10000000
+  };
+
+
   using namespace cpprtl::test::gstatic;
 
 
-  test_ft* test_table_thread_unsafe[] =
+  test_ft* const test_table_thread_unsafe[] =
   {
     0
 
@@ -51,9 +57,8 @@ namespace cpprtl  { namespace test  { namespace gstatic
         }
       }
     }
-    return res ? idx : 0;
+    return res ? idx * IDX_FACTOR + res : 0;
   }
-
 
 }  }  }
 

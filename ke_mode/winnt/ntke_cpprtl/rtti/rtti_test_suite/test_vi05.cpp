@@ -73,7 +73,7 @@ namespace cpprtl { namespace test { namespace rtti
 
   int test_vi05()
   {
-    int ret = 0;
+    int ret = RTTI_OK;
     derived d;
 
     try
@@ -147,7 +147,7 @@ namespace cpprtl { namespace test { namespace rtti
       }
 #endif
 
-      ret = 0;  // one would get here only if tests were passed successfully
+      ret = RTTI_OK;  // one would get here only if tests passed successfully
     }
     catch (int& i)
     {
@@ -155,15 +155,15 @@ namespace cpprtl { namespace test { namespace rtti
     }
     catch (std::bad_cast&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_CAST;
     }
     catch (std::bad_typeid&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_TYPEID;
     }
     catch (...)
     {
-      ret = -ret;
+      ret += ERROR_UNEXPECTED;
     }
     return ret;
   }

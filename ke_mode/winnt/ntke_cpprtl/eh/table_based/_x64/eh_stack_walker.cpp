@@ -391,8 +391,9 @@ stack_walker_restart_frame_loop_for_collided_unwind:
               {
                 if  // the following flags are expected to be set only at the eh_engine::stack_unwind():
                 ( 
-                    STATUS_UNWIND_CONSOLIDATE == unwind_exc_rec.ExceptionCode
-                &&  EXCEPTION_OPCODE_STACK_CONSOLIDATE == unwind_exc_rec.ExceptionInformation[EXCPTR_OPCODE] 
+                  STATUS_UNWIND_CONSOLIDATE == unwind_exc_rec.ExceptionCode
+                &&
+                  EXCEPTION_OPCODE_STACK_CONSOLIDATE == unwind_exc_rec.ExceptionInformation[EXCPTR_OPCODE] 
                 )
                 {
                 // make the preparations for the unwind phase:

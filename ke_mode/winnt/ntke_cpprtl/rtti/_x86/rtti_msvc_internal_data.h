@@ -29,11 +29,11 @@ namespace rtti
 
   struct base_class_descriptor2
   {
-    type_descriptor*               type_descr;                // type descriptor of the class (type_info)
-    unsigned long                  num_contained_bases;       // number of nested classes following in the base_class_array
-    subtype_cast_info              cast_info;                 // pointer-to-member displacement info
-    unsigned long                  attributes;                // attributes
-    class_hierarchy_descriptor*    class_hierarchy_descr;     // available if BC_WITH_HIERARCHY is set
+    type_descriptor*             type_descr;             // type descriptor of the class (type_info)
+    unsigned long                num_contained_bases;    // number of nested classes following in the base_class_array
+    subtype_cast_info            cast_info;              // pointer-to-member displacement info
+    unsigned long                attributes;             // attributes
+    class_hierarchy_descriptor*  class_hierarchy_descr;  // available if BC_WITH_HIERARCHY is set
   };
 
 
@@ -45,20 +45,20 @@ namespace rtti
   
   struct class_hierarchy_descriptor
   {
-    unsigned long                   signature;                // always zero ?
-    unsigned long                   attributes;               // bit 0 set = multiple inheritance, bit 1 set = virtual inheritance
-    unsigned long                   base_class_array_size;    // number of classes in base_class_array
-    base_class_array_descriptor*    base_class_array;
+    unsigned long                 signature;              // always zero ?
+    unsigned long                 attributes;             // bit 0 set: multiple inheritance, bit 1 set: virtual inheritance
+    unsigned long                 base_class_array_size;  // number of classes in base_class_array
+    base_class_array_descriptor*  base_class_array;
   };
 
   
   struct complete_object_locator
   {
-    unsigned long                  signature;                 // always zero ?
-    unsigned long                  offset;                    // offset of this vtable in the complete class
-    unsigned long                  cd_offset;                 // construction displacement offset
-    type_descriptor*               type_descr;                // type_descriptor of the complete class
-    class_hierarchy_descriptor*    class_hierarchy_descr;     // describes inheritance hierarchy
+    unsigned long                signature;              // always zero ?
+    unsigned long                offset;                 // offset of this vtable in the complete class
+    unsigned long                cd_offset;              // construction displacement offset
+    type_descriptor*             type_descr;             // type_descriptor of the complete class
+    class_hierarchy_descriptor*  class_hierarchy_descr;  // describes inheritance hierarchy
   };
 
 }  // namespace rtti

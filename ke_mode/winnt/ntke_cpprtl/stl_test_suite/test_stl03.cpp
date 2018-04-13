@@ -29,23 +29,23 @@ namespace
 {
   enum
   {
-    UNEXPECTED_ERROR             = -1
-  , UNEXPECTED_STD_EXCEPTION     = -2
-  , UNEXPECTED_STD_BAD_ALLOC     = -3
-  , TEST_ERROR_BAD_BALANCE       = -4
-  , TEST_ERROR_UNEXPECTED_SIZE0  = -5
-  , TEST_ERROR_UNEXPECTED_SIZE1  = -6
-  , TEST_ERROR_UNEXPECTED_SIZE2  = -7
-  , TEST_ERROR_UNEXPECTED_SIZE3  = -8
-  , TEST_ERROR_UNEXPECTED_SIZE4  = -9
-  , TEST_ERROR_UNEXPECTED_SIZE5  = -10
-  , TEST_ERROR_WRONG_MIN         = -11
-  , TEST_ERROR_WRONG_MAX         = -12
-  , TEST_ERROR_FIND1             = -13
-  , TEST_ERROR_FIND2             = -14
-  , TEST_ERROR_WRONG_SUM         = -15
-  , TEST_EMPTY_LIST_FAILED0      = -16
-  , TEST_LIST_NOT_EQUAL          = -17
+    UNEXPECTED_ERROR             = 301
+  , UNEXPECTED_STD_EXCEPTION     = 302
+  , UNEXPECTED_STD_BAD_ALLOC     = 303
+  , TEST_ERROR_BAD_BALANCE       = 304
+  , TEST_ERROR_UNEXPECTED_SIZE0  = 305
+  , TEST_ERROR_UNEXPECTED_SIZE1  = 306
+  , TEST_ERROR_UNEXPECTED_SIZE2  = 307
+  , TEST_ERROR_UNEXPECTED_SIZE3  = 308
+  , TEST_ERROR_UNEXPECTED_SIZE4  = 309
+  , TEST_ERROR_UNEXPECTED_SIZE5  = 310
+  , TEST_ERROR_WRONG_MIN         = 311
+  , TEST_ERROR_WRONG_MAX         = 312
+  , TEST_ERROR_FIND1             = 313
+  , TEST_ERROR_FIND2             = 314
+  , TEST_ERROR_WRONG_SUM         = 315
+  , TEST_EMPTY_LIST_FAILED0      = 316
+  , TEST_LIST_NOT_EQUAL          = 317
 
   , TEST_LIST_SIZE               = 512
   , TEST_LIST_MIN_ELEMENT        = 0
@@ -148,7 +148,8 @@ namespace cpprtl { namespace test { namespace stl
         std::for_each(test_lst3.begin(), test_lst3.end(), aux_::test_object_init<typename int_obj_nonpaged_list::value_type>());
         if
         (
-          TEST_LIST_SUM !=
+          TEST_LIST_SUM
+        !=
           std::for_each
           (
             test_lst3.begin()

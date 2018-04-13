@@ -11,8 +11,8 @@
 
 class type_info
 {
-  char mutable*    unmangled_name;  // used to keep the demangled name returned by type_info::name()
-  char             mangled_name;    // mangled type name, e.g. ".H" = "int", ".?AUA@@" = "struct A", ".?AVA@@" = "class A" (char[])
+  char mutable*  unmangled_name;  // used to keep the demangled name returned by type_info::name()
+  char           mangled_name;    // the actual type is char[], keeps a zero-terminated mangled type name, e.g. ".H" = "int", ".?AUA@@" = "struct A", ".?AVA@@" = "class A"
 
 public:
   virtual ~type_info() {}
@@ -27,7 +27,6 @@ public:
 private:
   type_info(type_info const&);
   type_info& operator=(type_info const&);
-
 };
 
 

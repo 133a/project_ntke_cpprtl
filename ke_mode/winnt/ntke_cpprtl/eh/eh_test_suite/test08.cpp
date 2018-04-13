@@ -21,16 +21,16 @@ namespace
 
   enum
   {
-    EH_OK              = 0,
-    UNEXPECTED_CATCH1  = -2,
-    UNEXPECTED_CATCH2  = -3,
-    UNEXPECTED_CATCH3  = -4,
-    UNEXPECTED_CATCH4  = -5,
-    UNEXPECTED_CATCH5  = -6,
-    UNEXPECTED_CATCH6  = -7,
-    UNEXPECTED_CATCH7  = -8,
-    UNEXPECTED_CATCH8  = -9,
-    THROW8             = 35,
+    EH_OK              = 0
+  , THROW8             = 80
+  , UNEXPECTED_CATCH1  = 81
+  , UNEXPECTED_CATCH2  = 82
+  , UNEXPECTED_CATCH3  = 83
+  , UNEXPECTED_CATCH4  = 84
+  , UNEXPECTED_CATCH5  = 85
+  , UNEXPECTED_CATCH6  = 86
+  , UNEXPECTED_CATCH7  = 87
+  , UNEXPECTED_CATCH8  = 88
   };
 
 

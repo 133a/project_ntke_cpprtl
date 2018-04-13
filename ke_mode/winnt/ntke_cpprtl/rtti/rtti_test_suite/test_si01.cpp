@@ -12,15 +12,12 @@
 /////////////////////////////////////////////////////
 
 
+#ifdef NT_KERNEL_MODE
+#  include "ntddk.include.h"
+#endif
+
 #include <typeinfo>
 #include "rtti_test_defs.h"
-
-
-#ifdef NT_KERNEL_MODE
-  extern "C" unsigned char __stdcall KeGetCurrentIrql();
-  #define PASSIVE_LEVEL   0
-  #define APC_LEVEL       1
-#endif  //  NT_KERNEL_MODE
 
 
 namespace
@@ -110,12 +107,10 @@ namespace cpprtl { namespace test { namespace rtti
 
   int test_si01()
   {
-    int ret = 0;
+    int ret = RTTI_OK;
 
     try
     {
-
-      ret = 0;
       no_virtual nv;
       base1 b;
       derived d;
@@ -209,7 +204,7 @@ namespace cpprtl { namespace test { namespace rtti
           }
           catch (std::bad_cast&)
           {
-            break; // test completed;
+            break;  // test completed;
           }
           catch (...)
           {
@@ -261,7 +256,7 @@ namespace cpprtl { namespace test { namespace rtti
         ret += KE_SKIP_TESTS;                        // adjusting the test counter,
         goto IF_IRQL_IS_GREATER_THAN_PASSIVE_LEVEL;  // if current IRQL>PASSIVE_LEVEL an access violation at a user space address becomes the bound trap, so let's skip.
       }
-#endif  //  NT_KERNEL_MODE
+#endif  // NT_KERNEL_MODE
 
 
       // badly designed to get bad_cast by access violation while casting to void*
@@ -280,11 +275,11 @@ namespace cpprtl { namespace test { namespace rtti
           }
           catch (std::bad_cast&)
           {
-            break; // test completed;
+            break;  // test completed;
           }                            
           catch (std::bad_typeid&)  // msvcrt throws '__non_rtti_object' type derived from 'bad_typeid'
           {
-            break; // test completed;
+            break;  // test completed;
           }
           catch (...)
           {
@@ -308,11 +303,11 @@ namespace cpprtl { namespace test { namespace rtti
           }
           catch (std::bad_cast&)
           {
-            break; // test completed;
+            break;  // test completed;
           }
           catch (std::bad_typeid&)  // msvcrt throws '__non_rtti_object' type derived from 'bad_typeid'
           {
-            break; // test completed;
+            break;  // test completed;
           }
           catch (...)
           {
@@ -338,7 +333,7 @@ namespace cpprtl { namespace test { namespace rtti
           }
           catch (std::bad_typeid&)
           {
-            break; // test completed;
+            break;  // test completed;
           }
           catch (...)
           {
@@ -354,7 +349,7 @@ namespace cpprtl { namespace test { namespace rtti
 IF_IRQL_IS_GREATER_THAN_PASSIVE_LEVEL: ;  // 'IRQL>PASSIVE_LEVEL'  skip to this point
 #endif
 
-      ret = 0;  // one would get here only if tests were passed successfully
+      ret = RTTI_OK;  // one would get here only if tests passed successfully
     }
     catch (int& i)
     {
@@ -362,15 +357,15 @@ IF_IRQL_IS_GREATER_THAN_PASSIVE_LEVEL: ;  // 'IRQL>PASSIVE_LEVEL'  skip to this 
     }
     catch (std::bad_cast&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_CAST;
     }
     catch (std::bad_typeid&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_TYPEID;
     }
     catch (...)
     {
-      ret = -ret;
+      ret += ERROR_UNEXPECTED;
     }
     return ret;
   }

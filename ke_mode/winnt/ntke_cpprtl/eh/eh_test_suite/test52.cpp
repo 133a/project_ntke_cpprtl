@@ -12,64 +12,63 @@
 /////////////////////////////////////////////////////////////////////////////
 
 
+#include "context_static.h"
+
+
 namespace
 {
   enum
   {
-    EH_OK               = 0,
-    UNEXPECTED_ERROR    = -1,
-    ARRAY_IS_CORRUPTED  = -2,
-    ARR_SZ              = 4,
+    EH_OK               = 0
+  , UNEXPECTED_CATCH_1  = 521
+  , UNEXPECTED_CATCH_2  = 522
+  , UNEXPECTED_CATCH_3  = 523
+  , UNEXPECTED_CATCH_4  = 524
+  , UNEXPECTED_CATCH_5  = 525
+  , ARRAY_IS_CORRUPTED  = 526
+  , ARRAY_OUT_OF_SCOPE  = 527
+  , ARR_SZ              = 32
   };
-
-
-  static int ctor_count52    = 0;
-  static int cctor_count52   = 0;
-  static int dtor_count52    = 0;
-  static int vctor_count52   = 0;
-  static int vcctor_count52  = 0;
-  static int vdtor_count52   = 0;
-  static int xtor_count52    = 0;
 
 
   class base52
   {
-    int i;
+    int volatile i52;
 
   public:
     base52()
-      : i ( ++ctor_count52 )
+      : i52 ( ++context::ctor_count )
     {
-      ++xtor_count52;
+      ++context::xtor_count;
     }
 
     base52(base52 const& src)
-      : i ( src.i )
+      : i52 ( src.i52 )
     {
-      ++cctor_count52;
-      ++xtor_count52;
+      ++context::cctor_count;
+      ++context::xtor_count;
     }
 
     base52& operator=(base52 const& src)
     {
       if (this != &src)
       {
-        i = src.i;
+        i52 = src.i52;
       }
       return *this;
     }
 
     virtual ~base52()
     {
-      ++dtor_count52;
-      --xtor_count52;
+      i52 = -1;
+      ++context::dtor_count;
+      --context::xtor_count;
     }
 
     int get() const
     {
-      return i;
+      return i52;
     }
-
   };
 
 
@@ -81,21 +80,21 @@ namespace
     cvtest52()
       : vbase_t ()
     {
-      ++vctor_count52;
-      ++xtor_count52;
+      ++context::vctor_count;
+      ++context::xtor_count;
     }
 
     cvtest52(cvtest52 const& src)
       : vbase_t ( src )
     {
-      ++vcctor_count52;
-      ++xtor_count52;
+      ++context::vcctor_count;
+      ++context::xtor_count;
     }
 
     ~cvtest52()
     {
-      ++vdtor_count52;
-      --xtor_count52;
+      ++context::vdtor_count;
+      --context::xtor_count;
     }
   };
 
@@ -110,13 +109,17 @@ namespace
 
 
   template <typename T>
-  static void check(T arr[])
+  static void check(T const arr[])
   throw(...)
   {
-    unsigned sum = 0;
-    for (unsigned u = 0; u < ARR_SZ; ++u)
+    int sum = 0;
+    for ( unsigned u = 0; u < ARR_SZ; ++u )
     {
       sum += arr[u].get();
+    }
+    if ( sum == 0 )
+    {
+      throw int(ARRAY_OUT_OF_SCOPE);
     }
     if ( sum != (arr[0].get() + arr[ARR_SZ-1].get()) * (ARR_SZ >> 1) )
     {
@@ -132,15 +135,9 @@ namespace cpprtl { namespace test { namespace eh
 
   int test52()
   {
-    ctor_count52    = 0;
-    cctor_count52   = 0;
-    dtor_count52    = 0;
-    vctor_count52   = 0;
-    vcctor_count52  = 0;
-    vdtor_count52   = 0;
-    xtor_count52    = 0;
-
+    context::init();
     int res = EH_OK;
+
     try
     {
       {
@@ -153,17 +150,76 @@ namespace cpprtl { namespace test { namespace eh
         }
         array_of_cvtest52 varray3;
         check(varray3);
+
+        try
+        {
+          throw varray3;
+        }
+      #if defined (_MSC_VER) && (_MSC_VER < 1310)  // ddk2600
+        catch (cvtest52 const* const exc)
+      #else
+        catch (cvtest52 const* const& exc)
+      #endif
+        {
+          check(exc);
+        }
+        catch (...)
+        {
+          return context::balance(UNEXPECTED_CATCH_2);
+        }
+
+        try
+        {
+          throw cvtest52_array_holder();
+        }
+        catch (cvtest52_array_holder const& exc)
+        {
+          check(exc.array);
+        }
+        catch (...)
+        {
+          return context::balance(UNEXPECTED_CATCH_3);
+        }
       }
-    
-    #ifndef __ICL  // icl suddenly doesn't make use of '__ehvec_copy_ctor_vb' so let's just skip the following test scope
+
+    // icl<icl15 seems not to handle '__ehvec_copy_ctor_vb' duties properly, so let's just skip the following test scope
+    // icl>=icl15 generates some custom array copying code
+    #if !defined (__ICL) || (__ICL >= 1500)
       {
       // this scope invokes '__ehvec_ctor_vb' and '__ehvec_copy_ctor_vb' and '__ehvec_dtor'
         cvtest52_array_holder vholder1;
         check(vholder1.array);
         cvtest52_array_holder vholder2(vholder1);
         check(vholder2.array);
+
+        try
+        {
+          throw vholder1;
+        }
+        catch (cvtest52_array_holder const/*&*/ exc)
+        {
+          check(exc.array);
+        }
+        catch (...)
+        {
+          return context::balance(UNEXPECTED_CATCH_4);
+        }
+
+        try
+        {
+          cvtest52_array_holder arr;
+          throw arr;
+        }
+        catch (cvtest52_array_holder const/*&*/ exc)
+        {
+          check(exc.array);
+        }
+        catch (...)
+        {
+          return context::balance(UNEXPECTED_CATCH_5);
+        }
       }
-    #endif
+    #endif  // __ICL
     }
     catch (int const& i)  // array check falls here if an inconsistency occured
     {
@@ -171,9 +227,9 @@ namespace cpprtl { namespace test { namespace eh
     }
     catch (...)
     {
-      res = UNEXPECTED_ERROR;
+      res = UNEXPECTED_CATCH_1;
     }
-    return res | ( xtor_count52 + (ctor_count52 + cctor_count52 + vctor_count52 + vcctor_count52 - dtor_count52 - vdtor_count52) );
+    return context::balance(res);
   }
 
 }  }  }

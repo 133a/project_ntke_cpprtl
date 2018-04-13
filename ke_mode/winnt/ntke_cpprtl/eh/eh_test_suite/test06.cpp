@@ -19,10 +19,9 @@ namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    EH_CONTEXT_DEFAULT        = -1,
-    WRONG_STATE               = -2,
-    MAGIC_VALUE6              = 236,
+    EH_OK         = 0
+  , WRONG_STATE   = 60
+  , MAGIC_VALUE6  = 66
   };
 
 

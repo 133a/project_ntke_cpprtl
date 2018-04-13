@@ -19,8 +19,8 @@ namespace
 {
   enum
   {
-    EH_OK         = 0,
-    MAGIC_VALUE3  = 233,
+    EH_OK         = 0
+  , MAGIC_VALUE3  = 33
   };
 }
 

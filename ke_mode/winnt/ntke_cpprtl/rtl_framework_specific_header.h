@@ -14,7 +14,7 @@
 #endif
 
 
-#if defined   ( NT_KERNEL_MODE )
+#if defined (NT_KERNEL_MODE)
 
   #if DDK_VER < 6000
     extern "C"
@@ -33,9 +33,9 @@
     #endif
   #endif
 
-#elif defined ( NT_NATIVE_MODE )
+#elif defined (NT_NATIVE_MODE)
   // TODO
-#else      // ( um )
+#else  // (um)
   #include <windows.h>
 #endif  // NT_KERNEL_MODE
 

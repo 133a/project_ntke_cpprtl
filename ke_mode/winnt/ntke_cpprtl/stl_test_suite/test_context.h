@@ -11,6 +11,12 @@
 
 namespace aux_
 {
+  enum
+  {
+    STATE_FACTOR  = 10000
+  , XTOR_FACTOR   = 1
+  };
+
 
   struct test_context
   {
@@ -25,7 +31,7 @@ namespace aux_
 
     explicit test_context(int expected)
       : state_expected  ( expected )
-      , state           ( -1 )
+      , state           ( 999 )
       , flags           ( 0 )
       , ctor_count      ( 0 )
       , cctor_count     ( 0 )
@@ -46,7 +52,7 @@ namespace aux_
 
     int balance() const
     {
-      return state_balance() | xtor_balance();
+      return state_balance() * STATE_FACTOR + xtor_balance() * XTOR_FACTOR;
     }
 
   private:  // context is intended to be the single instance in a test

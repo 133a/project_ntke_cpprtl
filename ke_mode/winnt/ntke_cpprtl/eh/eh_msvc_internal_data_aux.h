@@ -316,7 +316,7 @@ namespace eh
   <
     msvc_internal_data::eh::catchable_type
   , msvc_internal_data::eh::catchable_type_table
-  >::fwd_iterator                                catchable_type_iterator;
+  >::fwd_iterator                                 catchable_type_iterator;
 
 
   typedef
@@ -324,7 +324,7 @@ namespace eh
   <
     msvc_internal_data::eh::catchable_type
   , msvc_internal_data::eh::catchable_type_table
-  >::rev_iterator                                catchable_type_rev_iterator;
+  >::rev_iterator                                 catchable_type_rev_iterator;
 
 
   typedef
@@ -332,7 +332,7 @@ namespace eh
   <
     msvc_internal_data::eh::try_descriptor
   , msvc_internal_data::eh::func_descriptor
-  >::fwd_iterator                                try_iterator;
+  >::fwd_iterator                                 try_iterator;
 
 
   typedef
@@ -340,7 +340,7 @@ namespace eh
   <
     msvc_internal_data::eh::try_descriptor
   , msvc_internal_data::eh::func_descriptor
-  >::rev_iterator                                try_rev_iterator;
+  >::rev_iterator                                 try_rev_iterator;
 
 
   typedef
@@ -348,7 +348,7 @@ namespace eh
   <
     msvc_internal_data::eh::unwind_descriptor
   , msvc_internal_data::eh::func_descriptor
-  >::fwd_iterator                                unwind_iterator;
+  >::fwd_iterator                                 unwind_iterator;
 
 
   typedef
@@ -356,7 +356,7 @@ namespace eh
   <
     msvc_internal_data::eh::unwind_descriptor
   , msvc_internal_data::eh::func_descriptor
-  >::rev_iterator                                unwind_rev_iterator;
+  >::rev_iterator                                 unwind_rev_iterator;
 
 
 #ifdef CFG_EH_TABLE_BASED
@@ -365,7 +365,7 @@ namespace eh
   <
     msvc_internal_data::eh::ip2state_descriptor
   , msvc_internal_data::eh::func_descriptor
-  >::fwd_iterator                                ip2state_iterator;
+  >::fwd_iterator                                 ip2state_iterator;
 
 
   typedef
@@ -373,7 +373,7 @@ namespace eh
   <
     msvc_internal_data::eh::ip2state_descriptor
   , msvc_internal_data::eh::func_descriptor
-  >::rev_iterator                                ip2state_rev_iterator;
+  >::rev_iterator                                 ip2state_rev_iterator;
 #endif  //  CFG_EH_TABLE_BASED
 
 
@@ -382,7 +382,7 @@ namespace eh
   <
     msvc_internal_data::eh::catch_descriptor
   , msvc_internal_data::eh::try_descriptor
-  >::fwd_iterator                                catch_iterator;
+  >::fwd_iterator                                 catch_iterator;
 
 
   typedef
@@ -390,7 +390,7 @@ namespace eh
   <
     msvc_internal_data::eh::catch_descriptor
   , msvc_internal_data::eh::try_descriptor
-  >::rev_iterator                                catch_rev_iterator;
+  >::rev_iterator                                 catch_rev_iterator;
 
 
 //// eh data type single_value-iterators
@@ -399,7 +399,7 @@ namespace eh
   <
     msvc_internal_data::eh::type_descriptor
   , msvc_internal_data::eh::catch_descriptor
-  >::iterator                                    catch_typeinfo_iterator;
+  >::iterator                                     catch_typeinfo_iterator;
 
 
   typedef
@@ -407,7 +407,7 @@ namespace eh
   <
     msvc_internal_data::eh::type_descriptor
   , msvc_internal_data::eh::catchable_type
-  >::iterator                                    catchable_typeinfo_iterator;
+  >::iterator                                     catchable_typeinfo_iterator;
 
 
   typedef
@@ -415,7 +415,7 @@ namespace eh
   <
     msvc_internal_data::eh::catchable_type_table
   , msvc_internal_data::eh::exception_descriptor
-  >::iterator                                    catchable_table_iterator;
+  >::iterator                                     catchable_table_iterator;
 
 
   typedef
@@ -423,7 +423,7 @@ namespace eh
   <
     msvc_internal_data::eh::dtor_ft
   , msvc_internal_data::eh::exception_descriptor
-  >::iterator                                    dtor_iterator;
+  >::iterator                                     dtor_iterator;
 
 
   typedef
@@ -431,7 +431,7 @@ namespace eh
   <
     msvc_internal_data::eh::cctor_ft
   , msvc_internal_data::eh::catchable_type
-  >::iterator                                    cctor_iterator;
+  >::iterator                                     cctor_iterator;
 
 
   typedef
@@ -439,7 +439,7 @@ namespace eh
   <
     msvc_internal_data::eh::cctor_vb_ft
   , msvc_internal_data::eh::catchable_type
-  >::iterator                                    cctorvb_iterator;
+  >::iterator                                     cctorvb_iterator;
 
 
   typedef
@@ -447,7 +447,7 @@ namespace eh
   <
     msvc_internal_data::eh::unwind_action_ft
   , msvc_internal_data::eh::unwind_descriptor
-  >::iterator                                    unwind_action_iterator;
+  >::iterator                                     unwind_action_iterator;
 
 
   typedef
@@ -455,14 +455,18 @@ namespace eh
   <
     msvc_internal_data::eh::catch_handler_ft
   , msvc_internal_data::eh::catch_descriptor
-  >::iterator                                    catch_handler_iterator;
+  >::iterator                                     catch_handler_iterator;
 
 
 //// root func_descriptor single-value-iterator
   typedef
   msvc_internal_data_aux::aux_::cl_single_value_iterator
   <
-    msvc_internal_data_aux::aux_::iterator_traits<msvc_internal_data::eh::func_descriptor, msvc_internal_data::eh::func_descriptor const*>
+    msvc_internal_data_aux::aux_::iterator_traits
+    <
+      msvc_internal_data::eh::func_descriptor
+    , msvc_internal_data::eh::func_descriptor const*
+    >
   > func_descriptor_iterator;
 
 }  // namespace eh

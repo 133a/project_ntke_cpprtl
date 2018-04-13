@@ -54,14 +54,14 @@ namespace cpprtl { namespace test { namespace rtti
 
   int test_vi02()
   {
-    int ret = 0;
+    int ret = RTTI_OK;
     derived d;
 
     try
     {
 
       // cast-to-void*
-      ++ ret;
+      ++ret;
       {
         base10* const b10_sta = &d;
         base11* const b11_sta = &d;
@@ -86,7 +86,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // down-cast
-      ++ ret;
+      ++ret;
       {
         base12* const b12_sta = &d;
         derived* const pd_sta = &d;
@@ -100,7 +100,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // down-cast
-      ++ ret;
+      ++ret;
       {
         base10* const b10_sta = &d;
         derived* const pd_sta = &d;
@@ -114,7 +114,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // left-right cross-cast
-      ++ ret;
+      ++ret;
       {
         base10* const b10_sta = &d;
         base11* const b11_sta = &d;
@@ -128,7 +128,7 @@ namespace cpprtl { namespace test { namespace rtti
 
     
       // right-left cross-cast
-      ++ ret;
+      ++ret;
       {
         base12* const b12_sta = &d;
         base10* const b10_sta = &d;
@@ -142,7 +142,7 @@ namespace cpprtl { namespace test { namespace rtti
 
 
       // cast to virtual base
-      ++ ret;
+      ++ret;
       {
         base10* const b10_sta = &d;
         base11* const b11_sta = &d;
@@ -187,7 +187,7 @@ namespace cpprtl { namespace test { namespace rtti
 
 
       // cast to void from virtual base
-      ++ ret;
+      ++ret;
       {
         derived* const d_sta  = &d;
         base00* const b00_dyn = dynamic_cast<base00*>(d_sta);
@@ -198,7 +198,7 @@ namespace cpprtl { namespace test { namespace rtti
         }
       }
 
-      ret = 0;  // one would get here only if tests were passed successfully
+      ret = RTTI_OK;  // one would get here only if tests passed successfully
     }
     catch (int& i)
     {
@@ -206,15 +206,15 @@ namespace cpprtl { namespace test { namespace rtti
     }
     catch (std::bad_cast&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_CAST;
     }
     catch (std::bad_typeid&)
     {
-      ret = -ret;
+      ret += ERROR_BAD_TYPEID;
     }
     catch (...)
     {
-      ret = -ret;
+      ret += ERROR_UNEXPECTED;
     }
     return ret;
   }

@@ -12,7 +12,6 @@
 
 namespace std
 {
-
   void terminate()
   {
     KeBugCheckEx
@@ -24,6 +23,12 @@ namespace std
     , 0
     );
   }
+}
 
+
+// icl15 vector copying support
+void __cdecl terminate()
+{
+  std::terminate();
 }
 

@@ -12,14 +12,17 @@
 /////////////////////////////////////////////////////////////////////////////
 
 
+#include "context_static.h"
+
+
 namespace
 {
   enum
   {
-    EH_OK                     = 0,
-    UNEXPECTED_ERROR          = -1,
-    SPECIAL_EXCEPTION         = -2,
-    ARR_SZ                    = 8,
+    EH_OK              = 0
+  , SPECIAL_EXCEPTION  = 540
+  , UNEXPECTED_ERROR   = 541
+  , ARR_SZ             = 32
   };
 
 
@@ -31,14 +34,6 @@ namespace
     }
   }
 
-  static int ctor_count54    = 0;
-  static int cctor_count54   = 0;
-  static int dtor_count54    = 0;
-  static int vctor_count54   = 0;
-  static int vcctor_count54  = 0;
-  static int vdtor_count54   = 0;
-  static int xtor_count54    = 0;
-
   static bool throw_ctor_vb  = false;
   static bool throw_cctor_vb = false;
 
@@ -48,20 +43,20 @@ namespace
   public:
     base54()
     {
-      ++ctor_count54;
-      ++xtor_count54;
+      ++context::ctor_count;
+      ++context::xtor_count;
     }
 
     base54(base54 const& src)
     {
-      ++cctor_count54;
-      ++xtor_count54;
+      ++context::cctor_count;
+      ++context::xtor_count;
     }
 
     virtual ~base54()
     {
-      ++dtor_count54;
-      --xtor_count54;
+      ++context::dtor_count;
+      --context::xtor_count;
     }
   };
 
@@ -76,10 +71,10 @@ namespace
     {
       if ( throw_ctor_vb )
       {
-        throwing_func(vctor_count54);
+        throwing_func(context::vctor_count);
       }
-      ++vctor_count54;
-      ++xtor_count54;
+      ++context::vctor_count;
+      ++context::xtor_count;
     }
 
     cvtest54(cvtest54 const& src)
@@ -87,17 +82,16 @@ namespace
     {
       if ( throw_cctor_vb )
       {
-        throwing_func(vcctor_count54);
+        throwing_func(context::vcctor_count);
       }
-      ++vcctor_count54;
-      ++xtor_count54;
+      ++context::vcctor_count;
+      ++context::xtor_count;
     }
-
 
     ~cvtest54()
     {
-      ++vdtor_count54;
-      --xtor_count54;
+      ++context::vdtor_count;
+      --context::xtor_count;
     }
   };
 
@@ -118,17 +112,11 @@ namespace cpprtl { namespace test { namespace eh
 
   int test54()
   {
-    ctor_count54    = 0;
-    cctor_count54   = 0;
-    dtor_count54    = 0;
-    vctor_count54   = 0;
-    vcctor_count54  = 0;
-    vdtor_count54   = 0;
-    xtor_count54    = 0;
-    throw_ctor_vb   = false;
-    throw_cctor_vb  = false;
-
+    context::init();
+    throw_ctor_vb  = false;
+    throw_cctor_vb = false;
     int res = UNEXPECTED_ERROR;
+
     try
     {
       try
@@ -144,16 +132,18 @@ namespace cpprtl { namespace test { namespace eh
       {
         if ( i != SPECIAL_EXCEPTION )
         {
-          return SPECIAL_EXCEPTION;
+          return context::balance(SPECIAL_EXCEPTION);
         }
         res = EH_OK;
       }
       catch (...)
       {
-        return UNEXPECTED_ERROR;
+        return context::balance(UNEXPECTED_ERROR);
       }
 
-    #ifndef __ICL  // icl suddenly doesn't make use of '__ehvec_copy_ctor_vb' so let's just skip the following test scope
+    // icl<icl15 seems not to handle '__ehvec_copy_ctor_vb' duties properly, so let's just skip the following test scope
+    // icl>=icl15 generates some custom array copying code
+    #if !defined (__ICL) || (__ICL >= 1500)
       res = UNEXPECTED_ERROR;
       try
       {
@@ -169,21 +159,21 @@ namespace cpprtl { namespace test { namespace eh
       {
         if ( i != SPECIAL_EXCEPTION )
         {
-          return SPECIAL_EXCEPTION;
+          return context::balance(SPECIAL_EXCEPTION);
         }
         res = EH_OK;
       }
       catch (...)
       {
-        return UNEXPECTED_ERROR;
+        return context::balance(UNEXPECTED_ERROR);
       }
-    #endif
+    #endif  // __ICL
     }
     catch (...)
     {
-      return UNEXPECTED_ERROR;
+      return context::balance(UNEXPECTED_ERROR);
     }
-    return res | ( xtor_count54 + (ctor_count54 + cctor_count54 + vctor_count54 + vcctor_count54 - dtor_count54 - vdtor_count54) );
+    return context::balance(res);
   }
 
 }  }  }

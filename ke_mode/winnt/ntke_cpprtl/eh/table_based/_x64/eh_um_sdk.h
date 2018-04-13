@@ -37,7 +37,6 @@
 #endif
 
 
-
 #ifndef  UNW_FLAG_NHANDLER
 #define  UNW_FLAG_NHANDLER 0x0
 #endif
@@ -51,11 +50,9 @@
 #endif
 
 
-
 #ifndef    UNWIND_HISTORY_TABLE_SIZE
 #define    UNWIND_HISTORY_TABLE_SIZE 12
 #endif
-
 
 
 typedef 
@@ -70,8 +67,7 @@ typedef
 
 ////  some stuff is defined currently only in WinSDK >=8.0 (um header winnt.h) which is shipped with the msvc2012 and higher (mscl version >=17)
 
-#if ( defined ( _MSC_VER ) && _MSC_VER < 1700 )  ||  !defined (_MSC_VER)
-#  if !defined ( __CODEGEARC__ )
+#if ( defined (_MSC_VER) && _MSC_VER < 1700) || !defined (_MSC_VER)
 typedef struct _UNWIND_HISTORY_TABLE_ENTRY
 {
   DWORD64              ImageBase;
@@ -106,7 +102,6 @@ PEXCEPTION_ROUTINE  RtlVirtualUnwind
 , DWORD64            *  EstablisherFrame
 , struct KNONVOLATILE_CONTEXT_POINTERS  *  ContextPointers
 );
-#  endif  // __CODEGEARC__
 
 typedef struct _DISPATCHER_CONTEXT
 {
@@ -125,7 +120,6 @@ typedef struct _DISPATCHER_CONTEXT
 DISPATCHER_CONTEXT;
 
 #endif  // _MSC_VER
-
 
 
 extern "C"
@@ -158,7 +152,6 @@ extern "C"
     PVOID     PcValue
   , PVOID  *  BaseOfImage
   );
-
 
 }  // extern "C"
 
