@@ -1,11 +1,10 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-#include "rtl_framework_specific_header.h"
+#include "rtl_framework.h"
 #include "std_incl/exception"
 #include "eh/eh_exception_code.h"
 
@@ -24,11 +23,3 @@ namespace std
     );
   }
 }
-
-
-// icl15 vector copying support
-void __cdecl terminate()
-{
-  std::terminate();
-}
-

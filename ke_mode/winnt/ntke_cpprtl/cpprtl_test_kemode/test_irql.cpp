@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "ntddk.include.h"
@@ -23,7 +22,7 @@ namespace
 
   enum
   {
-    RET_ERROR_INCORRECT_IRQL = -1001
+    RET_ERROR_INCORRECT_IRQL = -1501
   };
 }
 
@@ -53,14 +52,16 @@ namespace cpprtl_tests
 
     try
     {
-      for ( unsigned k = 0 ; k < sizeof(test_at_irql) / sizeof(test_at_irql[0]) ; ++k )
+      for ( unsigned i = 0 ; tests[i] ; ++i )
       {
-        aux_::auto_irql_raiser irql(test_at_irql[k]);
-        for ( unsigned i = 0 ; tests[i] ; ++i )
+        for ( unsigned k = 0 ; k < sizeof(test_at_irql) / sizeof(test_at_irql[0]) ; ++k )
         {
           int res = RET_ERROR_UNEXPECTED;
-          tests[i](res);
-          DbgPrint("test_irql() : test[%u]=%i at IRQL=%u\n", i, res, unsigned(KeGetCurrentIrql()));  // DbgPrint() IRQL < DIRQL
+          {
+            aux_::auto_irql_raiser irql(test_at_irql[k]);
+            tests[i](res);
+            DbgPrint("test_irql() : test[%u]=%i at IRQL=%u\n", i, res, unsigned(KeGetCurrentIrql()));  // DbgPrint() IRQL < DIRQL
+          }
           if ( RET_SUCCESS != res )
           {
             return res;

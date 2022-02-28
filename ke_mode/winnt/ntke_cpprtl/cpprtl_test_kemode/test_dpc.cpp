@@ -1,13 +1,11 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "ntddk.include.h"
 #include <cstddef>
-#include <new>
 #include "aux_cpu.h"
 #include "aux_dpc.h"
 #include "aux_irql.h"
@@ -59,7 +57,7 @@ namespace cpprtl_tests
     }
 
     template <typename PLD>
-    bool spawn(PLD const& p, std::size_t const& idx = DONT_SET_PROCESSOR)
+    bool spawn(PLD const& p, std::size_t const idx = DONT_SET_PROCESSOR)
     {
       auto_lock_type lck(lock);
       if ( !spawned )
@@ -105,7 +103,7 @@ namespace cpprtl_tests
 namespace cpprtl_tests
 {
 
-  int test_dpc_impl(test_type const tests[], std::size_t const& task_num)
+  int test_dpc_impl(test_type const tests[], std::size_t const task_num)
   {
     typedef aux_::task_bunch<kdpc<test_payload> > dpc_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )

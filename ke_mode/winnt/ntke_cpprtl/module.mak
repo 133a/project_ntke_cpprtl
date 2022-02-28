@@ -13,7 +13,6 @@ module.sources       = rtlk_init.cpp \
                        rtlk_new.cpp \
                        rtlk_gstatic.cpp \
                        rtlk_std.cpp \
-                       rtlk_c.cpp
 
 module.dir.include   = $(project.dir.root)/ke_mode/winnt/ntke_cpprtl
 
@@ -22,7 +21,6 @@ module.dir.include   = $(project.dir.root)/ke_mode/winnt/ntke_cpprtl
 ###    eh stuff
 #############################################################################
 include ./module.src.eh.mak
-module.sources.arm += eh_restore_context.arm.asm  # ke-specific
 
 
 #############################################################################

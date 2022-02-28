@@ -1,32 +1,21 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef RTTI_CONFIG_H_
 #define RTTI_CONFIG_H_
 
 
-#define CFG_RVA
-
-
-#ifndef _MSC_VER
-typedef unsigned long long  size_t;
-#endif
+#define CPPRTL_CFG_RVA
+#define CPPRTL_RTTI_CFG_RVA
 
 namespace cpprtl
 {
-  namespace msvc_internal_data
-  {
-    typedef unsigned long  array_length_t;
-  }
-
-  typedef unsigned  rva_t;
-  typedef ::size_t  image_base_t;
+  typedef int      rva_t;
+  typedef ::size_t imagebase_t;
+  typedef ::size_t size_t;
 }
 
-
 #endif  // include guard
-

@@ -1,146 +1,81 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "eh_test_suite.h"
-#include "tests.h"
-#include "../eh_cfg_common.h"
+#include "eh_tests.h"
 
 
-namespace
+namespace cpprtl { namespace eh { namespace test
 {
-  enum
+  namespace
   {
-    IDX_FACTOR = 10000000
-  };
-
-
-  using namespace cpprtl::test::eh;
-
-
-//// thread-safe tests
-  test_ft* const test_table_thread_safe[] =
-  {
-    0
-
-    , &test00
-    , &test01
-    , &test02
-    , &test03
-    , &test04
-    , &test05
-    , &test06
-    , &test07
-    , &test08
-    , &test09
-    , &test10
-    , &test11
-    , &test12
-    , &test13
-    , &test14
-    , &test15
-    , &test16
-    , &test17
-    , &test18
-    , &test19
-    , &test20
-    , &test21
-    , &test22
-    , &test23
-    , &test24
-    , &test25
-    , &test26
-
-  //  , &test27
-  //  , &test28
-  //  , &test29
-
-
-#if !defined (NT_KERNEL_MODE) || !defined (NTKE_EH_CONFIG_DO_NOT_USE_STACK_WALKER)  // stack-consuming tests are meant
-    , &test100
-  //  , &test101
-  //  , &test102
-  //  , &test103
-  //  , &test104
-  //  , &test105
-  //  , &test106
-  //  , &test107
-  //  , &test108
-  //  , &test109
-#endif 
-    , 0
-  };
-
-
-  unsigned test_num_thread_safe()
-  {
-    return sizeof(test_table_thread_safe) / sizeof(test_table_thread_safe[0]);
-  }
-
-
-//// thread-unsafe tests
-  test_ft* const test_table_thread_unsafe[] =
-  {
-    0
-
-    , &test51  // tests 51-54 are using a static context for
-    , &test52  // default ctors counting while an array initialization.
-    , &test53  // ^
-    , &test54  // ^
-
-  //  , &test55
-  //  , &test56
-  //  , &test57
-  //  , &test58
-  //  , &test59
-
-    , 0
-  };
-
-
-  unsigned test_num_thread_unsafe()
-  {
-    return sizeof(test_table_thread_unsafe) / sizeof(test_table_thread_unsafe[0]);
-  }
-
-
-//// run loop
-  int run(test_ft* const test_table[], unsigned const& test_num)
-  {
-    unsigned idx = 0;
-    int res = 0;
-    for ( ; idx < test_num ; ++idx )
+    // thread-safe tests
+    test_ft const test_table_thread_safe[] =
     {
-      if ( test_table[idx] )
+      0  // keep 1st
+    , test_0101, test_0102, test_0103, test_0104, test_0105, test_0106, test_0107
+    , test_0201
+    , test_0301, test_0302, test_0303, test_0304
+    , test_0401, test_0402, test_0403, test_0404, test_0405, test_0406, test_0407, test_0408
+    , test_0501, test_0502, test_0503, test_0504, test_0505, test_0506, test_0507, test_0508, test_0509, test_0510
+    , test_0601
+    , test_0701, test_0702, test_0703, test_0704
+    , test_0801, test_0802
+    , test_0901, test_0902
+    };
+
+    // thread-unsafe tests
+    test_ft const test_table_thread_unsafe[] =
+    {
+      0  // keep 1st
+    , test_5101, test_5102, test_5103, test_5104, test_5105
+    };
+
+    test_ft const test_table_run_once[] =
+    {
+      0  // keep 1st
+    , test_5201
+    };
+
+    // run loop
+    template <unsigned LEN>
+    unsigned run(test_ft const (&test_table)[LEN])
+    {
+      for ( unsigned idx = 0; idx < LEN; ++idx )
       {
-        if ( 0 != (res = test_table[idx]()) )
+        if ( test_table[idx] )
         {
-          break;
+          try
+          {
+            if ( !test_table[idx]() )
+            {
+              return idx;
+            }
+          }
+          catch (...)
+          {
+            return idx;
+          }
         }
       }
+      return 0;
     }
-    return res ? idx * IDX_FACTOR + res : 0;
-  }
-
-}  // namespace 
-
-
-namespace cpprtl  { namespace test  { namespace eh
-{
+  }  // namespace 
 
   int run_thread_safe()
   {
-    return run(test_table_thread_safe, test_num_thread_safe());
+    return run(test_table_thread_safe);
   }
-
-
   int run_thread_unsafe()
   {
-    return run(test_table_thread_unsafe, test_num_thread_unsafe());
+    return run(test_table_thread_unsafe);
+  }
+  int run_once()
+  {
+    return run(test_table_run_once);
   }
 
-}  }  }
-
+}}}  // namespace cpprtl::eh::test

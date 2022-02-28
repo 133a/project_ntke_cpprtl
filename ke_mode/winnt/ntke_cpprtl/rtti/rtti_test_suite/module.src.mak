@@ -1,14 +1,11 @@
 module.sources  = rtti_test_loop.cpp \
-                  test_si01.cpp \
-                  test_mi01.cpp \
-                  test_mi02.cpp \
-                  test_mi03.cpp \
-                  test_vi01.cpp \
-                  test_vi02.cpp \
-                  test_vi03.cpp \
-                  test_vi04.cpp \
-                  test_vi05.cpp
-
-
-#icl.compiler.options.cpp += -Qdiag-warning:312
-
+                  test_s01.cpp \
+                  test_m01.cpp \
+                  test_m02.cpp \
+                  test_m03.cpp \
+                  test_v01.cpp \
+                  test_v02.cpp \
+                  test_v03.cpp \
+                  test_v04.cpp \
+                  test_v05.cpp \
+                  test_b01.cpp

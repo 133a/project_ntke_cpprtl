@@ -21,11 +21,11 @@ endif
 
   compiler.enum = $(target.kernel) \
                   $(target.arch) \
-                  $(target.kernel).$(target.arch) \
+                  $(target.kernel)-$(target.arch) \
                   $(target.profile) \
                   $(target.profile).$(target.kernel) \
                   $(target.profile).$(target.arch) \
-                  $(target.profile).$(target.kernel).$(target.arch)
+                  $(target.profile).$(target.kernel)-$(target.arch)
 
 
 

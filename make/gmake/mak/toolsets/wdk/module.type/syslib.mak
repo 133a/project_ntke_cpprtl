@@ -1,4 +1,4 @@
-include $(make.dir.toolsets)/_winnt/target.mak
+include $(make.dir.toolsets)/_win32/target.mak
 
 
 ###############################################
@@ -28,9 +28,9 @@ include $(make.dir.toolsets)/_winnt/target.mak
 #      composing build engines
 ###############################################
 
-include $(make.dir.toolsets)/_winnt/obj.mak
+include $(make.dir.toolsets)/_win32/obj.mak
 include $(wdk.dir.toolset)/wdk.assembler.mak
 include $(wdk.dir.toolset)/wdk.compiler.mak
-include $(wdk.dir.toolset)/wdk.libtool.mak
-include $(make.dir.util)/mkdir.winnt.mak
+include $(wdk.dir.toolset)/wdk.libmgr.mak
+include $(make.dir.util)/mkdir.win32.mak
 

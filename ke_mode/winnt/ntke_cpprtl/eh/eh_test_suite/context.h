@@ -1,66 +1,58 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef CONTEXT_H_
 #define CONTEXT_H_
 
 
-namespace
+namespace cpprtl { namespace eh { namespace test
 {
-  enum
+  class context
   {
-    STATE_FACTOR  = 10000
-  , XTOR_FACTOR   = 1
-  };
+    // ~context() keep trivial
 
+    int ctor_count;
+    int cctor_count;
+    int dtor_count;
+    int xtor_count;
+    int const expected;
+  public:
+    int state;
 
-  struct context
-  {
-    int const state_expected;
-    int  state;
-    int  flags;
+    explicit context(int const expected)
+      : ctor_count  ( 0 )
+      , cctor_count ( 0 )
+      , dtor_count  ( 0 )
+      , xtor_count  ( 0 )
+      , expected    ( expected )
+      , state       ( 0 )
+    {}
 
-    int  ctor_count;
-    int  cctor_count;
-    int  dtor_count;
-    int  vctor_count;
-    int  vcctor_count;
-    int  vdtor_count;
-    int  xtor_count;
-
-    // ~context() keep it trivial for using in seh-frames
-
-    explicit context(int expected)
-      : state_expected  ( expected )
-      , state           ( 999 )
-      , flags           ( 0 )
-      , ctor_count      ( 0 )
-      , cctor_count     ( 0 )
-      , dtor_count      ( 0 )
-      , vctor_count     ( 0 )
-      , vcctor_count    ( 0 )
-      , vdtor_count     ( 0 )
-      , xtor_count      ( 0 )
+    void ctor()
     {
+      ++ctor_count;
+      ++xtor_count;
     }
 
-    int xtor_balance() const
+    void cctor()
     {
-      return  xtor_count + ( ctor_count + cctor_count + vctor_count + vcctor_count - dtor_count - vdtor_count );
+      ++cctor_count;
+      ++xtor_count;
     }
 
-    int state_balance() const
+    void dtor()
     {
-      return state_expected - state;
+      ++dtor_count;
+      --xtor_count;
     }
 
-    int balance() const
+    bool ok() const
     {
-      return state_balance() * STATE_FACTOR + xtor_balance() * XTOR_FACTOR;
+      return (state - expected == 0) &&
+             (xtor_count + (ctor_count + cctor_count - dtor_count) == 0);
     }
 
   private:  // context is intended to be the single instance in a test
@@ -69,36 +61,34 @@ namespace
   };
 
 
-  struct eh_test
+  template <int I>
+  struct xtor_counter
   {
     context& ctx;
-    unsigned i;
+    int volatile val;
 
-    explicit eh_test(context& c_, int const& i_ = 0)
-      : ctx  ( c_ )
-      , i    ( i_ )
+    explicit xtor_counter(context& c, int const i = I)
+      : ctx ( c )
+      , val ( i )
     {
-      ++ctx.ctor_count;
-      ++ctx.xtor_count;
+      ctx.ctor();
     }
 
-    eh_test(eh_test const& src)
-      : ctx  ( src.ctx )
-      , i    ( src.i )
+    xtor_counter(xtor_counter const& src)
+      : ctx ( src.ctx )
+      , val ( src.val )
     {
-      ++ctx.cctor_count;
-      ++ctx.xtor_count;
+      ctx.cctor();
     }
 
-    ~eh_test()
+    ~xtor_counter()
     {
-      i = 0;
-      ++ctx.dtor_count;
-      --ctx.xtor_count;
+      val = 0;
+      ctx.dtor();
     }
   };
 
-}  // namespace
+}}}  // namespace cpprtl::eh::test
+
 
 #endif  // include guard
-

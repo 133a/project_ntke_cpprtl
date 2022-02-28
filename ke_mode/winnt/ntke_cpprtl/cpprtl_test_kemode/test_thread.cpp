@@ -1,13 +1,11 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "ntddk.include.h"
 #include <cstddef>
-#include <new>
 #include "aux_cpu.h"
 #include "aux_task.h"
 #include "tests_aux.h"
@@ -19,7 +17,7 @@ namespace cpprtl_tests
 {
   enum
   {
-    THREAD_FACTOR = 8
+    THREAD_FACTOR = 2
   };
 
 
@@ -43,7 +41,7 @@ namespace cpprtl_tests
         : payload ( pld )
       {}
 
-      void operator()()
+      void operator()() const
       {
         return payload();
       }
@@ -65,7 +63,7 @@ namespace cpprtl_tests
     }
 
     template <typename PLD>
-    bool spawn(PLD const& pld, size_t const& = 0)
+    bool spawn(PLD const& pld, std::size_t const = 0)
     {
       bool result = false;
       if ( !spawned )
@@ -78,9 +76,12 @@ namespace cpprtl_tests
 
     void acquire()
     {
-      thread.acquire(STATUS_SUCCESS);
-      thread.detach();
-      spawned = false;
+      if ( spawned )
+      {
+        thread.acquire(STATUS_SUCCESS);
+        thread.detach();
+        spawned = false;
+      }
     }
 
     payload_type const& get_payload() const
@@ -95,7 +96,7 @@ namespace cpprtl_tests
 namespace cpprtl_tests
 {
 
-  int test_thread_impl(test_type const tests[], std::size_t const& task_num)
+  int test_thread_impl(test_type const tests[], std::size_t const task_num)
   {
     typedef aux_::task_bunch<kthread<test_payload> > thread_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )

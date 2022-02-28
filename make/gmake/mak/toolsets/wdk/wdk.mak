@@ -3,7 +3,7 @@
 ###############################################
 
   toolset.type      = wdk
-  target.platform   = winnt
+  target.platform   = win32
   wdk.dir.toolset   = $(make.dir.toolsets)/wdk
   msvc.dir.toolset  = $(make.dir.toolsets)/msvc
 

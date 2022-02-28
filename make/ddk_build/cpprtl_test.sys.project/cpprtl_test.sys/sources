@@ -9,13 +9,13 @@ TARGETTYPE = DRIVER
 TARGETNAME = cpprtl_test
 
 
-USER_C_FLAGS  =  $(USER_C_FLAGS) /DTEST_GSTATIC /DTEST_EH /DTEST_RTTI /DTEST_STL /DTEST_WORKITEM /DTEST_DPC /DTEST_APC /DTEST_THREAD
+USER_C_FLAGS  =  $(USER_C_FLAGS) /DTEST_GSTATIC /DTEST_EH /DTEST_RTTI /DTEST_STL /DTEST_IRQL /DTEST_WORKITEM /DTEST_DPC /DTEST_APC /DTEST_THREAD
 
 
 TARGETLIBS = \
     $(DDK_LIB_PATH)\ntoskrnl.lib  \
     $(DDK_LIB_PATH)\hal.lib  \
-    $(DDK_LIB_PATH)\wdm.lib  \
+    $(DDK_LIB_PATH)\libcntpr.lib  \
     $(MODULE_OUTPUT_DIR)\*\ntke_cpprtl.lib  \
     $(MODULE_OUTPUT_DIR)\*\ntke_eh_test_suite.lib  \
     $(MODULE_OUTPUT_DIR)\*\ntke_rtti_test_suite.lib  \

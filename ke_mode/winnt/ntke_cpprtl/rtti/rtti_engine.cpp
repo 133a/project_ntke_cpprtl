@@ -1,141 +1,131 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-#include "rtti_framework_specific_header.h"
-
+#include "rtti_framework.h"
 #include "rtti_config.h"
-#include "rtti_msvc_internal_data.h"
-#include "rtti_msvc_internal_data_aux.h"
-#include "rtti_engine.h"
+#include "rtti_data.h"
+#include "rtti_data_iterator.h"
 #include "rtti_aux.h"
-
-
 #include <std_incl/typeinfo>
 
 
-namespace
+namespace cpprtl { namespace rtti
 {
+  using namespace msvc_data;
 
-  bool operator==
-  (
-    cpprtl::msvc_internal_data::rtti::type_descriptor const& lhs
-  , cpprtl::msvc_internal_data::rtti::type_descriptor const& rhs
-  )
+  struct polymorphic_object_type;
+  typedef polymorphic_object_type const* pcobj_t;
+  typedef polymorphic_object_type*       pobj_t;
+
+
+  bool operator==(type_descriptor const& lhs, type_descriptor const& rhs)
   {
-    return &lhs == &rhs || cpprtl::rtti::aux_::strzcmp(&lhs.name, &rhs.name);
+    return (&lhs == &rhs) || aux_::strzeq(lhs.name, rhs.name);
   }
 
 
-  int exception_access_violation_seh_filter(int const& exc_code)
+  size_t pointer_cast(size_t obj_addr, subtype_cast_info const& cast_info)
   {
-    return STATUS_ACCESS_VIOLATION == exc_code ? EXCEPTION_EXECUTE_HANDLER: EXCEPTION_CONTINUE_SEARCH;
-  }
-
-
-  cpprtl::image_base_t get_image_base(void const* ptr)
-  {
-  #ifdef CFG_RVA
-    void* ib = 0;
-    IRQL_CHECK ( <=DISPATCH_LEVEL )  // RtlPcToFileHeader()
-    ib = ::RtlPcToFileHeader(const_cast<void*>(ptr), &ib);
-    return reinterpret_cast<cpprtl::image_base_t>(ib);
-  #else
-    return 0;
-  #endif
-  }
-
-}
-
-
-namespace cpprtl
-{
-namespace rtti
-{
-
-  typedef ::std::bad_cast     bad_cast_t;
-  typedef ::std::bad_typeid   bad_typeid_t;
-
-
-  pcobj_t pointer_cast(pcobj_t const complete_obj, msvc_internal_data::rtti::subtype_cast_info const& cast_info)
-  {
-    ::size_t ptr = reinterpret_cast< ::size_t>(complete_obj);
     if ( cast_info.vbase_table_offset >= 0 )
     {
-      ptr += cast_info.vbase_table_offset;
-      ptr += *reinterpret_cast<int*>(*reinterpret_cast< ::size_t*>(ptr) + cast_info.vbase_disp_offset);
+      obj_addr += cast_info.vbase_table_offset;
+      obj_addr += *reinterpret_cast<int const*>(*reinterpret_cast<size_t const*>(obj_addr) + cast_info.vbase_disp_offset);
     }
-    ptr += cast_info.subtype_offset;
-    return reinterpret_cast<pcobj_t>(ptr);
+    obj_addr += cast_info.subtype_offset;
+    return obj_addr;
+  }
+
+  pcobj_t pointer_cast(pcobj_t const obj_ptr, subtype_cast_info const& cast_info)
+  {
+    return reinterpret_cast<pcobj_t>(pointer_cast(reinterpret_cast<size_t>(obj_ptr), cast_info));
   }
 
 
-  msvc_internal_data::rtti::complete_object_locator const* get_complete_object_locator(pcobj_t obj)
-  {
-    return (*reinterpret_cast<msvc_internal_data::rtti::complete_object_locator** const*>(obj))[-1];
-  }
+  extern "C" complete_object_descriptor const* __fastcall cpprtl_rtti_get_co_descriptor(pcobj_t obj);
 
-
-  pcobj_t get_complete_object(pcobj_t src_obj)
+  class complete_object
   {
-    msvc_internal_data::rtti::complete_object_locator const* pcol = get_complete_object_locator(src_obj);
-    ::size_t complete_obj = reinterpret_cast< ::size_t>(src_obj) - pcol->offset;
-    if ( pcol->cd_offset )
+    complete_object_descriptor const* dsc;
+    size_t                            addr;
+    imagebase_t                       ib;
+
+  public:
+    explicit complete_object(pcobj_t const obj, bool const get_image_base = true)
+      : dsc  ( cpprtl_rtti_get_co_descriptor(obj) )
+      , addr ( 0 )
+      , ib   ( 0 )
     {
-      complete_obj -= (reinterpret_cast< ::size_t>(src_obj) - pcol->cd_offset);
+      if ( dsc )
+      {
+        addr = reinterpret_cast<size_t>(obj) - dsc->offset;
+        if ( dsc->cd_offset )
+        {
+          addr -= *reinterpret_cast<int const*>(reinterpret_cast<size_t>(obj) - dsc->cd_offset);
+        }
+      #ifdef CPPRTL_RTTI_CFG_RVA
+        if ( get_image_base )
+        {
+          if ( dsc->signature == CO_SIG_V0 )
+          { 
+            IRQL_CHECK ( <=DISPATCH_LEVEL )  // RtlPcToFileHeader()
+            ib = reinterpret_cast<imagebase_t>
+            (
+              ::RtlPcToFileHeader
+              (
+                const_cast<complete_object_descriptor*>(dsc)
+              , reinterpret_cast<void**>(&ib)
+              )
+            );
+          }
+          else
+          {
+            ib = reinterpret_cast<imagebase_t>(dsc) - dsc->self;
+          }
+        }
+      #endif
+      }
     }
-    return reinterpret_cast<pcobj_t>(complete_obj);
-  }
 
-
-  struct complete_object
-  {
-    msvc_internal_data::rtti::complete_object_locator const* locator;
-    pcobj_t                                                  ptr;
-
-    complete_object(pcobj_t src)
-      : locator(get_complete_object_locator(src))
-      , ptr(get_complete_object(src))
-    {}
-
-    bool check() const  // TODO ?
-    {
-      return locator && ptr;
-    }
+    operator pcobj_t() const { return reinterpret_cast<pcobj_t>(addr); }
+    size_t                            address()    const { return addr; }
+    complete_object_descriptor const& descriptor() const { return *dsc; }
+    imagebase_t                       image_base() const { return ib; }
   };
 
 
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-  ////  single inheritance hierarchy walker
-  /////////////////////////////////////////////////////////
-  msvc_internal_data::rtti::base_class_descriptor2 const* dynamic_cast_single_inheritance
+//====================================
+// single inheritance hierarchy walker
+//------------------------------------
+  base_class_descriptor const* dynamic_cast_single_inheritance
   (
-    complete_object                              const&  complete_obj
-  , msvc_internal_data::rtti::type_descriptor    const&  src_type_dsc
-  , msvc_internal_data::rtti::type_descriptor    const&  dst_type_dsc
-  , ::size_t                                     const&  image_base
+    complete_object  const&  co
+  , type_descriptor  const&  src_type
+  , type_descriptor  const&  dst_type
   )
   {
-    // checks for downcast (base to derived). upcasts are expected to be resolved at compile time
-    class_hierarchy ch(complete_obj.locator, image_base);
-    for ( base_class_iterator dst_bc(*base_class_array(*ch, image_base), *ch, image_base); dst_bc.valid(); dst_bc.next() )
+    // checks for downcast, upcasts are expected to be resolved at compile time
+    for
+    (
+      base_class_iterator dst_bc(*class_hierarchy_accessor(co.descriptor(), co.image_base()), co.image_base())
+    ; dst_bc.valid()
+    ; dst_bc.next()
+    )
     {
-      if ( dst_type_dsc == **base_class_type_descriptor(*dst_bc, image_base) )
+      if ( dst_type == *type_descriptor_accessor(*dst_bc, co.image_base()) )
       {
         base_class_iterator src_bc(dst_bc);
         for ( src_bc.next(); src_bc.valid(); src_bc.next() )
         {
-          if ( src_bc->attributes & msvc_internal_data::rtti::BC_NOT_PUBLIC_BASE )
+          if ( src_bc->attributes & (BC_NOT_PUBLIC_BASE_4 | BC_NOT_PUBLIC_BASE_8) )
           {
             break;
           }
-          if ( src_type_dsc == **base_class_type_descriptor(*src_bc, image_base) )
+          if ( src_type == *type_descriptor_accessor(*src_bc, co.image_base()) )
           {
-            return *src_bc;
+            return &*src_bc;
           }
         }
         break;
@@ -145,395 +135,321 @@ namespace rtti
   }
 
 
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-  ////  multiple inheritance hierarchy walker aux staff
-  /////////////////////////////////////////////////////////
-  namespace mi_aux_
+//======================================
+// multiple inheritance hierarchy walker
+//--------------------------------------
+  namespace mi_aux
   {
-
-    msvc_internal_data::rtti::base_class_descriptor2 const* check_cross_cast(base_class_iterator const& src, base_class_iterator const& dst)
+    base_class_descriptor const* check_cross_cast
+    (
+      base_class_iterator  const&  src
+    , base_class_iterator  const&  dst
+    )
     {
-      msvc_internal_data::rtti::base_class_descriptor2 const* bc_ret = *dst;
-      if 
-      (
-        src->attributes &  msvc_internal_data::rtti::BC_NOT_VISIBLE
-      ||
-        dst->attributes & (msvc_internal_data::rtti::BC_NOT_VISIBLE | msvc_internal_data::rtti::BC_AMBIGUOUS)
-      )
+      base_class_descriptor const* bc = &*dst;
+      if ( (src->attributes & BC_NOT_VISIBLE) || (dst->attributes & (BC_NOT_VISIBLE | BC_AMBIGUOUS)) )
       {
-        bc_ret = 0;
+        bc = 0;
       }
-      return bc_ret;
+      return bc;
     }
 
-
-    msvc_internal_data::rtti::base_class_descriptor2 const* check_down_cast(base_class_iterator const& src, base_class_iterator const& dst)
+    base_class_descriptor const* check_down_cast
+    (
+      base_class_iterator  const&  src
+    , base_class_iterator  const&  dst
+    , imagebase_t          const   image_base
+    )
     {
-      msvc_internal_data::rtti::base_class_descriptor2 const* bc_ret = *dst;
-
-      if ( dst->attributes & msvc_internal_data::rtti::BC_WITH_HIERARCHY )  // the real base_class_descriptor2*
+      base_class_descriptor const* bc = &*dst;
+      if ( dst->attributes & BC_WITH_HIERARCHY )
       {
-        ::size_t const image_base = dst.get_image_base();
-        class_hierarchy dst_ch(*dst, image_base);
-        base_class_iterator src_in_dst(*base_class_array(*dst_ch, image_base), *dst_ch, image_base);
-
-        if ( src_in_dst[src.index() - dst.index()].valid() )
+        base_class_iterator src_in_dst(*class_hierarchy_accessor(*dst, image_base), image_base);
+        if ( src_in_dst[src.index() - dst.index()], src_in_dst.valid() )
         {
-          if ( src_in_dst->attributes & msvc_internal_data::rtti::BC_NOT_VISIBLE )
+          if ( src_in_dst->attributes & BC_NOT_VISIBLE )
           {
-            bc_ret = 0;
+            bc = 0;
           }
         }
       }
-      else  // our base_class_descriptor2* is actually just an base_class_descriptor*
+      else
       {
-        if
-        (
-          dst.index() == 0
-        &&
-          (src->attributes & msvc_internal_data::rtti::BC_NOT_VISIBLE)
-        )
+        if ( (dst.index() == 0) && (src->attributes & BC_NOT_VISIBLE) )
         {
-          bc_ret = 0;
+          bc = 0;
         }
       }
-      return bc_ret;
+      return bc;
     }
+  }  // namespace mi_aux
 
-  }  // namespace mi_aux_
-
-
-  /////////////////////////////////////////////////////////
-  ////  multiple inheritance hierarchy walker
-  /////////////////////////////////////////////////////////
-  msvc_internal_data::rtti::base_class_descriptor2 const* dynamic_cast_multiple_inheritance
+  base_class_descriptor const* dynamic_cast_multiple_inheritance
   (
-    complete_object                           const&  complete_obj
-  , ::size_t                                  const&  src_obj_offset
-  , msvc_internal_data::rtti::type_descriptor const&  src_type_dsc
-  , msvc_internal_data::rtti::type_descriptor const&  dst_type_dsc
-  , ::size_t                                  const&  image_base
+    complete_object  const&  co
+  , size_t           const   src_offset
+  , type_descriptor  const&  src_type
+  , type_descriptor  const&  dst_type
   )
   {
-    class_hierarchy ch(complete_obj.locator, image_base);
+    base_class_iterator bc(*class_hierarchy_accessor(co.descriptor(), co.image_base()), co.image_base());
+    base_class_iterator src = bc;
+    base_class_iterator dst = bc;
+    src.deface();
+    dst.deface();
 
-    base_class_iterator bc_iter(*base_class_array(*ch, image_base), *ch, image_base);
-    base_class_iterator dst_bc = bc_iter;
-    base_class_iterator src_bc = bc_iter;
-    dst_bc.deface();
-    src_bc.deface();
-
-    for ( ; bc_iter.valid(); bc_iter.next() )
+    for ( ; bc.valid(); bc.next() )
     {
-
-      if ( dst_type_dsc == **base_class_type_descriptor(*bc_iter, image_base) )
+      if ( dst_type == *type_descriptor_accessor(*bc, co.image_base()) )
       {
-        if ( src_bc.valid() )  // left-right cross-cast
+        if ( src.valid() )  // left-right cross-cast
         {
-          return mi_aux_::check_cross_cast(src_bc, bc_iter);
+          return mi_aux::check_cross_cast(src, bc);
         }
-        dst_bc = bc_iter;
+        dst = bc;
       }
-
       if
       (
-        src_type_dsc == **base_class_type_descriptor(*bc_iter, image_base)
-      &&
-        reinterpret_cast< ::size_t>(complete_obj.ptr) + src_obj_offset == reinterpret_cast< ::size_t>(pointer_cast(complete_obj.ptr, bc_iter->cast_info))
+        (src_type == *type_descriptor_accessor(*bc, co.image_base())) &&
+        (co.address() + src_offset == pointer_cast(co.address(), bc->cast_info))
       )
       {
-        if ( dst_bc.valid() )
+        if ( dst.valid() )
         {
-          if ( bc_iter.index() - dst_bc.index() <= dst_bc->num_contained_bases )  // base-derived cast
+          if ( bc.index() - dst.index() <= dst->nested_bases )  // downcast
           {
-            return mi_aux_::check_down_cast(bc_iter, dst_bc);
+            return mi_aux::check_down_cast(bc, dst, co.image_base());
           }
           else  // right-left cross-cast
           {
-            return mi_aux_::check_cross_cast(bc_iter, dst_bc);
+            return mi_aux::check_cross_cast(bc, dst);
           }
         }
-        src_bc = bc_iter;
+        src = bc;
       }
     }
-    return 0;  // there was not found src and/or dst types in type hierarchy
+    return 0;
   }
 
 
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-  //// virtual inheritance hierarchy walker aux staff
-  /////////////////////////////////////////////////////////
-  namespace vi_aux_
+//=====================================
+// virtual inheritance hierarchy walker
+//-------------------------------------
+  namespace vi_aux
   {
-
-    struct vi_walker_state
+    struct hierarchy_walker_state
     {
-      complete_object const& complete_obj;
-      bool down_cast_allowed;
-      bool directly_public;
-      msvc_internal_data::rtti::base_class_descriptor2 const* cross_cast_src;
-      msvc_internal_data::rtti::base_class_descriptor2 const* cross_cast_dst;
-      msvc_internal_data::rtti::base_class_descriptor2 const* down_cast_dst;
-      ::size_t down_cast_dst_offset;
+      complete_object       const& co;
+      base_class_descriptor const* cross_cast_src;
+      base_class_descriptor const* cross_cast_dst;
+      base_class_descriptor const* down_cast_dst;
+      size_t                       down_cast_dst_offset;
+      bool                         down_cast_allowed;
+      bool                         directly_public;
 
-      vi_walker_state(complete_object const& co)
-        : complete_obj         ( co )
-        , down_cast_allowed    ( true )
-        , directly_public      ( false )
+      explicit hierarchy_walker_state(complete_object const& co)
+        : co                   ( co )
         , cross_cast_src       ( 0 )
         , cross_cast_dst       ( 0 )
         , down_cast_dst        ( 0 )
         , down_cast_dst_offset ( 0 )
+        , down_cast_allowed    ( true )
+        , directly_public      ( false )
       {}
-    };
 
-
-    void check_cross_cast_src(base_class_iterator const& src, vi_walker_state& state)
-    {
-      if ( !(src->attributes & (msvc_internal_data::rtti::BC_NOT_VISIBLE | msvc_internal_data::rtti::BC_NOT_PUBLIC_BASE)) )
+      void check_cross_cast_src(base_class_iterator const& src)
       {
-        state.cross_cast_src = *src;
-      }
-    }
-
-
-    void check_cross_cast_dst(base_class_iterator const& dst, vi_walker_state& state)
-    {
-      if ( !(dst->attributes & (msvc_internal_data::rtti::BC_NOT_VISIBLE | msvc_internal_data::rtti::BC_AMBIGUOUS)) )
-      {
-        state.cross_cast_dst = *dst;
-      }
-    }
-
-
-    bool check_down_cast(base_class_iterator const& src, base_class_iterator const& dst, vi_walker_state& state)
-    {
-      if ( state.down_cast_allowed )
-      {
-        if ( dst->attributes & msvc_internal_data::rtti::BC_WITH_HIERARCHY )  // the real base_class_descriptor2*
+        if ( !(src->attributes & (BC_NOT_VISIBLE | BC_NOT_PUBLIC_BASE_4 | BC_NOT_PUBLIC_BASE_8)) )
         {
-          ::size_t const image_base = dst.get_image_base();
-          class_hierarchy dst_ch(*dst, image_base);
-          base_class_iterator src_in_dst(*base_class_array(*dst_ch, image_base), *dst_ch, image_base);
-  
-          if ( src_in_dst[src.index() - dst.index()].valid() )
+          cross_cast_src = &*src;
+        }
+      }
+
+      void check_cross_cast_dst(base_class_iterator const& dst)
+      {
+        if ( !(dst->attributes & (BC_NOT_VISIBLE | BC_AMBIGUOUS)) )
+        {
+          cross_cast_dst = &*dst;
+        }
+      }
+
+      bool check_down_cast(base_class_iterator const& src, base_class_iterator const& dst)
+      {
+        if ( down_cast_allowed )
+        {
+          if ( dst->attributes & BC_WITH_HIERARCHY )
           {
-            if ( src_in_dst->attributes & msvc_internal_data::rtti::BC_NOT_VISIBLE )
+            base_class_iterator src_in_dst(*class_hierarchy_accessor(*dst, co.image_base()), co.image_base());
+            if ( src_in_dst[src.index() - dst.index()], src_in_dst.valid() )
             {
-              state.down_cast_allowed = false;
+              if ( src_in_dst->attributes & BC_NOT_VISIBLE )
+              {
+                down_cast_allowed = false;
+              }
+              directly_public = !(src_in_dst->attributes & (BC_NOT_PUBLIC_BASE_4 | BC_NOT_PUBLIC_BASE_8));
             }
-            state.directly_public = !(src_in_dst->attributes & msvc_internal_data::rtti::BC_NOT_PUBLIC_BASE);
+          }
+          else
+          {
+            if ( (dst.index() == 0) && (src->attributes & BC_NOT_VISIBLE) )
+            {
+              down_cast_allowed = false;
+            }
+            directly_public = true;
+          } 
+          if ( down_cast_allowed && directly_public )
+          {
+            size_t const dst_offset = pointer_cast(co.address(), dst->cast_info) - co.address();
+            if ( down_cast_dst && (dst_offset != down_cast_dst_offset) )
+            {
+              return false;  // ambiguous dst
+            }
+            down_cast_dst = &*dst;
+            down_cast_dst_offset = dst_offset;
           }
         }
-        else  // our base_class_descriptor2* is actually just an base_class_descriptor*
-        {
-          if
-          (
-            dst.index() == 0
-          && 
-            (src->attributes & msvc_internal_data::rtti::BC_NOT_VISIBLE)
-          )
-          {
-            state.down_cast_allowed = false;
-          }
-          state.directly_public = true;
-        } 
-
-        if ( state.down_cast_allowed && state.directly_public )
-        {
-          ::size_t const current_dst_offset = reinterpret_cast< ::size_t>(pointer_cast(state.complete_obj.ptr, dst->cast_info)) - reinterpret_cast< ::size_t>(state.complete_obj.ptr);
-          if
-          (
-            state.down_cast_dst
-          &&
-            current_dst_offset != state.down_cast_dst_offset
-          )
-          {
-            return false;  // ambiguous dst
-          }
-          state.down_cast_dst = *dst;
-          state.down_cast_dst_offset = current_dst_offset;
-        }
-
+        return true;
       }
-      return true;
-    }
-
+    };
   }  // namespace vi_aux_
 
-
-  /////////////////////////////////////////////////////////
-  ////  virtual inheritance hierarchy walker
-  /////////////////////////////////////////////////////////
-  msvc_internal_data::rtti::base_class_descriptor2 const* dynamic_cast_virtual_inheritance
+  base_class_descriptor const* dynamic_cast_virtual_inheritance
   (
-    complete_object                           const&  complete_obj
-  , ::size_t                                  const&  src_obj_offset
-  , msvc_internal_data::rtti::type_descriptor const&  src_type_dsc
-  , msvc_internal_data::rtti::type_descriptor const&  dst_type_dsc
-  , ::size_t                                  const&  image_base
+    complete_object  const&  co
+  , size_t           const   src_offset
+  , type_descriptor  const&  src_type
+  , type_descriptor  const&  dst_type
   )
   {
-    vi_aux_::vi_walker_state vi_state(complete_obj);
-
-    class_hierarchy ch(complete_obj.locator, image_base);
-    base_class_iterator bc_iter(*base_class_array(*ch, image_base), *ch, image_base);
-    base_class_iterator dst_bc = bc_iter;
-    dst_bc.deface();
-
-    for ( ; bc_iter.valid(); bc_iter.next() )
+    vi_aux::hierarchy_walker_state walker_state(co);
+    base_class_iterator bc(*class_hierarchy_accessor(co.descriptor(), co.image_base()), co.image_base());
+    base_class_iterator dst = bc;
+    dst.deface();
+    for ( ; bc.valid(); bc.next() )
     {
-
-      if ( dst_type_dsc == **base_class_type_descriptor(*bc_iter, image_base) )
+      if ( dst_type == *type_descriptor_accessor(*bc, co.image_base()) )
       {
-        dst_bc = bc_iter;
-        vi_aux_::check_cross_cast_dst(dst_bc, vi_state);  // possible cross-cast destination
+        dst = bc;
+        walker_state.check_cross_cast_dst(dst);  // possible cross-cast destination
       }
-
       if
       (
-        src_type_dsc == **base_class_type_descriptor(*bc_iter, image_base)
-      &&
-        reinterpret_cast< ::size_t>(complete_obj.ptr) + src_obj_offset == reinterpret_cast< ::size_t>(pointer_cast(complete_obj.ptr, bc_iter->cast_info))
+        (src_type == *type_descriptor_accessor(*bc, co.image_base())) &&
+        (co.address() + src_offset == pointer_cast(co.address(), bc->cast_info))
       )
       {
-        if ( dst_bc.valid()  &&  bc_iter.index() - dst_bc.index() <= dst_bc->num_contained_bases )   // down-cast
+        if ( dst.valid() && (bc.index() - dst.index() <= dst->nested_bases) )  // downcast
         {
-          if ( !vi_aux_::check_down_cast(bc_iter, dst_bc, vi_state) )
+          if ( !walker_state.check_down_cast(bc, dst) )
           {
             return 0;
           }
         }
         else  // cross-cast
         {
-          vi_aux_::check_cross_cast_src(bc_iter, vi_state);  // possible cross-cast source
+          walker_state.check_cross_cast_src(bc);  // possible cross-cast source
         }
       }
     }
-
-    if ( vi_state.down_cast_allowed && vi_state.down_cast_dst )
+    if ( walker_state.down_cast_allowed && walker_state.down_cast_dst )
     {
-      return vi_state.down_cast_dst;
+      return walker_state.down_cast_dst;
     }
-
-    if ( vi_state.cross_cast_src && vi_state.cross_cast_dst )
+    if ( walker_state.cross_cast_src && walker_state.cross_cast_dst )
     {
-      return vi_state.cross_cast_dst;
+      return walker_state.cross_cast_dst;
     }
     return 0;
   }
 
 
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
-  void* dynamic_cast_impl
+//=========================================================
+// msvc internally pre-declared RTTI routines' entry points
+//---------------------------------------------------------
+  extern "C"
+  void* __cdecl __RTDynamicCast
   (
-    pcobj_t                                           src_obj
-  , long                                              vfdelta
-  , msvc_internal_data::rtti::type_descriptor const&  src_type_dsc
-  , msvc_internal_data::rtti::type_descriptor const&  dst_type_dsc
-  , bool                                              is_ref
+    pcobj_t                 src_obj
+  , long            const   vfdelta
+  , type_descriptor const&  src_type
+  , type_descriptor const&  dst_type
+  , bool            const   is_ref
   )
+  throw (...)
   {
     pcobj_t dst_obj = 0;
     if ( src_obj )
     {
-      __try
+      complete_object co(src_obj);
+      if ( co )
       {
-        complete_object const complete_obj(src_obj);
-        if ( complete_obj.check() )
+        base_class_descriptor const* bc = 0;
+        class_hierarchy_accessor ch(co.descriptor(), co.image_base());
+        if ( !(ch->attributes & CH_MULTIPLE_INHERITANCE) )
         {
-          reinterpret_cast< ::size_t&>(src_obj) -= vfdelta;
-          cpprtl::image_base_t image_base = get_image_base(complete_obj.locator);
-          class_hierarchy ch(complete_obj.locator, image_base);
-          msvc_internal_data::rtti::base_class_descriptor2 const* base_class = 0;
-          ::size_t src_obj_offset = reinterpret_cast< ::size_t>(src_obj) - reinterpret_cast< ::size_t>(complete_obj.ptr);
-  
-          if ( !(ch->attributes & msvc_internal_data::rtti::CH_MULTIPLE_INHERITANCE) )
+          bc = dynamic_cast_single_inheritance(co, src_type, dst_type);
+        }
+        else
+        {
+          size_t const src_offset = (reinterpret_cast<size_t&>(src_obj) -= vfdelta) - co.address();
+          if ( !(ch->attributes & CH_VIRTUAL_INHERITANCE) )
           {
-            base_class = dynamic_cast_single_inheritance(complete_obj, src_type_dsc, dst_type_dsc, image_base);
-          }
-          else if ( !(ch->attributes & msvc_internal_data::rtti::CH_VIRTUAL_INHERITANCE) )
-          {
-            base_class = dynamic_cast_multiple_inheritance(complete_obj, src_obj_offset, src_type_dsc, dst_type_dsc, image_base);
+            bc = dynamic_cast_multiple_inheritance(co, src_offset, src_type, dst_type);
           }
           else
           {
-            base_class = dynamic_cast_virtual_inheritance(complete_obj, src_obj_offset, src_type_dsc, dst_type_dsc, image_base);
-          }
-  
-          if ( base_class )
-          {
-            dst_obj = pointer_cast(complete_obj.ptr, base_class->cast_info);
+            bc = dynamic_cast_virtual_inheritance(co, src_offset, src_type, dst_type);
           }
         }
-      }
-      __except (exception_access_violation_seh_filter(GetExceptionCode()))
-      {
-        dst_obj = 0;
+        if ( bc )
+        {
+          dst_obj = pointer_cast(co, bc->cast_info);
+        }
       }
     }
     if ( is_ref && !dst_obj )
     {
-      throw bad_cast_t();
+      throw std::bad_cast();
     }
     return const_cast<pobj_t>(dst_obj);
   }
 
 
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
-  void* typeid_impl(pcobj_t src_obj)
+  extern "C"
+  void const* __cdecl __RTtypeid(pcobj_t const src_obj)
+  throw (...)
   {
+    type_descriptor const* type_info = 0;
     if ( src_obj )
     {
-      __try
+      complete_object co(src_obj);
+      if ( co )
       {
-        complete_object const complete_obj(src_obj);
-        if ( complete_obj.check() )
-        {
-          ::size_t image_base = get_image_base(complete_obj.locator);
-          complete_object_type_descriptor type_dsc(complete_obj.locator, image_base);
-          if ( type_dsc.valid() )
-          {
-            return const_cast<msvc_internal_data::rtti::type_descriptor*>(*type_dsc);
-          }
-        }
-      }
-      __except (exception_access_violation_seh_filter(GetExceptionCode()))
-      {
+        type_info = &*type_descriptor_accessor(co.descriptor(), co.image_base());
       }
     }
-    throw bad_typeid_t();
+    if ( !type_info )
+    {
+      throw std::bad_typeid();
+    }
+    return type_info;
   }
 
 
-///////////////////////////////////////////////////////
-///////////////////////////////////////////////////////
-  void* cast_to_void_impl(pcobj_t src_obj)
+  extern "C"
+  void* __cdecl __RTCastToVoid(pcobj_t const src_obj)
+  throw (...)
   {
     pcobj_t dst_obj = 0;
-    bool throw_bad_cast = false;
     if ( src_obj )
     {
-      __try
+      dst_obj = complete_object(src_obj, false);
+      if ( !dst_obj )
       {
-        complete_object const complete_obj(src_obj);
-        if ( complete_obj.check() )
-        {
-          dst_obj = complete_obj.ptr;
-        }
-      }
-      __except (exception_access_violation_seh_filter(GetExceptionCode()))
-      {
-        throw bad_cast_t();
+        throw std::bad_cast();
       }
     }
     return const_cast<pobj_t>(dst_obj);
   }
 
-}  // namespace rtti
-}  // namespace cpprtl
-
+}}  // namespace cpprtl::rtti

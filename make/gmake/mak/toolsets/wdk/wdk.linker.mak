@@ -4,13 +4,12 @@
 
 # -SECTION:INIT,d -FORCE:MULTIPLE
   wdk.linker.options += -NOLOGO
+  wdk.linker.options += -DRIVER
   wdk.linker.options += -SUBSYSTEM:NATIVE
   wdk.linker.options += -INCREMENTAL:NO
   wdk.linker.options += -NODEFAULTLIB
-  wdk.linker.options += -BASE:0x10000
   wdk.linker.options += -OPT:REF
   wdk.linker.options += -OPT:ICF
-  wdk.linker.options += -DRIVER
 
 
 # target.arch options
@@ -19,11 +18,23 @@
   wdk.linker.options.arm    += -MACHINE:ARM
   wdk.linker.options.arm64  += -MACHINE:ARM64
   wdk.linker.options.ia64   += -MACHINE:IA64
-
 ifndef toolset.not_supported.safeseh
-  wdk.linker.options.x86  += -SAFESEH:NO
+  ifneq '$(target.kernel)' 'nt5.0'
+    wdk.linker.options.x86  += -SAFESEH
+  else
+    wdk.linker.options.x86  += -SAFESEH:NO
+  endif
 endif
 
+
+ifndef module.base.$(target.arch)
+    module.base.$(target.arch) = 0x100000
+  ifdef toolset.supported.force_aslr
+    module.base.x64            = 0x110000000
+    module.base.arm64          = 0x110000000
+  endif
+endif
+  wdk.linker.options += -BASE:$(module.base.$(target.arch))
 
 
 ###############################################
@@ -37,7 +48,6 @@ endif
   # x86 decor for the __stdcall function taking 2 ptr args
   wdk.linker.entry_point_tail.x86 = @8
   wdk.linker.options += -ENTRY:$(module.entry_point)$(wdk.linker.entry_point_tail.$(target.arch))
-
 
 
 ###############################################
@@ -60,10 +70,8 @@ endif
   wdk.linker.options.cpprtl_release  += -DEBUG -RELEASE
 
 
-
 ###############################################
 #      include the linker engine
 ###############################################
 
 include $(msvc.dir.toolset)/impl/link.mak
-

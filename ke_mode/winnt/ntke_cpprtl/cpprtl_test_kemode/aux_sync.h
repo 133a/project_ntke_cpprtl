@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef AUX_SYNC_H_
@@ -46,7 +45,7 @@ namespace aux_
       return KeWaitForSingleObject(&evt, Executive, KernelMode, FALSE, 0);
     }
 
-    NTSTATUS acquire(NTSTATUS const& acq_st)
+    NTSTATUS acquire(NTSTATUS const acq_st)
     {
       NTSTATUS st = STATUS_UNSUCCESSFUL;
       do
@@ -71,7 +70,6 @@ namespace aux_
 
     _NO_COPY_(kevent)
   };
-
 
 
 //// spin lock
@@ -165,7 +163,6 @@ namespace aux_
   };
 
 
-
 //// mutex
   class kmutex
   {
@@ -225,7 +222,6 @@ namespace aux_
 
     _NO_COPY_(auto_mutex)
   };
-
 
 
 //// fast mutex

@@ -1,13 +1,11 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "ntddk.include.h"
 #include <cstddef>
-#include <new>
 #include "aux_apc.h"
 #include "aux_cpu.h"
 #include "aux_task.h"
@@ -21,7 +19,7 @@ namespace cpprtl_tests
 {
   enum
   {
-    APC_FACTOR = 2
+    APC_FACTOR = 1
   };
 
   enum
@@ -204,7 +202,7 @@ namespace cpprtl_tests
     }
 
     template <typename PLD>
-    bool spawn(PLD const& pld, std::size_t const& = 0)
+    bool spawn(PLD const& pld, std::size_t const = 0)
     {
       typedef apc_transmitter<apc_type, apc_mode, PLD> apc_transmitter;
       return NT_SUCCESS(kt.spawn(apc_transmitter(apc, st, pld, 0)));
@@ -245,7 +243,7 @@ namespace cpprtl_tests
   public:
     sending_apc_to_another_thread()
       : stop_evt ( false, event_type::MANUAL_RESET )
-      , st ( RET_ERROR_UNEXPECTED )
+      , st       ( RET_ERROR_UNEXPECTED )
     {}
 
     ~sending_apc_to_another_thread()
@@ -254,7 +252,7 @@ namespace cpprtl_tests
     }
 
     template <typename PLD>
-    bool spawn(PLD const& pld, std::size_t const& = 0)
+    bool spawn(PLD const& pld, std::size_t const = 0)
     {
       if ( !NT_SUCCESS(kt_rx.spawn(apc_receiver(stop_evt))) )
       {
@@ -293,7 +291,7 @@ namespace cpprtl_tests
 {
 
   template <typename APC_TASK_TYPE>
-  int test_apc_impl(test_type const tests[], std::size_t const& task_num)
+  int test_apc_impl(test_type const tests[], std::size_t const task_num)
   {
     typedef aux_::task_bunch<APC_TASK_TYPE> apc_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
@@ -327,55 +325,44 @@ namespace cpprtl_tests
   }
 
 
-  int test_apc(test_type const tests[])
+  int test_apc_n(test_type const tests[], std::size_t const task_num)
   {
     using aux_::kapc;
-    DbgPrint("test_apc() : special, self-rx\n");
-    int status = test_apc_impl<sending_apc_to_thread_self<test_payload, kapc::special> >(tests, 1);
+    DbgPrint("test_apcs() : special, self-rx\n");
+    int status = test_apc_impl<sending_apc_to_thread_self<test_payload, kapc::special> >(tests, task_num);
     if ( RET_SUCCESS == status )
     {
-      DbgPrint("test_apc() : regular, self-rx\n");
-      status = test_apc_impl<sending_apc_to_thread_self<test_payload, kapc::regular> >(tests, 1);
+      DbgPrint("test_apcs() : regular, self-rx\n");
+      status = test_apc_impl<sending_apc_to_thread_self<test_payload, kapc::regular> >(tests, task_num);
     }
     if ( RET_SUCCESS == status )
     {
-      DbgPrint("test_apc() : special, thread-rx\n");
-      status = test_apc_impl<sending_apc_to_another_thread<test_payload, kapc::special> >(tests, 1);
+      DbgPrint("test_apcs() : special, thread-rx\n");
+      status = test_apc_impl<sending_apc_to_another_thread<test_payload, kapc::special> >(tests, task_num);
     }
     if ( RET_SUCCESS == status )
     {
-      DbgPrint("test_apc() : regular, thread-rx\n");
-      status = test_apc_impl<sending_apc_to_another_thread<test_payload, kapc::regular> >(tests, 1);
+      DbgPrint("test_apcs() : regular, thread-rx\n");
+      status = test_apc_impl<sending_apc_to_another_thread<test_payload, kapc::regular> >(tests, task_num);
     }
     return status;
   }
 
 
+  int test_apc(test_type const tests[])
+  {
+    DbgPrint("test_apc()\n");
+    return test_apc_n(tests, 1);
+  }
+
+
   int test_apc_mt(test_type const tests[])
   {
-    using aux_::kapc;
     std::size_t const task_num = aux_::get_number_processors() * APC_FACTOR;
     DbgPrint("test_apc_mt() : task_num=%d\n", unsigned(task_num));
     if ( task_num > 1 )
     {
-      DbgPrint("test_apc_mt() : special, self-rx\n");
-      int status = test_apc_impl<sending_apc_to_thread_self<test_payload, kapc::special> >(tests, task_num);
-      if ( RET_SUCCESS == status )
-      {
-        DbgPrint("test_apc_mt() : regular, self-rx\n");
-        status = test_apc_impl<sending_apc_to_thread_self<test_payload, kapc::regular> >(tests, task_num);
-      }
-      if ( RET_SUCCESS == status )
-      {
-        DbgPrint("test_apc_mt() : special, thread-rx\n");
-        status = test_apc_impl<sending_apc_to_another_thread<test_payload, kapc::special> >(tests, task_num);
-      }
-      if ( RET_SUCCESS == status )
-      {
-        DbgPrint("test_apc_mt() : regular, thread-rx\n");
-        status = test_apc_impl<sending_apc_to_another_thread<test_payload, kapc::regular> >(tests, task_num);
-      }
-      return status;
+      return test_apc_n(tests, task_num);
     }
     return RET_SUCCESS;
   }

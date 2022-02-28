@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef RTTI_AUX_H_
@@ -12,19 +11,10 @@
 #include "rtti_config.h"
 
 
-namespace cpprtl
+namespace cpprtl { namespace rtti { namespace aux_
 {
-namespace rtti
-{
-namespace aux_
-{
-
-  bool strzcmp(char const* ch1, char const* ch2);
-
-}  // namespace aux_
-}  // namespace rtti
-}  // namespace cpprtl
+  bool strzeq(char const* ch1, char const* ch2);
+}}}  // namespace cpprtl::rtti::aux_
 
 
 #endif  // include guard
-

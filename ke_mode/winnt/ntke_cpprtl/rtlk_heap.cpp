@@ -1,23 +1,17 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-#include "rtl_framework_specific_header.h"
+#include "rtl_framework.h"
 #include "rtl_init_heap.h"
 #include "rtlk_heap.h"
 
 
-/////////////////////////////////////////////////////////////////////////////
-//// nt kernel heap memory allocation
-/////////////////////////////////////////////////////////////////////////////
-
 namespace
 {
-
-  bool DBG_memory_allocation_check(POOL_TYPE const& pt)
+  bool DBG_memory_allocation_check(POOL_TYPE const pt)
   {
     bool res = false;
     switch (pt)
@@ -31,32 +25,24 @@ namespace
     };
     return res;
   }
-
 }  // namespace
 
-
-namespace cpprtl
+namespace cpprtl { namespace heap
 {
-namespace heap
-{
-
-  int start()
+  bool start()
   {
-    return STATUS_SUCCESS;
+    return true;
   }
-
 
   void stop()
   {
   }
-
 
   void* alloc(size_t const& sz, POOL_TYPE const& pt, ULONG const& tag)
   {
     ASSERT ( DBG_memory_allocation_check(pt) );
     return ExAllocatePoolWithTag(pt, sz, tag);
   }
-
   
   void dealloc(void* const ptr)
   {
@@ -67,7 +53,6 @@ namespace heap
     }
   }
 
-
   void dealloc(void* const ptr, POOL_TYPE const& pt)
   {
     if (ptr)
@@ -76,7 +61,23 @@ namespace heap
       ExFreePool(ptr);
     }
   }
+}}  // namespace cpprtl::heap
 
-}  // namespace heap
-}  // namespace cpprtl
+namespace 
+{
+  ULONG const rtl_memtag = 'EKTN';  // "NTKE"
+}
 
+// malloc() and free() are used by stlport 'class __Named_exception' to maintain exception-related data string
+extern "C"
+{
+  void* __cdecl malloc(size_t sz)
+  {
+    return cpprtl::heap::alloc(sz, NonPagedPool, rtl_memtag);
+  }
+
+  void __cdecl free(void* ptr)
+  {
+    return cpprtl::heap::dealloc(ptr);
+  }
+}  // extern "C"

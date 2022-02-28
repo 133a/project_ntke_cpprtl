@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef AUX_DPC_H_
@@ -22,9 +21,9 @@ namespace aux_
   public:
     virtual ~kdpc() {}
 
-    void set_processor(char const& pn)
+    void set_processor(char const pn)
     {
-      KeSetTargetProcessorDpc(&dpc, pn);
+      KeSetTargetProcessorDpc(&dpc, pn);  // any IRQL
     }
 
   protected:

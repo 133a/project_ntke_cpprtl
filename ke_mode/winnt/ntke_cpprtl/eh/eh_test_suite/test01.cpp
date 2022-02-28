@@ -1,46 +1,142 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-/////////////////////////////////////////////
-////
-////  testing 'catch(...)'
-////  MT-safe
-/////////////////////////////////////////////
-
-
+// MT-safe
 #include "context.h"
 
 
-namespace
+namespace cpprtl { namespace eh { namespace test
 {
-  enum
+  namespace
   {
-    EH_OK = 0
-  };
-}
+    enum { THROW = 11 };
+    typedef xtor_counter<0> UDT;
+    typedef xtor_counter<THROW> EXC;
+  }
 
-
-namespace cpprtl { namespace test { namespace eh
-{
-
-  int test01()
+//=============
+// 'catch(...)'
+//-------------
+  bool test_0101()
   {
-    context ctx(EH_OK);  // EH_OK is expected
-  
+    context ctx(THROW);
     try
     {
-      throw 1;
+      throw 0;
     }
     catch (...)
     {
-      ctx.state = EH_OK;
+      ctx.state = THROW;
     }
-    return ctx.balance();
+    return ctx.ok();
   }
 
-}  }  }
+//==============
+// 'catch(BIT&)'
+//--------------
+  bool test_0102()
+  {
+    typedef unsigned BIT;
+    context ctx(THROW);
+    try
+    {
+      throw BIT(THROW);
+    }
+    catch (BIT& t)
+    {
+      ctx.state = t;
+    }
+    return ctx.ok();
+  }
 
+//====================
+// 'catch(BIT const&)'
+//--------------------
+  bool test_0103()
+  {
+    typedef long BIT;
+    context ctx(THROW);
+    try
+    {
+      throw BIT(THROW);
+    }
+    catch (BIT const& t)
+    {
+      ctx.state = t;
+    }
+    return ctx.ok();
+  }
+
+//=============
+// 'catch(BIT)'
+//-------------
+  bool test_0104()
+  {
+    typedef int BIT;
+    context ctx(THROW);
+    try
+    {
+      throw BIT(THROW);
+    }
+    catch (BIT t)
+    {
+      ctx.state = t;
+    }
+    return ctx.ok();
+  }
+
+//==============
+// 'catch(UDT&)'
+//--------------
+  bool test_0105() 
+  {
+    context ctx(THROW);
+    try
+    {
+      throw EXC(ctx);
+    }
+    catch (EXC& exc)
+    {
+      ctx.state = exc.val;
+    }
+    return ctx.ok();
+  }
+
+//====================
+// 'catch(UDT const&)'
+//--------------------
+  bool test_0106() 
+  {
+    context ctx(THROW);
+    try
+    {
+      throw EXC(ctx);
+    }
+    catch (EXC const& exc)
+    {
+      ctx.state = exc.val;
+    }
+    return ctx.ok();
+  }
+
+//=============
+// 'catch(UDT)'
+//-------------
+  bool test_0107() 
+  {
+    context ctx(THROW);
+    try
+    {
+      throw EXC(ctx);
+    }
+    catch (EXC exc)
+    {
+      ctx.state = exc.val;
+    }
+    return ctx.ok();
+  }
+
+}}}  // namespace cpprtl::eh::test

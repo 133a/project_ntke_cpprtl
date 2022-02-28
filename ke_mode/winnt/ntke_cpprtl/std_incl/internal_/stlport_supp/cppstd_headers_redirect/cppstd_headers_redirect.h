@@ -2,18 +2,18 @@
 #define CPPSTD_HEADERS_REDIRECT_H_
 
 
-#if defined DDK_VER  //  ddk/wdk toolset
+#if defined (DDK_VER)  //  ddk/wdk toolset
 
-#  if    DDK_VER < 6000    //  ddk2600 ddk3790sp1
+#  if    (DDK_VER < 6000)    //  ddk2600 ddk3790
 #    define NTKE_INCLUDE_DDK_STL_PATH    ../crt
 #    define NTKE_INCLUDE_DDK_CPPRT_PATH  ../crt
-#  elif  DDK_VER < 9000    //  wdk6.1sp1 wdk7.1.0
+#  elif  (DDK_VER < 9000)    //  wdk6001 wdk7600
 #    define NTKE_INCLUDE_DDK_STL_PATH    ../api/crt/stl70
 #    define NTKE_INCLUDE_DDK_CPPRT_PATH  ../crt
-#  elif  DDK_VER < 10000   //  wdk8.0 wdk8.1
+#  elif  (DDK_VER < 10000)   //  wdk9200 wdk9600
 #    define NTKE_INCLUDE_DDK_STL_PATH    ../include
 #    define NTKE_INCLUDE_DDK_CPPRT_PATH  ../include
-#  elif  DDK_VER >= 10240  // wdk10 ewdk16299-km
+#  elif  (DDK_VER >= 10240)  //  wdk10240 ewdk*
 #    define NTKE_INCLUDE_DDK_STL_PATH    ../include
 #    define NTKE_INCLUDE_DDK_CPPRT_PATH  ../include
 #  else

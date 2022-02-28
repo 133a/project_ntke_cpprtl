@@ -1,71 +1,114 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-/////////////////////////////////////////////
-////
-////  testing catching of built-in types and subsequent try-blocks in one function
-////  MT-safe
-/////////////////////////////////////////////
-
-
+// MT-safe
 #include "context.h"
 
 
-namespace
+namespace cpprtl { namespace eh { namespace test
 {
-  enum
+  namespace
   {
-    EH_OK = 0
-  };
-
-
-  int      const  int02  = 356;
-  char     const  char02 = 'a';
-  unsigned const  uint02 = 789;
-}
-
-
-namespace cpprtl { namespace test { namespace eh
-{
-
-  int test02()
-  {
-    context ctx(int02 + char02 + uint02);  // 3 catches are expected
-    ctx.state = EH_OK;
-  
-    try
-    {
-      throw int02;
-    }
-    catch (int i)
-    {
-      ctx.state += i;
-    }
-
-    try
-    {
-      throw char02;
-    }
-    catch (char c)
-    {
-      ctx.state += c;
-    }
-
-    try
-    {
-      throw uint02;
-    }
-    catch (unsigned u)
-    {
-      ctx.state += u;
-    }
-
-    return ctx.balance();
+    enum { UNEXPECTED = 5 };
+    int      const int_value   = 101;
+    unsigned const uint_value  = 2200;
+    char     const char_value  = 'a';
+    short    const short_value = 23;
   }
 
-}  }  }
+//=======================================
+// subsequent try-blocks and catch-blocks
+//---------------------------------------
+  bool test_0201()
+  {
+    context ctx(int_value + uint_value + char_value + short_value);
+    try
+    {
+      throw int_value;
+    }
+    catch (int)
+    {
+      ctx.state += int_value;
+    }
+    catch (unsigned)
+    {
+      ctx.state += uint_value;
+    }
+    catch (char)
+    {
+      ctx.state += char_value;
+    }
+    catch (...)
+    {
+      ctx.state += UNEXPECTED;
+    }
 
+    try
+    {
+      throw uint_value;
+    }
+    catch (int)
+    {
+      ctx.state += int_value;
+    }
+    catch (unsigned)
+    {
+      ctx.state += uint_value;
+    }
+    catch (char)
+    {
+      ctx.state += char_value;
+    }
+    catch (...)
+    {
+      ctx.state += UNEXPECTED;
+    }
+
+    try
+    {
+      throw char_value;
+    }
+    catch (int)
+    {
+      ctx.state += int_value;
+    }
+    catch (unsigned)
+    {
+      ctx.state += uint_value;
+    }
+    catch (char)
+    {
+      ctx.state += char_value;
+    }
+    catch (...)
+    {
+      ctx.state += UNEXPECTED;
+    }
+
+    try
+    {
+      throw short_value;
+    }
+    catch (int)
+    {
+      ctx.state += int_value;
+    }
+    catch (unsigned)
+    {
+      ctx.state += uint_value;
+    }
+    catch (char)
+    {
+      ctx.state += char_value;
+    }
+    catch (...)
+    {
+      ctx.state += short_value;
+    }
+    return ctx.ok();
+  }
+
+}}}  // namespace cpprtl::eh::test

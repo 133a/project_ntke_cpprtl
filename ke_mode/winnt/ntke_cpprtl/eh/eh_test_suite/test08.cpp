@@ -1,189 +1,175 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-/////////////////////////////////////////////
-////
-////  testing nested exceptions
-////  MT-safe
-/////////////////////////////////////////////
-
-
+// function-try-blocks tests
+// MT-safe
 #include "context.h"
-#include "eh_config.h"
 
 
-namespace
+namespace cpprtl { namespace eh { namespace test
 {
-
-  enum
+  namespace
   {
-    EH_OK              = 0
-  , THROW8             = 80
-  , UNEXPECTED_CATCH1  = 81
-  , UNEXPECTED_CATCH2  = 82
-  , UNEXPECTED_CATCH3  = 83
-  , UNEXPECTED_CATCH4  = 84
-  , UNEXPECTED_CATCH5  = 85
-  , UNEXPECTED_CATCH6  = 86
-  , UNEXPECTED_CATCH7  = 87
-  , UNEXPECTED_CATCH8  = 88
-  };
+    enum
+    {
+      THROW      = 17
+    , UNEXPECTED = 19
+    , DTOR       = 23
+    };
 
+    typedef xtor_counter<0> UDT;
+    typedef xtor_counter<THROW> EXC;
+  }
 
-  enum
-  {                    
-  #ifdef NT_KERNEL_MODE  // here we just get the stack overrun (STOP-0x7F-UNEXPECTED_KERNEL_MODE_TRAP-EXCEPTION_DOUBLE_FAULT) if 
-                         // more than 'NESTED_THROW_LIMIT8' nested throws occure in kernel mode.
-                         // the stack for kernel threads is too small (x86-12k, x64-24k, arm-12k)
-
-    #ifdef  CFG_EH_STACK_WALKER  // the eh lib's 'stack_walk()' is used
-    #  if   defined     ( __ICL )                            //  for icl
-    #    if    defined  ( _M_X64 ) || defined ( _M_AMD64 )   //    x64 eh lib is used with icl
-            NESTED_THROW_LIMIT8     = 7,                     //      '10'- stack overrun (x64) ('9' kAPC)
-    #    elif  defined  ( _M_IX86 )                          //    x86 eh lib is used with icl
-            NESTED_THROW_LIMIT8     = 14,                    //      '16'- stack overrun (x86)
-    #    else
-    #       error check $(target.arch)
-    #    endif
-    #  elif defined     ( _MSC_VER )                         //  for mscl
-    #    if    defined  ( _M_X64 ) || defined ( _M_AMD64 )   //    x64 eh lib is used with mscl
-            NESTED_THROW_LIMIT8     = 7,                     //      '9'- stack overrun (x64) ('8' kAPC)
-    #    elif  defined  ( _M_IX86 )                          //    x86 eh lib is used with mscl
-            NESTED_THROW_LIMIT8     = 16,                    //      '19'- stack overrun (x86)
-    #    elif  defined  ( _M_ARM )                           //    arm eh lib is used with mscl
-            NESTED_THROW_LIMIT8     = 8,                     //      '10'- stack overrun (arm PANIC_STACK_SWITCH)
-    #    else
-    #       error check $(target.arch)
-    #    endif                                             
-    #  endif  // compiler
-    #else     // external dispatching/unwinding engines are used
-          NESTED_THROW_LIMIT8     = 1,   // '2'- stack overrun
-    #endif    // CFG_EH_STACK_WALKER
-
-  #else       // feel free to make nested rethrows in a user mode process
-    NESTED_THROW_LIMIT8       = 32,
-  #endif      // NT_KERNEL_MODE
-  };  // enum
-
-
-  void nested_rethrow_function(context& ctx)
+//===================
+// function-try-block
+//-------------------
+  namespace
   {
+    int f_01(context& ctx)
     try
     {
-      eh_test et(ctx);
-      if ( ctx.state < NESTED_THROW_LIMIT8  )
-      {
-        ++ctx.state;
-        throw;
-      }
+      UDT udt1(ctx);
+      UDT udt2(ctx);
+      throw EXC(ctx);
+      return UNEXPECTED;
     }
-    catch (int)
+    catch (EXC const exc)
     {
-      eh_test et(ctx);
+      UDT udt1(ctx);
+      UDT udt2(ctx);
+      ctx.state += exc.val;
+      return exc.val;
+    }
+  }  // namespace
+
+  bool test_0801()
+  {
+    context ctx(2*THROW);
+    {
+      UDT udt1(ctx);
+      UDT udt2(ctx);
       try
       {
-        eh_test et(ctx);
-        nested_rethrow_function(ctx);
+        UDT udt1(ctx);
+        UDT udt2(ctx);
+        ctx.state += f_01(ctx);
       }
       catch (...)
       {
-        ctx.state = UNEXPECTED_CATCH8;
+        ctx.state = UNEXPECTED;
       }
     }
-    catch (...)
-    {
-      ctx.state = UNEXPECTED_CATCH7;
-    }
+    return ctx.ok();
   }
 
 
-  void nested_throw_function(context& ctx)
+//========================
+// ctor function-try-block
+//------------------------
+  namespace
   {
-    try
+    template <unsigned N>
+    class test;
+    
+    template <>
+    class test<0>
     {
-      eh_test et(ctx);
-      if ( ctx.state < NESTED_THROW_LIMIT8 * 2 )  //  
+      context& ctx;
+
+    public:
+      test(context& c, int const do_throw = -1)
+        : ctx ( c )
       {
-        ++ctx.state;
-        throw eh_test(ctx);
+        UDT udt1(ctx);
+        UDT udt2(ctx);
+        if ( 0 == do_throw )
+        {
+          throw EXC(ctx);
+        }
+        ctx.ctor();
       }
-    }
-    catch (eh_test ex)
+
+      ~test()
+      {
+        ctx.state += DTOR;
+        ctx.dtor();
+      }
+    };
+
+    template <unsigned N>
+    class test : public test<N-1>
     {
-      eh_test et(ctx);
+      typedef test<N-1> base_type;
+      context&  ctx;
+      base_type val;
+
+    public:
+      test(context& c, int const do_throw = -1)
+      try
+        : base_type ( c, do_throw-1 ) 
+        , ctx       ( c )
+        , val       ( c )
+      {
+        UDT udt1(ctx);
+        UDT udt2(ctx);
+        if ( 0 == do_throw )
+        {
+          throw EXC(ctx);
+        }
+        ctx.ctor();
+      }
+      catch (EXC const& exc)
+      {
+        UDT udt1(c);
+        UDT udt2(c);
+        c.state += exc.val;
+      #if defined (_MSC_VER) && (_MSC_VER < 1310)
+        throw;  // looks like {msvc2002/ddk2600}-x86 doesn't emit the implicit `throw;'
+      #else
+      // implicit `throw;'
+      #endif
+      }
+
+      ~test()
+      {
+        ctx.state += DTOR;
+        ctx.dtor();
+      }
+    };
+
+    enum { BASES = 3 };
+    typedef test<BASES> test_type;
+  }  // namespace
+
+  bool test_0802()
+  {
+    context ctx
+    (
+      THROW + (BASES)*THROW   + 0*DTOR
+    + THROW + (BASES)*THROW   + 2*DTOR
+    + THROW + (BASES-1)*THROW + 6*DTOR
+    + THROW + (BASES-2)*THROW + 14*DTOR
+    );
+    for ( int throw_at = BASES; throw_at >= 0; --throw_at )
+    {                        
       try
       {
-        eh_test et(ctx);
-        nested_throw_function(ctx);
+        UDT udt1(ctx);
+        UDT udt2(ctx);
+        test_type t(ctx, throw_at);
+        UDT udt3(ctx);
+        UDT udt4(ctx);
       }
-      catch (...)
+      catch (EXC const& exc)
       {
-        ctx.state = UNEXPECTED_CATCH6;
+        ctx.state += exc.val;
       }
     }
-    catch (...)
-    {
-      ctx.state = UNEXPECTED_CATCH5;
-    }
+    return ctx.ok();
   }
 
-}  // namespace
-
-
-namespace cpprtl { namespace test { namespace eh
-{
-
-  int test08()
-  {
-    context ctx(NESTED_THROW_LIMIT8 * 2);  // 2 passes - the first one for nested rethrows, the second for nested 'throw T'
-    ctx.state = EH_OK;
-
-    try
-    {
-      throw int(THROW8);
-    }
-    catch (int)
-    {
-      try
-      {
-        nested_rethrow_function(ctx);
-      }
-      catch (...)
-      {
-        ctx.state = UNEXPECTED_CATCH4;
-      }
-    }
-    catch (...)
-    {
-      ctx.state = UNEXPECTED_CATCH3;
-    }
-
-    try
-    {
-      throw int(THROW8);
-    }
-    catch (int)
-    {
-      try
-      {
-        nested_throw_function(ctx);
-      }
-      catch (...)
-      {
-        ctx.state = UNEXPECTED_CATCH2;
-      }
-    }
-    catch (...)
-    {
-      ctx.state = UNEXPECTED_CATCH1;
-    }
-
-    return ctx.balance();
-  }
-
-}  }  }
-
+}}}  // namespace cpprtl::eh::test

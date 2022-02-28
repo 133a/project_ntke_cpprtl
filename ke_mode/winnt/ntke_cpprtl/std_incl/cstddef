@@ -1,24 +1,23 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef NTKE_CPPRTL_CSTDDEF_
 #define NTKE_CPPRTL_CSTDDEF_
 
 
-#if defined ( _M_X64 ) || defined ( _M_AMD64 ) || defined ( _M_IA64 )
+#if defined (_M_X64) || defined (_M_AMD64) || defined (_M_IA64) || defined (_M_ARM64)
   typedef unsigned long long    size_t;
   typedef          long long    ssize_t;
   typedef          long long    ptrdiff_t;
-#elif defined ( _M_IX86 ) || defined ( _M_ARM )
+#elif defined (_M_IX86) || defined (_M_ARM)
   typedef unsigned int          size_t;
   typedef          int          ssize_t;
   typedef          int          ptrdiff_t;
 #else
-#  error check $(target.arch) !
+#  error check $(target.arch)
 #endif
 
 
@@ -31,4 +30,3 @@ namespace std
 
 
 #endif  // include guard
-

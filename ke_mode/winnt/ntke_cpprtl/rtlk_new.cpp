@@ -1,37 +1,31 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-#include "rtl_framework_specific_header.h"
+#include "rtl_framework.h"
 #include "rtlk_new.h"
 #include "rtlk_heap.h"
 
 
-/////////////////////////////////////////////////////////////////////////////
-//// std::new_handler support
-/////////////////////////////////////////////////////////////////////////////
-
+//=================
+// std::new_handler
+//-----------------
 namespace
 {
   std::new_handler volatile nh = 0;
-
 
   std::new_handler get_new_handler_impl()
   {
     return nh;
   }
 
-
   std::new_handler set_new_handler_impl(std::new_handler new_p)
   {
     return reinterpret_cast<std::new_handler>(InterlockedExchangePointer(reinterpret_cast<void* volatile*>(&nh), new_p));
   }
-
 }
-
 
 namespace std
 {
@@ -42,25 +36,25 @@ namespace std
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-//// std::nothrow_t support
-/////////////////////////////////////////////////////////////////////////////
-
+//===============
+// std::nothrow_t
+//---------------
+// ewdk17134 and newer contain `std::nothrow' object in ntoskrnl.lib for nt10.0
+#if !defined (DDK_VER)              \
+  || (DDK_VER < 17134)              \
+  || (NTDDI_VERSION < 0x0A000000)
 namespace std
 {
-  nothrow_t const nothrow;
+  extern nothrow_t const nothrow = nothrow_t();
 }
+#endif  // DDK_VER
 
 
-/////////////////////////////////////////////////////////////////////////////
-////  <rtlk_new.h>                                                           
-/////////////////////////////////////////////////////////////////////////////
-
-#ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable:4290)  //  C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
-#endif
-
+//=============
+// <rtlk_new.h>                                                           
+//-------------
+#pragma warning(push)
+#pragma warning(disable:4290)  // C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
 
 void* __cdecl operator new(std::size_t size, POOL_TYPE const& pt) throw(std::bad_alloc)
 {
@@ -139,10 +133,9 @@ void __cdecl operator delete[](void* ptr, std::nothrow_t const& nothrow_tag, POO
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-////  <new>
-/////////////////////////////////////////////////////////////////////////////
-
+//======
+// <new>
+//------
 void* __cdecl operator new(std::size_t size) throw(std::bad_alloc)
 {
   return ::operator new(size, NonPagedPool);
@@ -187,8 +180,9 @@ void __cdecl operator delete[](void* ptr, std::nothrow_t const&) throw()
 }
 
 
-////////////////////////////////////////////////////////////////
-////  the placement operators new/delete
+//===============================
+// placement new/delete operators
+//-------------------------------
 void* __cdecl operator new(std::size_t, void* ptr) throw()
 {
   return ptr;
@@ -209,9 +203,10 @@ void __cdecl operator delete[](void*, void*) throw()
 }
 
 
-////////////////////////////////////////////////////////////////
-////  msvc2015 specific sized delete operators
-#if ( _MSC_VER >= 1900 )  
+//====================================
+// sized delete operators (>=msvc2015)
+//------------------------------------
+#if (_MSC_VER >= 1900)
 void __cdecl operator delete(void* ptr, std::size_t) throw()
 {
   return ::operator delete(ptr);
@@ -224,8 +219,4 @@ void __cdecl operator delete[](void* ptr, std::size_t) throw()
 #endif
 
 
-
-#ifdef _MSC_VER
-#  pragma warning(pop)
-#endif
-
+#pragma warning(pop)  // disable:4290

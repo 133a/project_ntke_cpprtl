@@ -1,14 +1,13 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "ntddk.include.h"
 #include <cstddef>
-#include <new>
 #include "aux_cpu.h"
+#include "aux_irql.h"
 #include "aux_task.h"
 #include "aux_workitem.h"
 #include "sync_type.h"
@@ -56,7 +55,7 @@ namespace cpprtl_tests
     }
 
     template <typename PLD>
-    bool spawn(PLD const& p, std::size_t const& = 0)
+    bool spawn(PLD const& p, std::size_t const = 0)
     {
       auto_lock_type lck(lock);
       if ( !spawned )
@@ -99,16 +98,18 @@ namespace cpprtl_tests
 namespace cpprtl_tests
 {
 
-  int test_workitem_impl(test_type const tests[], std::size_t const& task_num)
+  int test_workitem_impl(test_type const tests[], std::size_t const task_num)
   {
     typedef aux_::task_bunch<work_item<test_payload> > work_item_task;
     for ( unsigned i = 0 ; tests[i] ; ++i )
     {
       DbgPrint("test_workitem_impl() : spawning work_items[%u] for test[%u]\n", unsigned(task_num), i);
       work_item_task task;
-      if ( !task.spawn(task_num, tests[i]) )
       {
-        return RET_ERROR_WORKITEM_TASK_SPAWN;
+        if ( !task.spawn(task_num, tests[i]) )
+        {
+          return RET_ERROR_WORKITEM_TASK_SPAWN;
+        }
       }
       task.acquire();
 

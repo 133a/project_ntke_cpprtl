@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef EH_ENGINE_H_
@@ -10,57 +9,64 @@
 
 
 #include "eh_config.h"
-#include "eh_framework_specific_header.h"
+#include <check_ct.h>
 
 
-namespace cpprtl
+namespace cpprtl { namespace eh
 {
+//========================
+// EXCEPTION_RECORD layout
+//------------------------
 
-  namespace msvc_internal_data
+  // exception flags at the ExceptionInformation[EXCDATA_FLAGS]
+  enum
   {
-    namespace eh
-    {
-      struct exception_descriptor;  // msvc's ::_ThrowInfo lookalike
-    }
-  }
+    EXCEPTION_FLAG_NO_EXCEPTION_OBJECT = 1 << 0
+  , EXCEPTION_FLAG_OBJECT_RETHROWN     = 1 << 1
+  , EXCEPTION_FLAG_OBJECT_DESTRUCTED   = 1 << 2
+  , EXCEPTION_FLAG_FH4                 = 1 << 3
+  , EXCEPTION_FLAG_FH4_TRANSIENT_STATE = 1 << 4
+  };
 
-  namespace eh
+  // ExceptionInformation[] layout
+  // throw data, common
+  enum 
   {
+    EXCDATA_FLAGS            // EXCEPTION_FLAG_ enum
+  , EXCDATA_THROW_OBJECT     // exception object address
+  , EXCDATA_THROW_INFO       // exception_object_descriptor*
+  , EXCDATA_THROW_IMAGEBASE  // imagebase_t
+  , EXCDATA_CATCH_IMAGEBASE  // imagebase_t
+  , EXCDATA_FUNCTION_FRAME   // function_frame_t
+  , EXCDATA_TARGET_FRAME     // funclet_frame_t
+  , EXCDATA_TARGET_STATE     // frame_state_t
+  , EXCDATA_RUN_CATCH_BLOCK  // run_catch_block() address, size_t(*)(EXCEPTION_RECORD&)
+  , EXCDATA_NVCONTEXT        // arm/arm64 specific: NV-context
+  , ARRAYSIZE_EXCDATA_EH
+  };
 
-    namespace eh_engine
-    {
+  // FH3
+  enum 
+  {
+    EXCDATA_FH3_FUNCTION_DESCRIPTOR = ARRAYSIZE_EXCDATA_EH  // function_descriptor*
+  , EXCDATA_FH3_CATCH_FUNCLET  // funclet_ft
+  , ARRAYSIZE_EXCDATA_FH3
+  };
+  COMPILE_TIME_CHECK (ARRAYSIZE_EXCDATA_FH3 <= EXCEPTION_MAXIMUM_PARAMETERS , EXCEPTION_INFORMATION_FH3_MAXIMUM_PARAMETERS_EXCEEDED)
 
-      namespace aux_
-      {
-        struct frame_t;
-        struct func_frame_t;
-      } // namespace aux_
-  
-      typedef aux_::frame_t* frame_ptr_t;           // the frame of the throwing entity - the function or the catch-block-funclet
-      typedef aux_::func_frame_t* funcframe_ptr_t;  // the function frame
+  // FH4
+  enum 
+  {
+    EXCDATA_FH4_CATCH_BLOCK_DATA = ARRAYSIZE_EXCDATA_EH  // fh4::catch_block_data_packed
+  , EXCDATA_FH4_FUNCLET_ENTRY    // rva_t
+  , EXCDATA_FH4_CATCH_LEVEL      // frame_state_t
+  , EXCDATA_FH4_TRANSIENT_STATE  // frame_state_t
+  , EXCDATA_FH4_UNWIND_STATE     // frame_state_t + FRAME_STATE_SHIFT (to keep INVALID and EMPTY values as unsigned)
+  , ARRAYSIZE_EXCDATA_FH4
+  };
+  COMPILE_TIME_CHECK (ARRAYSIZE_EXCDATA_FH4 <= EXCEPTION_MAXIMUM_PARAMETERS , EXCEPTION_INFORMATION_FH4_MAXIMUM_PARAMETERS_EXCEEDED)
 
-
-      void throw_exception
-      (
-        void                                          const* const  exc_object
-      , msvc_internal_data::eh::exception_descriptor  const* const  exc_descr
-      );
-
-
-      ::EXCEPTION_DISPOSITION frame_handler3
-      (
-        ::EXCEPTION_RECORD    const&  exc_rec
-      , frame_ptr_t           const&  frame
-      , ::CONTEXT             const&  context
-      , ::DISPATCHER_CONTEXT  const&  dc
-      );
-
-    }  // namespace eh_engine
-
-  }  // namespace eh
-
-}  // namespace cpprtl
+}}  // namespace cpprtl::eh
 
 
 #endif  // include guard
-

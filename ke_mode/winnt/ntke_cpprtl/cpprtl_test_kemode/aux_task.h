@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef AUX_TASK_H_
@@ -10,6 +9,7 @@
 
 
 #include <cstddef>
+#include <new>
 #include "aux_scoped_ptr.h"
 
 
@@ -36,7 +36,7 @@ namespace aux_
     }
 
     template <typename PAYLOAD>
-    bool spawn(std::size_t const& task_num, PAYLOAD const& payload)
+    bool spawn(std::size_t const task_num, PAYLOAD const& payload)
     {
       tasks.reset(new(std::nothrow) task_type[task_num]);
       if ( !tasks.get() )
@@ -61,7 +61,7 @@ namespace aux_
       }
     }
 
-    task_type const& operator[](std::size_t const& idx) const
+    task_type const& operator[](std::size_t const idx) const
     {
       return tasks[idx];
     }

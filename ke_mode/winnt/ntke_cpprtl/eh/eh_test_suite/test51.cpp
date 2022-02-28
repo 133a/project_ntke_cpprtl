@@ -1,209 +1,286 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-/////////////////////////////////////////////////////////////////////////////
-////
-////   __ehvec_...() test for types with no inheritance
-////   MT-UNsafe
-/////////////////////////////////////////////////////////////////////////////
-
-
+// __ehvec_...() tests
+// MT-UNsafe
 #include "context_static.h"
 
 
-namespace
+namespace cpprtl { namespace eh { namespace test
 {
-  enum
+  namespace
   {
-    EH_OK               = 0
-  , UNEXPECTED_CATCH_1  = 511
-  , UNEXPECTED_CATCH_2  = 512
-  , UNEXPECTED_CATCH_3  = 513
-  , UNEXPECTED_CATCH_4  = 514
-  , UNEXPECTED_CATCH_5  = 515
-  , ARRAY_IS_CORRUPTED  = 516
-  , ARRAY_OUT_OF_SCOPE  = 517
-  , ARR_SZ              = 32
-  };
-
-
-  class ctest51
-  {
-    int volatile i51;
-
-  public:
-    ctest51()
-      : i51 ( ++context::ctor_count )
+    enum
     {
-      ++context::xtor_count;
-    }
+      ARRAY_LEN  = 64
+    , UNEXPECTED = 5
+    };
 
-    ctest51(ctest51 const& src)
-      : i51 ( src.i51 )
+    class test
     {
-      ++context::cctor_count;
-      ++context::xtor_count;
-    }
-
-    ctest51& operator=(ctest51 const& src)
-    {
-      if ( this != &src)
+      int val;
+    public:
+      typedef int value_type;
+      static int ctor_throw;
+      static int cctor_throw;
+      enum { BASES = 0 };
+      test()
+        : val ( context::ctor_count )
       {
-        i51 = src.i51;
+        if ( ctor_throw && ctor_throw == context::ctor_count)
+        {
+          throw ctor_throw;
+        }
+        context::ctor();
       }
-      return *this;
-    }
-
-    ~ctest51()
-    {
-      i51 = 0;
-      ++context::dtor_count;
-      --context::xtor_count;
-    }
-
-    int get() const
-    {
-      return i51;
-    }
-  };
-
-
-  typedef ctest51 array_of_ctest51[ARR_SZ];
-
-
-  struct ctest51_array_holder
-  {
-    array_of_ctest51 array;
-  };
-
-
-  template <typename T>
-  static void check(T const arr[])
-  throw(...)
-  {
-    int sum = 0;
-    for ( unsigned u = 0; u < ARR_SZ; ++u )
-    {
-      sum += arr[u].get();
-    }
-    if ( sum == 0 )
-    {
-      throw int(ARRAY_OUT_OF_SCOPE);
-    }
-    if ( sum != (arr[0].get() + arr[ARR_SZ-1].get()) * (ARR_SZ >> 1) )
-    {
-      throw int(ARRAY_IS_CORRUPTED);
-    }
-  }
-
-}  // namespace
-
-
-namespace cpprtl { namespace test { namespace eh
-{
-
-  int test51()
-  {
-    context::init();
-    int res = EH_OK;
-
-    try
-    {
+      test(test const& src)
+        : val ( src.val )
       {
-      // this scope invokes '__ehvec_ctor' and '__ehvec_dtor'
-        array_of_ctest51 array1;
-        check(array1);
+        if ( cctor_throw && cctor_throw == context::cctor_count)
         {
-          array_of_ctest51 array2;
-          check(array2);
+          throw cctor_throw;
         }
-        array_of_ctest51 array3;
-        check(array3);
+        context::cctor();
+      }
+      /*virtual*/ ~test()
+      {
+        context::dtor();
+      }
+      int value() const
+      {
+        return val;
+      }
+    };
+    int test::ctor_throw  = 0;
+    int test::cctor_throw = 0;
 
-        try
-        {
-          throw array3;
-        }
-      #if defined (_MSC_VER) && (_MSC_VER < 1310)  // ddk2600
-        catch (ctest51 const* const exc)
+    class vbtest : public virtual test
+    {
+    public:
+      enum { BASES = 1 };
+      vbtest()
+        : test()
+      {
+        context::ctor();
+      }
+      vbtest(vbtest const& src)
+        : test ( src )
+      {
+        context::cctor();
+      }
+      ~vbtest()
+      {
+        context::dtor();
+      }
+    };
+
+    class ftbtest : public test
+    {
+    public:
+      enum { BASES = 1 };
+      ftbtest()
+      try
+        : test()
+      {
+        context::ctor();
+      }
+      catch (...)
+      {
+      #if defined (_MSC_VER) && (_MSC_VER < 1310)
+        throw;
       #else
-        catch (ctest51 const* const& exc)
+      // implicit `throw;'
       #endif
-        {
-          check(exc);
-        }
-        catch (...)
-        {
-          return context::balance(UNEXPECTED_CATCH_2);
-        }
-
-        try
-        {
-          throw ctest51_array_holder();
-        }
-        catch (ctest51_array_holder const& exc)
-        {
-          check(exc.array);
-        }
-        catch (...)
-        {
-          return context::balance(UNEXPECTED_CATCH_3);
-        }
       }
-    
-    // icl<icl15 seems not to handle '__ehvec_copy_ctor' duties properly, so let's just skip the following test scope
-    // icl>=icl15 generates some custom array copying code
-    #if !defined (__ICL) || (__ICL >= 1500)
+      ftbtest(ftbtest const& src)
+      try
+        : test ( src )
       {
-      // this scope invokes '__ehvec_ctor' and '__ehvec_copy_ctor' and '__ehvec_dtor'
-        ctest51_array_holder holder1;
-        check(holder1.array);
-        ctest51_array_holder holder2(holder1);
-        check(holder2.array);
+        context::cctor();
+      }
+      catch (...)
+      {
+      #if defined (_MSC_VER) && (_MSC_VER < 1310)
+        throw;
+      #else
+      // implicit `throw;'
+      #endif
+      }
+      ~ftbtest()
+      {
+        context::dtor();
+      }
+    };
 
-        try
-        {
-          throw holder1;
-        }
-        catch (ctest51_array_holder const/*&*/ exc)
-        {
-          check(exc.array);
-        }
-        catch (...)
-        {
-          return context::balance(UNEXPECTED_CATCH_4);
-        }
+    template <typename T>
+    struct holder
+    {
+      T stuff;
+    };
 
-        try
+    template <unsigned L, typename T>
+    void check(T const (&array)[L])
+    {
+      typename T::value_type sum = 0;
+      for ( unsigned idx = 0; idx < L; ++idx )
+      {
+        sum += array[idx].value();
+      }
+      if ( sum != (array[0].value() + array[L-1].value()) * (L>>1) )
+      {
+        throw int(UNEXPECTED);
+      }
+    }
+
+    template <unsigned L, typename T>
+    void check(T const* const ptr)
+    {
+      check(*reinterpret_cast<T const(*)[L]>(ptr));
+    }
+  }  // namespace
+
+//===============================================================================
+// `__ehvec_ctor' and `__ehvec_copy_ctor' and `__ehvec_dtor'
+// NOTE icl doesn't emit `__ehvec_copy_ctor', uses own inline array cctor instead
+//-------------------------------------------------------------------------------
+// `__ehvec_ctor_vb' and `__ehvec_copy_ctor_vb' and `__ehvec_dtor'
+// NOTE icl doesn't emit `__ehvec_copy_ctor_vb',
+//      icl>=icl15 uses own inline array cctor, while icl<icl15 crashes
+//-------------------------------------------------------------------------------
+  namespace
+  {
+    template <typename T>
+    bool test_ehvec()
+    {
+      typedef T test_type;
+      typedef holder<T[ARRAY_LEN]> holder_type;
+      context::init(ARRAY_LEN + 2*ARRAY_LEN + 3*ARRAY_LEN);
+      test::ctor_throw = 0;
+      test::cctor_throw = 0;
+      try
+      {
         {
-          ctest51_array_holder arr;
-          throw arr;
+          holder_type h1;
+          check(h1.stuff);
+          {
+            holder_type h2;
+            check(h2.stuff);
+          }
+          holder_type h3;
+          check(h3.stuff);
+          try
+          {
+            throw h3.stuff;
+          }
+          catch (test_type const* const exc)
+          {
+            check<ARRAY_LEN>(exc);
+            context::state += ARRAY_LEN;
+          }
+          try
+          {
+            throw holder_type();
+          }
+          catch (holder_type const& exc)
+          {
+            check(exc.stuff);
+            context::state += 2*ARRAY_LEN;
+          }
         }
-        catch (ctest51_array_holder const/*&*/ exc)
         {
-          check(exc.array);
-        }
-        catch (...)
-        {
-          return context::balance(UNEXPECTED_CATCH_5);
+          holder_type h1;
+          check(h1.stuff);
+          try
+          {
+            holder_type h2(h1);
+            check(h2.stuff);
+            throw h2;
+          }
+          catch (holder_type const exc)
+          {
+            check(exc.stuff);
+            context::state += 3*ARRAY_LEN;
+          }
         }
       }
-    #endif  // __ICL
+      catch (int const exc)
+      {
+        context::state = exc;
+      }
+      return context::ok();
     }
-    catch (int const& i)  // array check falls here if an inconsistency occured
-    {
-      res = i;
-    }
-    catch (...)
-    {
-      res = UNEXPECTED_CATCH_1;
-    }
-    return context::balance(res);
+  }  // namespace
+
+  bool test_5101()
+  {
+    return test_ehvec<test>();
   }
 
-}  }  }
+  bool test_5102()
+  {
+    return test_ehvec<vbtest>();
+  }
 
+//=============
+// array unwind
+//-------------
+  namespace
+  {
+    template <typename T>
+    bool test_array_unwind()
+    {
+      typedef T test_type;
+      typedef holder<T[ARRAY_LEN]> holder_type;
+      context::init(0);
+      try
+      {
+        test::ctor_throw  = 0;
+        test::cctor_throw = 0;
+        holder_type h1;
+        check(h1.stuff);
+        test::ctor_throw  = context::ctor_count + (ARRAY_LEN>>1) * (test_type::BASES+1);
+        context::expected += test::ctor_throw;
+        holder_type h2;
+      }
+      catch (int const exc)
+      {
+        context::state += exc;
+      }
+      try
+      {
+        test::ctor_throw  = 0;
+        test::cctor_throw = 0;
+        holder_type h1;
+        holder_type h2(h1);
+        check(h2.stuff);
+        test::cctor_throw = context::cctor_count + (ARRAY_LEN>>1) * (test_type::BASES+1);
+        context::expected += 2*test::cctor_throw;
+        holder_type h3(h2);
+      }
+      catch (int const exc)
+      {
+        context::state += 2*exc;
+      }
+      return context::ok();
+    }
+  }  // namespace
+
+  bool test_5103()
+  {
+    return test_array_unwind<test>();
+  }
+
+  bool test_5104()
+  {
+    return test_array_unwind<vbtest>();
+  }
+
+  bool test_5105()
+  {
+    return test_array_unwind<ftbtest>();
+  }
+
+}}}  // namespace cpprtl::eh::test

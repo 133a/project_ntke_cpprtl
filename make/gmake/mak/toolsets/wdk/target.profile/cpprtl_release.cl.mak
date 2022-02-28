@@ -16,21 +16,18 @@
 
 #code generation                               
   wdk.compiler.options.cpprtl_release             +=  -GF
-
   wdk.compiler.options.cpprtl_release.x86         +=  -Gz
-
   wdk.compiler.options.cpp.cpprtl_release         +=  -GR
-ifdef module.EHa
-  wdk.compiler.options.cpp.cpprtl_release         +=  -EHa
-else
   wdk.compiler.options.cpp.cpprtl_release         +=  -EHs
-endif
+#ifdef toolset.supported.FH4
+#  wdk.compiler.options.cpp.cpprtl_release         +=  -d2FH4-
+#endif
 
 
 #debugging
   wdk.compiler.options.cpprtl_release             +=  -Zi
 ifndef toolset.not_supported.RTC_and_GS
-  wdk.compiler.options.cpprtl_release             +=  -GS-
+  wdk.compiler.options.cpprtl_release             +=  -GS
 endif
 
 

@@ -1,64 +1,43 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "gstatic_test_loop.h"
-#include "tests.h"
+#include "gstatic_tests.h"
 
 
-namespace
+namespace cpprtl { namespace gstatic { namespace test
 {
-  enum
+  namespace
   {
-    IDX_FACTOR = 10000000
-  };
-
-
-  using namespace cpprtl::test::gstatic;
-
-
-  test_ft* const test_table_thread_unsafe[] =
-  {
-    0
-
-    , &test_gstatic01
-    , &test_gstatic02
-    , &test_gstatic03
-
-    , 0
-  };
-
-
-  unsigned test_num_thread_unsafe()
-  {
-    return sizeof(test_table_thread_unsafe) / sizeof(test_table_thread_unsafe[0]);
-  }
-
-}  // namespace
-
-
-namespace cpprtl  { namespace test  { namespace gstatic
-{
-
-  int run()
-  {
-    unsigned idx = 0;
-    unsigned res = 0;
-    for ( ; idx < test_num_thread_unsafe() ; ++idx )
+    test_ft const test_table_run_once[] =
     {
-      if ( test_table_thread_unsafe[idx] )
+      0  // keep 1st
+    , test_01, test_02, test_03
+    };
+
+    unsigned test_num_run_once()
+    {
+      return sizeof(test_table_run_once) / sizeof(test_table_run_once[0]);
+    }
+  }  // namespace
+
+
+  int run_once()
+  {
+    for ( unsigned idx = 0; idx < test_num_run_once() ; ++idx )
+    {
+      if ( test_table_run_once[idx] )
       {
-        if ( 0 != (res = test_table_thread_unsafe[idx]()) )
+        if ( !test_table_run_once[idx]() )
         {
-          break;
+          return idx;
         }
       }
     }
-    return res ? idx * IDX_FACTOR + res : 0;
+    return 0;
   }
 
-}  }  }
-
+}}}  // namespace cpprtl::gstatic::test

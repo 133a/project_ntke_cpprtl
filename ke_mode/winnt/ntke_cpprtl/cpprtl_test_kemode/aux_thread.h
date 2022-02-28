@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef AUX_THREAD_H_
@@ -22,7 +21,6 @@ namespace aux_
     template <typename PAYLOAD>
     class thread_launcher
     {
-    private:
       typedef PAYLOAD          payload_type;
       typedef thread_launcher  self_type;
 
@@ -40,7 +38,7 @@ namespace aux_
         evt.acquire(STATUS_SUCCESS);
       }
 
-      static void thread_start(void* arg)
+      static void thread_routine(void* arg)
       {
         ASSERT ( arg );
         ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
@@ -59,7 +57,7 @@ namespace aux_
 
   class kthread
   {
-    PKTHREAD thr;
+    PKTHREAD kt;
 
     kthread(kthread const&);
     kthread& operator=(kthread const&);
@@ -67,7 +65,7 @@ namespace aux_
   public:
 
     kthread()
-      : thr(0)
+      : kt(0)
     {}
 
     ~kthread()
@@ -77,32 +75,32 @@ namespace aux_
 
     PKTHREAD native_type() const
     {
-      return thr;
+      return kt;
     }
 
     void detach()
     {
-      if ( thr )
+      if ( kt )
       {
         ASSERT ( KeGetCurrentIrql() <= DISPATCH_LEVEL );
-        ObDereferenceObject(thr);
-        thr = 0;
+        ObDereferenceObject(kt);
+        kt = 0;
       }
     }
 
     NTSTATUS acquire()
     {
       NTSTATUS status = STATUS_SUCCESS;
-      if ( thr )
+      if ( kt )
       {
-        ASSERT ( KeGetCurrentThread() != thr );
+        ASSERT ( KeGetCurrentThread() != kt );
         ASSERT ( KeGetCurrentIrql() <= APC_LEVEL );  // for continuous time-out
-        status = KeWaitForSingleObject(thr, Executive, KernelMode, FALSE, 0);
+        status = KeWaitForSingleObject(kt, Executive, KernelMode, FALSE, 0);
       }
       return status;
     }
 
-    NTSTATUS acquire(NTSTATUS const& acq_st)
+    NTSTATUS acquire(NTSTATUS const acq_st)
     {
       NTSTATUS st = STATUS_UNSUCCESSFUL;
       do
@@ -117,9 +115,9 @@ namespace aux_
     NTSTATUS spawn(PAYLOAD const& payload)
     {
       NTSTATUS status = STATUS_UNSUCCESSFUL;
-      if ( !thr )
+      if ( !kt )
       {
-        HANDLE hthread;
+        HANDLE ht;
         OBJECT_ATTRIBUTES oa;
         InitializeObjectAttributes(&oa, 0, OBJ_KERNEL_HANDLE, 0, 0);
     
@@ -128,20 +126,20 @@ namespace aux_
         ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
         status = PsCreateSystemThread
         (
-          &hthread
+          &ht
         , THREAD_ALL_ACCESS
         , &oa
         , 0
         , 0
-        , &launcher_type::thread_start
+        , &launcher_type::thread_routine
         , reinterpret_cast<void*>(&launcher)
         );
         if ( NT_SUCCESS(status) )
         {
           ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
-          ObReferenceObjectByHandle(hthread, THREAD_ALL_ACCESS, 0, KernelMode, reinterpret_cast<PVOID*>(&thr), 0);
+          ObReferenceObjectByHandle(ht, THREAD_ALL_ACCESS, 0, KernelMode, reinterpret_cast<PVOID*>(&kt), 0);
           ASSERT ( KeGetCurrentIrql() == PASSIVE_LEVEL );
-          ZwClose(hthread);
+          ZwClose(ht);
           launcher.acquire();
         }
       }

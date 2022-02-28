@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef AUX_IRQL_H_
@@ -19,7 +18,7 @@ namespace aux_
     KIRQL saved_irql;
 
   public:
-    explicit auto_irql_raiser(KIRQL const& new_irql)
+    explicit auto_irql_raiser(KIRQL const new_irql)
     {
       ASSERT ( KeGetCurrentIrql() <= new_irql );  // KeRaiseIrql()
       KeRaiseIrql(new_irql, &saved_irql);

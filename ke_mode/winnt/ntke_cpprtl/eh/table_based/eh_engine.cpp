@@ -1,1025 +1,906 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "eh_config.h"
-#include "eh_framework_specific_header.h"
+#include "eh_framework.h"
 
-#include "eh_msvc_internal_data.h"
-#include "eh_msvc_internal_data_aux.h"
-#include "eh_engine.h"
-#include "eh_engine_defs.h"
-#include "eh_stack_walker.h"
-#include "eh_aux.h"
+#include "eh_data.h"
+#include "eh_data_iterator.h"
+#include "eh_data_4.h"
 #include "eh_exception_code.h"
-#include "eh_invoke_funclet.h"
+#include "eh_engine.h"
+#include "eh_context.h"
+#include "eh_aux.h"
 
 
-namespace cpprtl
+namespace cpprtl { namespace eh
 {
-namespace eh
-{
+  void stack_walk(::EXCEPTION_RECORD&, nvcontext&, size_t const = 0);  // fwd
 
 
-namespace eh_engine
-{
-  typedef int ehstate_t;
-}
-
-
-namespace eh_state
-{
-
-  using eh_engine::ehstate_t;
-  using eh_engine::frame_ptr_t;
-  using eh_engine::funcframe_ptr_t;
-
-
-  enum
+  // eh_funclet.<arch>.asm
+  extern "C"
   {
-    INVALID   = -2,
-    EMPTY     = -1,
-  };
+    void cpprtl_eh_run_dtor     (msvc_data::object_type* this_ptr, msvc_data::dtor_ft dtor);
+    void cpprtl_eh_run_cctor    (msvc_data::object_type* this_ptr, msvc_data::object_type const* that_ptr, msvc_data::cctor_ft cctor);
+    void cpprtl_eh_run_cctor_vb (msvc_data::object_type* this_ptr, msvc_data::object_type const* that_ptr, int, msvc_data::cctor_vb_ft cctor_vb);
+    void cpprtl_eh_run_unwind_funclet
+    (
+      msvc_data::object_type* pobj, function_frame_t frame, msvc_data::funclet_ft funclet
+    #if defined (_M_ARM) || defined (_M_ARM64)
+    , void const* nvctx
+    #endif
+    );
+    size_t cpprtl_eh_run_catch_block
+    (
+      msvc_data::funclet_ft funclet, function_frame_t frame, ::EXCEPTION_RECORD* exc_rec
+    #if defined (_M_ARM) || defined (_M_ARM64)
+    , void const* nvctx
+    #endif
+    );
 
-
-
-  ehstate_t from_ip
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , ::size_t                  const&  ip
-  , ::DISPATCHER_CONTEXT      const&  dc
-  )
-  {
-    ehstate_t state = EMPTY;
-    rva_t ip_rva = static_cast<rva_t>(ip - dc.ImageBase);
-
-    ip2state_iterator ip2state(*func_dsc, dc.ImageBase);
-    for ( ; ip2state.valid(); ip2state.next() )
+    // eh_funclet.<arch>.asm cpprtl_run_xtor() frame handlers implementation
+    unsigned cpprtl_eh_dtor_handler(::EXCEPTION_RECORD* exc_rec, void*, void*, void*)
     {
-      if (ip_rva < ip2state->ip)
+      if ( EXCEPTION_CODE_CPP == exc_rec->ExceptionCode )
       {
-        break;
+        aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_DTOR_THROW);
       }
+      return ::ExceptionContinueSearch;
     }
-    if ( ip2state.prev() )
+    unsigned cpprtl_eh_cctor_handler(::EXCEPTION_RECORD* exc_rec, void*, void*, void*)
     {
-      state = ip2state->state;
-    }
-    return state;
-  }
-
-
-  ehstate_t from_dc
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , ::DISPATCHER_CONTEXT      const&  dc
-  )
-  {
-    ::size_t pc = dc.ControlPc;
-  #if defined (_M_ARM)
-    if ( dc.ControlPcIsUnwound )
-    {
-      pc -= 2;  //  rewind the forwarded execution point
-    }
-  #elif defined (_M_ARM64)
-    if ( dc.ControlPcIsUnwound )
-    {
-      pc -= 4;  //  rewind the forwarded execution point
-    }
-  #endif
-    return from_ip(func_dsc, pc, dc);
-  }
-
-
-  void try_range
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , ehstate_t                 const&  state
-  , try_iterator                   &  try_begin
-  , try_iterator                   &  try_end
-  , ::DISPATCHER_CONTEXT      const&  dc
-  )
-  {
-    ehstate_t const cs = from_dc(func_dsc, dc);
-    msvc_internal_data::eh::try_descriptor const* in_catch = 0;
-    for ( try_rev_iterator try_dsc(*func_dsc, dc.ImageBase); try_dsc.valid(); try_dsc.next() )
-    {
-      if ( cs > try_dsc->high_level && cs <= try_dsc->catch_level )
+      if ( EXCEPTION_CODE_CPP == exc_rec->ExceptionCode )
       {
-        in_catch = *try_dsc;
-        break;
+        aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_CCTOR_THROW);
       }
+      return ::ExceptionContinueSearch;
     }
-
-    try_begin.deface();
-    try_end.deface();
-
-    for ( try_iterator try_dsc(*func_dsc, dc.ImageBase); try_dsc.valid(); try_dsc.next() )
+    // eh_funclet.<arch>.asm cpprtl_run_fuclet() frame handler implementation
+    unsigned cpprtl_eh_unwind_handler(::EXCEPTION_RECORD* exc_rec, void*, void*, void*)
     {
+      if ( EXCEPTION_CODE_CPP == exc_rec->ExceptionCode )
+      {
+        aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_UNWIND_THROW);
+      }
+      return ::ExceptionContinueSearch;
+    }
+  }  // extern "C"
+
+
+  class exception_object
+  {
+    msvc_data::exception_object_descriptor const* exc_descriptor;
+    size_t                                        exc_object_addr;
+    imagebase_t                                   throw_imagebase;
+
+    bool match
+    (
+      msvc_data::type_descriptor  const* const  catch_typeinfo
+    , unsigned                    const         catch_attributes
+    , msvc_data::type_descriptor  const* const  catchable_typeinfo
+    , unsigned                    const         catchable_attributes
+    ) const
+    {
+      // (...) check
+      if ( !catch_typeinfo || !catch_typeinfo->name[0] )
+      {
+        return true;
+      }
+      // type_info equality check
       if
       (
-        in_catch
-      &&
-        ( try_dsc->low_level <= in_catch->high_level || try_dsc->high_level > in_catch->catch_level )
+        catchable_typeinfo != catch_typeinfo &&
+        !aux_::strzeq(catchable_typeinfo->name, catch_typeinfo->name)
       )
       {
-        continue;
+        return false;
       }
-
-      if
+      return !
       (
-        state >= try_dsc->low_level
-      &&
-        state <= try_dsc->high_level
-      )
-      {
-        if ( !try_begin.valid() )
-        {
-          try_begin = try_dsc;
-        }
-        try_end = try_dsc;
-      }
+        ( (catchable_attributes       & msvc_data::EXCOBJECT_REFERENCE) && !(catch_attributes & msvc_data::CATCH_REFERENCE) ) ||
+        ( (exc_descriptor->attributes & msvc_data::EXCOBJECT_CONST)     && !(catch_attributes & msvc_data::CATCH_CONST)     ) ||
+        ( (exc_descriptor->attributes & msvc_data::EXCOBJECT_UNALIGNED) && !(catch_attributes & msvc_data::CATCH_UNALIGNED) ) ||
+        ( (exc_descriptor->attributes & msvc_data::EXCOBJECT_VOLATILE)  && !(catch_attributes & msvc_data::CATCH_VOLATILE)  )
+      );
     }
-    if ( try_end.valid() )
-    {
-      try_end.next();
-    }
-  }
 
+  public:
+    explicit exception_object(::EXCEPTION_RECORD const& exc_rec)
+      : exc_descriptor  ( reinterpret_cast<msvc_data::exception_object_descriptor*>(exc_rec.ExceptionInformation[EXCDATA_THROW_INFO]) )
+      , exc_object_addr ( exc_rec.ExceptionInformation[EXCDATA_THROW_OBJECT] )
+      , throw_imagebase ( exc_rec.ExceptionInformation[EXCDATA_THROW_IMAGEBASE] )
+    {}
 
-  funcframe_ptr_t function_frame
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , frame_ptr_t               const&  frame
-  , ::DISPATCHER_CONTEXT      const&  dc
-  )
-  {
-    ehstate_t state = from_dc(func_dsc, dc);
-    ::size_t func_frame = reinterpret_cast< ::size_t>(frame);
-    for ( try_rev_iterator try_dsc(*func_dsc, dc.ImageBase); try_dsc.valid(); try_dsc.next() )
+    msvc_data::catchable_type_descriptor const* match
+    (
+      msvc_data::type_descriptor  const* const  catch_typeinfo
+    , unsigned                    const         catch_attributes
+    ) const                  
     {
-      if
-      (
-        state > try_dsc->high_level
-      &&
-        state <= try_dsc->catch_level
-      )
+      for ( msvc_data::catchable_type_iterator catchable_type(*exc_descriptor, throw_imagebase); catchable_type.valid(); catchable_type.next() )
       {
-        image_base_t img_base;
-        IRQL_CHECK ( <=DISPATCH_LEVEL ) //  ::RtlLookupFunctionEntry()
-        ::RUNTIME_FUNCTION const* prf = ::RtlLookupFunctionEntry(dc.ControlPc, &img_base, 0);
-        catch_iterator catch_block(*try_dsc, dc.ImageBase);
-        while ( catch_block.valid() && prf->BeginAddress != catch_block->handler_address )
+        if ( match(catch_typeinfo, catch_attributes, &*msvc_data::type_descriptor_accessor(*catchable_type, throw_imagebase), catchable_type->attributes) )
         {
-          catch_block.next();
-        }
-        if ( catch_block.valid() )
-        {
-        #if defined (_M_AMD64) || defined (_M_X64)
-          func_frame = *reinterpret_cast< ::size_t*>(func_frame + catch_block->frame_offset);
-        #elif defined (_M_ARM) || defined (_M_ARM64)
-          func_frame = *reinterpret_cast< ::size_t*>(func_frame);
-        #else
-        #  error check $(target.arch)
-        #endif
-          break;
+          return &*catchable_type;
         }
       }
+      return 0;
     }
-    return reinterpret_cast<funcframe_ptr_t>(func_frame);
-  }
 
-
-  namespace aux_
-  {
-    struct FRAME_POINTERS
+    template <typename catch_block_descriptor_type>
+    void copy_to_catch_object
+    (
+      catch_block_descriptor_type           const&  catch_block
+    , function_frame_t                      const&  function_frame
+    , msvc_data::catchable_type_descriptor  const&  catchable_type
+    ) const
     {
-      int fp1;    // contains the current function state
-      int fp2;
-
-      static FRAME_POINTERS* get
-      (
-        func_descriptor_iterator  const&  func_dsc
-      , funcframe_ptr_t           const&  func_frame
-      )
+      if ( catch_block.object_offset )  // catch by name
       {
-        return reinterpret_cast<eh_state::aux_::FRAME_POINTERS*>(reinterpret_cast< ::size_t>(func_frame) + func_dsc->frame_ptrs);
-      }
-    };
-  }
-
-
-  ehstate_t saved_state
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , funcframe_ptr_t           const&  func_frame
-  )
-  {
-    return static_cast<ehstate_t>(aux_::FRAME_POINTERS::get(func_dsc, func_frame)->fp1);
-  }
-
-
-  void save_state
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , funcframe_ptr_t           const&  func_frame
-  , ehstate_t                 const&  state
-  )
-  {
-    aux_::FRAME_POINTERS::get(func_dsc, func_frame)->fp1 = state;
-  }
-
-
-  ehstate_t saved_unwind_try_block
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , funcframe_ptr_t           const&  func_frame
-  )
-  {
-    return static_cast<ehstate_t>(aux_::FRAME_POINTERS::get(func_dsc, func_frame)->fp2);
-  }
-
-
-  void save_unwind_try_block
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , funcframe_ptr_t           const&  func_frame
-  , ehstate_t                 const&  state
-  )
-  {
-    aux_::FRAME_POINTERS::get(func_dsc, func_frame)->fp2 = state;
-  }
-
-}  // namespace eh_state
-
-
-
-namespace eh_type
-{
-
-  using eh_engine::funcframe_ptr_t;
-
-
-  msvc_internal_data::eh::exception_descriptor const* get_exception_descriptor(::EXCEPTION_RECORD const& exc_rec)
-  {
-    if ( eh_engine::EXCEPTION_OPCODE_THROW == exc_rec.ExceptionInformation[eh_engine::EXCPTR_OPCODE] )
-    {
-      return reinterpret_cast<msvc_internal_data::eh::exception_descriptor*>(exc_rec.ExceptionInformation[eh_engine::EXCPTR_THR_THROWINFO]);
-    }
-    return 0;
-  }
-
-
-  void* get_exception_object(::EXCEPTION_RECORD const& exc_rec)
-  {
-    if ( eh_engine::EXCEPTION_OPCODE_THROW == exc_rec.ExceptionInformation[eh_engine::EXCPTR_OPCODE] )
-    {
-      return reinterpret_cast<void*>(exc_rec.ExceptionInformation[eh_engine::EXCPTR_THR_THROWOBJECT]);
-    }
-    return 0;
-  }
-
-
-  bool match
-  (
-    msvc_internal_data::eh::exception_descriptor  const&  exc_dsc
-  , catchable_type_iterator                       const&  catchable_type
-  , catchable_typeinfo_iterator                   const&  catchable_typeinfo
-  , catch_typeinfo_iterator                       const&  catch_typeinfo
-  , unsigned                                      const&  catch_attr
-  )
-  {
-    if
-    (
-      0 == *catch_typeinfo
-    ||
-      0 == catch_typeinfo->name
-    )  // (...) check
-    {
-      return true;
-    }
-
-    if
-    (
-      *catchable_typeinfo != *catch_typeinfo
-    &&
-      !aux_::strzcmp(&catchable_typeinfo->name, &catch_typeinfo->name)
-    )  // type_info equality check
-    {
-      return false;
-    }
-
-    if 
-    (
-      ( (catchable_type->attributes & msvc_internal_data::eh::EXCEP_REFERENCE)  &&  !(catch_attr & msvc_internal_data::eh::CATCH_REFERENCE) )
-    ||
-      ( (exc_dsc.attributes & msvc_internal_data::eh::EXCEP_CONST)              &&  !(catch_attr & msvc_internal_data::eh::CATCH_CONST)     )
-    ||
-      ( (exc_dsc.attributes & msvc_internal_data::eh::EXCEP_VOLATILE)           &&  !(catch_attr & msvc_internal_data::eh::CATCH_VOLATILE)  )
-    )
-    {
-      return false;
-    }
-    return true;
-  }
-
-
-  void* pointer_cast
-  (
-    void                                       const* const  complete_obj
-  , msvc_internal_data::eh::subtype_cast_info  const&        cast_info
-  )
-  {
-    ::size_t ptr = reinterpret_cast< ::size_t>(complete_obj);
-    if ( cast_info.vbase_table_offset >= 0 )
-    {
-      ptr += cast_info.vbase_table_offset;
-      ptr += *reinterpret_cast<int*>(*reinterpret_cast< ::size_t*>(ptr) + cast_info.vbase_disp_offset);
-    }
-    ptr += cast_info.subtype_offset;
-    return reinterpret_cast<void*>(ptr);
-  }
-
-
-
-  void copy_exception_object
-  (
-    void                     const* const  exc_object
-  , funcframe_ptr_t          const&        func_frame
-  , catch_iterator           const&        catch_block
-  , catchable_type_iterator  const&        catchable_type
-  , ::DISPATCHER_CONTEXT     const&        dc
-  )
-  {
-    if ( exc_object && catch_block->exc_offset )
-    {
-      __try
-      {
-        catch_typeinfo_iterator type_dsc(*catch_block, dc.ImageBase);
-        if ( type_dsc.valid() && type_dsc->name )
+        size_t catch_object_addr = reinterpret_cast<size_t>(function_frame) + catch_block.object_offset;
+        if ( catch_block.attributes & msvc_data::CATCH_REFERENCE )
         {
-          ::size_t dst_addr = reinterpret_cast< ::size_t>(func_frame) + catch_block->exc_offset;
-  
-          if ( catch_block->attributes & msvc_internal_data::eh::CATCH_REFERENCE )
+          *reinterpret_cast<size_t*>(catch_object_addr) = pointer_cast(exc_object_addr, catchable_type.cast_info);
+        }
+        else if ( catchable_type.attributes & msvc_data::EXCOBJECT_SIMPLE_TYPE )
+        {
+          aux_::memcpy(reinterpret_cast<void*>(catch_object_addr), reinterpret_cast<void*>(exc_object_addr), catchable_type.size);
+          if ( sizeof(void*) == catchable_type.size )
           {
-            *reinterpret_cast<void**>(dst_addr) = pointer_cast(exc_object, catchable_type->cast_info);
+            *reinterpret_cast<size_t*>(catch_object_addr) = pointer_cast(*reinterpret_cast<size_t const*>(catch_object_addr), catchable_type.cast_info);
           }
-          else if ( catchable_type->attributes & msvc_internal_data::eh::EXCEP_SIMPLE_TYPE )
+        }
+        else  // UDT
+        {
+          size_t const exc_subobject_addr = pointer_cast(exc_object_addr, catchable_type.cast_info);
+          if ( !catchable_type.cctor )  // POD if empty
           {
-            aux_::memcpy(reinterpret_cast<void*>(dst_addr), exc_object, catchable_type->size);
-            if ( sizeof(void*) == catchable_type->size )
-            {
-              *reinterpret_cast<void**>(dst_addr) = pointer_cast(*reinterpret_cast<void**>(dst_addr), catchable_type->cast_info);
-            }
+            aux_::memcpy(reinterpret_cast<void*>(catch_object_addr), reinterpret_cast<void const*>(exc_subobject_addr), catchable_type.size);
           }
-          else // UDT
+          else
           {
-            void* casted_exc_object = pointer_cast(exc_object, catchable_type->cast_info);
-            if ( !catchable_type->cctor )
+            if ( catchable_type.attributes & msvc_data::EXCOBJECT_HAS_VIRTUAL_BASE )
             {
-              aux_::memcpy(reinterpret_cast<void*>(dst_addr), casted_exc_object, catchable_type->size);
+              cpprtl_eh_run_cctor_vb
+              (
+                reinterpret_cast<msvc_data::object_type*>(catch_object_addr)
+              , reinterpret_cast<msvc_data::object_type*>(exc_subobject_addr)
+              , 1
+              , *msvc_data::cctor_vb_accessor(catchable_type, throw_imagebase)
+              );
             }
             else
             {
-              if ( catchable_type->attributes & msvc_internal_data::eh::EXCEP_VIRTUAL_BASE )
-              {
-                (*cctorvb_iterator(*catchable_type, dc.ImageBase))(reinterpret_cast<void*>(dst_addr), casted_exc_object, 1);
-              }
-              else
-              {
-                (*cctor_iterator(*catchable_type, dc.ImageBase))(reinterpret_cast<void*>(dst_addr), casted_exc_object);
-              }
-            }
-          }
-        }
-      }
-      __except ( eh::aux_::invalid_exception(GetExceptionCode(), eh::EXCEPTION_SUBCODE_CCTOR_THROW) , EXCEPTION_CONTINUE_SEARCH )
-      {
-      }
-    }
-  }
-
-
-
-  void destroy_exception_object(::EXCEPTION_RECORD const& exc_rec)
-  {
-    if
-    (
-      eh::EXCEPTION_CODE_CPP == exc_rec.ExceptionCode
-    &&
-      eh_engine::EXCEPTION_OPCODE_THROW == exc_rec.ExceptionInformation[eh_engine::EXCPTR_OPCODE]
-    )
-    {
-      msvc_internal_data::eh::exception_descriptor const* const exc_dsc = eh_type::get_exception_descriptor(exc_rec);
-      void* const exc_object = eh_type::get_exception_object(exc_rec);
-      if ( exc_object && exc_dsc )
-      {
-        dtor_iterator dtor(exc_dsc, exc_rec.ExceptionInformation[eh_engine::EXCPTR_THR_IMAGEBASE]);
-        if ( dtor.valid() )
-        {
-          __try
-          {
-            (*dtor)(exc_object);
-          }
-          __except ( eh::aux_::invalid_exception(GetExceptionCode(), eh::EXCEPTION_SUBCODE_DTOR_THROW) , EXCEPTION_CONTINUE_SEARCH )
-          {
-          }
-        }
-      }
-    }
-  }
-
-}  // namespace eh_type
-
-
-
-namespace eh_engine
-{
-
-
-  void unwind_frame
-  (
-    func_descriptor_iterator  const&  func_dsc
-  , funcframe_ptr_t           const&  func_frame
-  , ehstate_t                 const&  target_state
-  , ::DISPATCHER_CONTEXT      const&  dc
-  )
-  {
-    ehstate_t current_state = eh_state::saved_state(func_dsc, func_frame);
-    if ( eh_state::INVALID == current_state )
-    {
-      current_state = eh_state::from_dc(func_dsc, dc);
-    }
-
-    unwind_iterator unwind_entry(*func_dsc, dc.ImageBase);
-    while
-    (
-      current_state > eh_state::EMPTY
-    &&
-      current_state != target_state
-    &&
-      unwind_entry[current_state].valid()
-    )
-    {
-      current_state = unwind_entry->prev_state;
-      unwind_action_iterator unwind_action(*unwind_entry, dc.ImageBase);
-      if ( unwind_action.valid() )
-      {
-        eh_state::save_state(func_dsc, func_frame, current_state);
-        __try
-        {
-        #if defined (_M_X64) || defined (_M_AMD64)
-          _CPPRTL_invoke_funclet(*unwind_action, func_frame);
-        #elif defined (_M_ARM) || defined (_M_ARM64)
-          _CPPRTL_invoke_funclet(*unwind_action, func_frame, dc.NonVolatileRegisters);
-        #else
-        #  error check $(target.arch)
-        #endif
-        }
-        __except ( eh::aux_::invalid_exception(GetExceptionCode(), eh::EXCEPTION_SUBCODE_UNWIND_THROW) , EXCEPTION_CONTINUE_SEARCH )
-        {
-        }
-      }
-    }
-    eh_state::save_state(func_dsc, func_frame, current_state);
-  }
-
-
-
-  namespace aux_
-  {
-
-    int call_catch_block_rethrow_seh_filter
-    (
-      ::EXCEPTION_POINTERS  *        xp
-    , ::EXCEPTION_RECORD    * const  cur_exc
-    )
-    {
-      if ( eh::EXCEPTION_CODE_CPP == xp->ExceptionRecord->ExceptionCode )
-      {
-        ::EXCEPTION_RECORD* new_exc = xp->ExceptionRecord;
-        if ( new_exc )
-        {
-
-          if ( EXCEPTION_OPCODE_THROW == new_exc->ExceptionInformation[EXCPTR_OPCODE] )
-          {
-            if ( 0 == new_exc->ExceptionInformation[EXCPTR_THR_THROWOBJECT] )
-            {
-              new_exc->ExceptionInformation[EXCPTR_THR_THROWOBJECT]      = cur_exc->ExceptionInformation[EXCPTR_THR_THROWOBJECT];
-              new_exc->ExceptionInformation[EXCPTR_THR_THROWINFO]        = cur_exc->ExceptionInformation[EXCPTR_THR_THROWINFO];
-              new_exc->ExceptionInformation[EXCPTR_THR_IMAGEBASE]        = cur_exc->ExceptionInformation[EXCPTR_THR_IMAGEBASE];
-              new_exc->ExceptionInformation[EXCPTR_THR_PREV_EXCEPTION]   = reinterpret_cast< ::ULONG_PTR>(cur_exc);
-            // our exception object is propagated to the outer scope so we are no longer responsible for its' destruction.
-              cur_exc->ExceptionInformation[EXCPTR_FLAGS]           |= EXCEPTION_FLAG_OBJECT_RETHROWED;
-            // delegate the exception object's destruction to the outer scope's catch-block caller finally handler
-              new_exc->ExceptionInformation[EXCPTR_FLAGS]           &= ~EXCEPTION_FLAG_OBJECT_RETHROWED;
-            }
-            else if (cur_exc->ExceptionInformation[EXCPTR_THR_THROWOBJECT] == new_exc->ExceptionInformation[EXCPTR_THR_THROWOBJECT])
-            {
-              new_exc->ExceptionInformation[EXCPTR_THR_PREV_EXCEPTION]   = reinterpret_cast< ::ULONG_PTR>(cur_exc);
-              new_exc->ExceptionInformation[EXCPTR_THR_IMAGEBASE]        = cur_exc->ExceptionInformation[EXCPTR_THR_IMAGEBASE];
-            // our exception object is propagated to the outer scope so we are no longer responsible for its' destruction.
-              cur_exc->ExceptionInformation[EXCPTR_FLAGS]           |= EXCEPTION_FLAG_OBJECT_RETHROWED;
-            // delegate the exception object's destruction to the outer scope's catch-block caller finally handler
-              new_exc->ExceptionInformation[EXCPTR_FLAGS]           &= ~EXCEPTION_FLAG_OBJECT_RETHROWED;
-            }
-
-            return EXCEPTION_CONTINUE_SEARCH;
-          }
-
-          if ( EXCEPTION_OPCODE_NO_EXC_OBJ == new_exc->ExceptionInformation[EXCPTR_OPCODE] )
-          {
-            ::EXCEPTION_RECORD* const rec_patch = reinterpret_cast< ::EXCEPTION_RECORD*>(new_exc->ExceptionInformation[EXCPTR_NOOBJ_EXCREC_PTR]);
-            if ( rec_patch && EXCEPTION_OPCODE_THROW == rec_patch->ExceptionInformation[EXCPTR_OPCODE] )
-            {
-              rec_patch->ExceptionInformation[EXCPTR_THR_THROWOBJECT]      = cur_exc->ExceptionInformation[EXCPTR_THR_THROWOBJECT];
-              rec_patch->ExceptionInformation[EXCPTR_THR_THROWINFO]        = cur_exc->ExceptionInformation[EXCPTR_THR_THROWINFO];
-              rec_patch->ExceptionInformation[EXCPTR_THR_IMAGEBASE]        = cur_exc->ExceptionInformation[EXCPTR_THR_IMAGEBASE];
-              rec_patch->ExceptionInformation[EXCPTR_THR_PREV_EXCEPTION]   = reinterpret_cast< ::ULONG_PTR>(cur_exc);
-            // put the flag that our scope (and may be outer ones) is responsible of the exception object's lifetime
-              rec_patch->ExceptionInformation[EXCPTR_FLAGS]           |= EXCEPTION_FLAG_OBJECT_RETHROWED;
-            }
-            return EXCEPTION_CONTINUE_EXECUTION;
-          }
-        }
-      }
-      return EXCEPTION_CONTINUE_SEARCH;
-    }
-
-  }  // namespace aux_
-
-
-
-  void* call_catch_block(::EXCEPTION_RECORD const& unwind_exc_rec)
-  {
-    ::EXCEPTION_RECORD& cur_exc = *reinterpret_cast< ::EXCEPTION_RECORD*>(unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_CURRENT_EXCEPTION]);
-
-    void* ret_addr = 0;
-    __try
-    {
-      __try
-      {
-        ret_addr =
-      #if defined (_M_X64) || defined (_M_AMD64)
-          _CPPRTL_invoke_funclet
-          (
-            reinterpret_cast<msvc_internal_data::eh::catch_handler_ft> (unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_HANDLER_ADDR])
-          , reinterpret_cast<void*>                                    (unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_FUNCTION_FRAME])
-          );
-      #elif defined (_M_ARM) || defined (_M_ARM64)
-          _CPPRTL_invoke_funclet
-          (
-            reinterpret_cast<msvc_internal_data::eh::catch_handler_ft> (unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_HANDLER_ADDR])
-          , reinterpret_cast<void*>                                    (unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_FUNCTION_FRAME])
-          , reinterpret_cast<void*>                                    (unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_ARM_NV_CONTEXT])
-          );
-      #else
-      #  error check $(target.arch)
-      #endif
-      }
-      __except ( aux_::call_catch_block_rethrow_seh_filter(GetExceptionInformation(), &cur_exc) )
-      {
-      }
-    }
-    __finally
-    {
-      if ( !(cur_exc.ExceptionInformation[EXCPTR_FLAGS] & EXCEPTION_FLAG_OBJECT_RETHROWED) )
-      {
-        eh_type::destroy_exception_object(cur_exc);
-      }
-    }
-
-    eh_state::save_unwind_try_block
-    (
-      func_descriptor_iterator(reinterpret_cast<msvc_internal_data::eh::func_descriptor*>(unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_FUNC_DESCRIPTOR]))
-    , reinterpret_cast<funcframe_ptr_t>(unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_FUNCTION_FRAME])
-    , eh_state::INVALID
-    );
-
-    return ret_addr;
-  }
-
-
-  namespace aux_
-  {
-    void init_unwind_exception_record
-    (
-      ::EXCEPTION_RECORD               &  unwind_exc_rec
-    , ::EXCEPTION_RECORD          const&  exc_rec
-    , func_descriptor_iterator    const&  func_dsc
-    , funcframe_ptr_t             const&  func_frame
-    , frame_ptr_t                 const&  target_frame
-    , ehstate_t                   const&  target_state
-    , catch_handler_iterator      const&  handler
-    )
-    {
-      unwind_exc_rec.ExceptionCode     = STATUS_UNWIND_CONSOLIDATE;
-      unwind_exc_rec.ExceptionFlags   |= EXCEPTION_NONCONTINUABLE;
-      unwind_exc_rec.ExceptionRecord   = 0;
-      unwind_exc_rec.ExceptionAddress  = 0;
-    
-      unwind_exc_rec.ExceptionInformation[EXCPTR_OPCODE]                   = EXCEPTION_OPCODE_STACK_CONSOLIDATE;                     // operation sub-code
-      unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_CALLBACK_ADDR]        = reinterpret_cast< ::ULONG_PTR>(&call_catch_block);      // Address of callback function
-      unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_FUNCTION_FRAME]       = reinterpret_cast< ::ULONG_PTR>(func_frame);             // Used by callback funciton
-      unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_HANDLER_ADDR]         = reinterpret_cast< ::ULONG_PTR>(*handler);               // Used by callback function to call catch block
-      unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_TARGET_STATE]         = target_state;                                           // Used by CxxFrameHandler to unwind to target_state
-      unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_TARGET_FRAME]         = reinterpret_cast< ::ULONG_PTR>(target_frame);           // used by CFG_EH_STACK_WALKER
-      unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_FUNC_DESCRIPTOR]      = reinterpret_cast< ::ULONG_PTR>(*func_dsc);              // Used in callback function to set state on stack to -2
-      unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_CURRENT_EXCEPTION]    = reinterpret_cast< ::ULONG_PTR>(&exc_rec);               // Used for passing current Exception
-      unwind_exc_rec.ExceptionInformation[EXCPTR_UNW_ARM_NV_CONTEXT]       = -1;                                                     // _M_ARM specific
-    
-      unwind_exc_rec.NumberParameters = ARRAYSIZE_EXCPTR_UNW;
-    }
-
-    void unwind_stack_helper
-    (
-      ::EXCEPTION_RECORD          const&  exc_rec
-    , func_descriptor_iterator    const&  func_dsc
-    , funcframe_ptr_t             const&  func_frame
-    , frame_ptr_t                 const&  target_frame
-    , ehstate_t                   const&  target_state
-    , catch_handler_iterator      const&  handler
-    , ::DISPATCHER_CONTEXT        const&  dc
-    )
-    {
-      ::EXCEPTION_RECORD unwind_exc_rec = { 0 };
-      init_unwind_exception_record
-      (
-        unwind_exc_rec
-      , exc_rec
-      , func_dsc
-      , func_frame
-      , target_frame
-      , target_state
-      , handler
-      );
-      ::RtlUnwindEx(target_frame, reinterpret_cast<void*>(dc.ControlPc), &unwind_exc_rec, 0, dc.ContextRecord, dc.HistoryTable);
-    }
-  }  // namespace aux_
-
-
-  void unwind_stack
-  (
-    ::EXCEPTION_RECORD          const&  exc_rec
-  , func_descriptor_iterator    const&  func_dsc
-  , funcframe_ptr_t             const&  func_frame
-  , frame_ptr_t                 const&  target_frame
-  , ehstate_t                   const&  target_state
-  , catch_handler_iterator      const&  handler
-  , ::DISPATCHER_CONTEXT        const&  dc
-  )
-  {
-    if
-    (
-      eh::EXCEPTION_CODE_CPP == exc_rec.ExceptionCode
-    &&
-      EXCEPTION_OPCODE_THROW == exc_rec.ExceptionInformation[EXCPTR_OPCODE]
-    )
-    {
-      if ( exc_rec.ExceptionInformation[EXCPTR_FLAGS] & EXCEPTION_FLAG_STACKWALKER_UNWIND )
-      {
-        ::EXCEPTION_RECORD& unwind_exc_rec = *reinterpret_cast< ::EXCEPTION_RECORD*>(exc_rec.ExceptionInformation[EXCPTR_THR_UNWIND_EXCREC]);
-        aux_::init_unwind_exception_record
-        (
-          unwind_exc_rec
-        , exc_rec
-        , func_dsc
-        , func_frame
-        , target_frame
-        , target_state
-        , handler
-        );
-        return;  // back into the stack walker
-      }
-    }
-    aux_::unwind_stack_helper
-    (
-      exc_rec
-    , func_dsc
-    , func_frame
-    , target_frame
-    , target_state
-    , handler
-    , dc
-    );
-  }
-
-
-  void throw_exception_no_exception_object(::EXCEPTION_RECORD const* const rec)
-  {
-    ::EXCEPTION_RECORD exc_rec  = { 0 };
-    exc_rec.ExceptionCode       = eh::EXCEPTION_CODE_CPP;
-    exc_rec.ExceptionFlags      = 0;  // this is a continuable exception - if catchblock-handler would fill the necessary ptrs it will return ExceptionContinueExecution
-    exc_rec.ExceptionRecord     = 0;
-    exc_rec.ExceptionAddress    = 0;
-    exc_rec.ExceptionInformation[EXCPTR_OPCODE]            = EXCEPTION_OPCODE_NO_EXC_OBJ;
-    exc_rec.ExceptionInformation[EXCPTR_NOOBJ_EXCREC_PTR]  = reinterpret_cast< ::ULONG_PTR>(rec);
-    exc_rec.NumberParameters = ARRAYSIZE_EXCPTR_NOOBJ;
-
-  #ifdef CFG_EH_STACK_WALKER
-    eh::eh_engine::stack_walk(exc_rec);
-  #else
-    eh::aux_::raise_exception(exc_rec);
-  #endif
-
-  }
-
-
-  void throw_exception
-  (
-    void                                          const* const  exc_object
-  , msvc_internal_data::eh::exception_descriptor  const* const  exc_descr
-  )
-  {
-    ::EXCEPTION_RECORD exc_rec  = { 0 };
-    exc_rec.ExceptionCode       = eh::EXCEPTION_CODE_CPP;
-    exc_rec.ExceptionFlags     |= EXCEPTION_NONCONTINUABLE;
-    exc_rec.ExceptionRecord     = 0;
-    exc_rec.ExceptionAddress    = 0;
-    exc_rec.ExceptionInformation[EXCPTR_OPCODE]           = EXCEPTION_OPCODE_THROW;
-    exc_rec.ExceptionInformation[EXCPTR_THR_THROWOBJECT]  = reinterpret_cast< ::ULONG_PTR>(exc_object);
-    exc_rec.ExceptionInformation[EXCPTR_THR_THROWINFO]    = reinterpret_cast< ::ULONG_PTR>(exc_descr);
-    if ( exc_descr )
-    {
-      IRQL_CHECK ( <=DISPATCH_LEVEL )  //  RtlPcToFileHeader()
-      exc_rec.ExceptionInformation[EXCPTR_THR_IMAGEBASE]  = 
-        reinterpret_cast< ::ULONG_PTR>
-        (
-          ::RtlPcToFileHeader
-          (
-            reinterpret_cast<void*>  (const_cast<msvc_internal_data::eh::exception_descriptor*>(exc_descr))
-          , reinterpret_cast<void**> (&exc_rec.ExceptionInformation[EXCPTR_THR_IMAGEBASE])
-          )
-        );
-    }
-    exc_rec.NumberParameters = ARRAYSIZE_EXCPTR_THROW;
-
-    if ( !exc_object || !exc_descr )
-    {
-      // if we are here the 'throw;' statement has occured and we are to try getting the exception info from the previous scope's rethrow-seh-filter by continuable seh-exception
-      throw_exception_no_exception_object(&exc_rec);
-    }
-
-  #ifdef CFG_EH_STACK_WALKER
-    eh::eh_engine::stack_walk(exc_rec);
-  #else
-    eh::aux_::raise_exception(exc_rec);
-  #endif
-  }
-
-
-
-  void find_matching_catch_block
-  (
-    ::EXCEPTION_RECORD        const&  exc_rec
-  , func_descriptor_iterator  const&  func_dsc
-  , frame_ptr_t               const&  frame
-  , ::DISPATCHER_CONTEXT      const&  dc
-  )
-  {
-    funcframe_ptr_t const func_frame = eh_state::function_frame(func_dsc, frame, dc);
-
-    ehstate_t state = eh_state::from_dc(func_dsc, dc);
-    if ( state > eh_state::saved_unwind_try_block(func_dsc, func_frame) )
-    {                             
-      eh_state::save_state(func_dsc, func_frame, state);
-      eh_state::save_unwind_try_block(func_dsc, func_frame, state);
-    }
-    else
-    {
-      state = eh_state::saved_unwind_try_block(func_dsc, func_frame);
-    }
-
-    try_iterator try_cur(*func_dsc, dc.ImageBase);
-    try_iterator try_end(*func_dsc, dc.ImageBase);
-    eh_state::try_range(func_dsc, state, try_cur, try_end, dc);
-
-    if ( eh::EXCEPTION_CODE_CPP == exc_rec.ExceptionCode )  // ...for cpp-exception
-    {
-      if ( EXCEPTION_OPCODE_THROW == exc_rec.ExceptionInformation[EXCPTR_OPCODE] )
-      {
-        msvc_internal_data::eh::exception_descriptor const* const exc_dsc = eh_type::get_exception_descriptor(exc_rec);
-        void const* const exc_object = eh_type::get_exception_object(exc_rec);
-
-        if ( exc_object && exc_dsc )
-        {
-          for ( ; try_cur != try_end; try_cur.next() )
-          {
-            if ( try_cur->low_level <= state && state <= try_cur->high_level )
-            {
-              for ( catch_iterator catch_block(*try_cur, dc.ImageBase); catch_block.valid(); catch_block.next() )
-              {
-                for ( catchable_type_iterator catchable_type(*catchable_table_iterator(exc_dsc, dc.ImageBase), dc.ImageBase); catchable_type.valid(); catchable_type.next() )
-                {
-                  if
-                  (
-                    eh_type::match
-                    (
-                      *exc_dsc
-                    , catchable_type
-                    , catchable_typeinfo_iterator(*catchable_type, dc.ImageBase)
-                    , catch_typeinfo_iterator(*catch_block, dc.ImageBase)
-                    , catch_block->attributes
-                    )
-                  )
-                  {
-                    eh_type::copy_exception_object
-                    (
-                      exc_object
-                    , func_frame
-                    , catch_block
-                    , catchable_type
-                    , dc
-                    );
-                    unwind_stack
-                    (
-                      exc_rec
-                    , func_dsc
-                    , func_frame
-                    , frame
-                    , try_cur->low_level
-                    , catch_handler_iterator(*catch_block, dc.ImageBase)
-                    , dc
-                    );
-                  #if defined ( CFG_EH_STACK_WALKER )
-                    if ( exc_rec.ExceptionInformation[EXCPTR_FLAGS] & EXCEPTION_FLAG_STACKWALKER_UNWIND )
-                    {
-                      return;  // delegate the unwind duties back to the stack_walker
-                    }
-                  #endif
-                    goto next_try_block;  // don't come here if unwound properly
-                  }
-                }
-              }
-            }
-next_try_block : ;
-          }
-        }
-      }
-    }
-    else  // ...for remaining SEH-exceptions
-    {
-      if ( STATUS_BREAKPOINT != exc_rec.ExceptionCode )  //// wouldn't touch this code
-      {
-      //// TODO SEH translator
-#if !( defined (NT_KERNEL_MODE) && defined (_M_ARM) )
-  // WinRT (at least 6.2.9200) ke-mode RtlUnwindEx()-->RtlRestoreContext() doesn't support stack consolidation mode, so let's skip 
-  // the SEH catching by (...) facility
-        for ( ; try_cur != try_end; try_cur.next() )
-        {
-          if ( try_cur->low_level <= state && state <= try_cur->high_level )
-          {
-            catch_rev_iterator catch_block(*try_cur, dc.ImageBase); 
-            if
-            (
-              catch_block.valid()
-            &&
-              !catch_typeinfo_iterator(*catch_block, dc.ImageBase).valid()
-            )  // check the last catch in the corresponding try is the '(...)'
-            {
-              unwind_stack
+              cpprtl_eh_run_cctor
               (
-                exc_rec
-              , func_dsc
-              , func_frame
-              , frame
-              , try_cur->low_level
-              , catch_handler_iterator(*catch_block, dc.ImageBase)
-              , dc
+                reinterpret_cast<msvc_data::object_type*>(catch_object_addr)
+              , reinterpret_cast<msvc_data::object_type*>(exc_subobject_addr)
+              , *msvc_data::cctor_accessor(catchable_type, throw_imagebase)
               );
-            #if defined ( CFG_EH_STACK_WALKER )
-              return;  // could anyone achieve here ? hardly... but hell knows... let's just delegate the decision back to the stack_walker
-            #endif
             }
           }
         }
-#endif
       }
     }
 
-  }
-
-
-  namespace aux_
-  {
-    msvc_internal_data::eh::func_descriptor const* const get_function_descriptor(::DISPATCHER_CONTEXT const& dc)
+    void destroy() const
     {
-      return reinterpret_cast<msvc_internal_data::eh::func_descriptor const*>(dc.ImageBase + *reinterpret_cast<rva_t*>(dc.HandlerData));
+      msvc_data::dtor_accessor dtor(*exc_descriptor, throw_imagebase);
+      if ( *dtor )  // may be empty
+      {
+        cpprtl_eh_run_dtor(reinterpret_cast<msvc_data::object_type*>(exc_object_addr), *dtor);
+      }
     }
-  }
+  };
 
 
-  ::EXCEPTION_DISPOSITION frame_handler3
+  // eh_funclet.<arch>.asm cpprtl_eh_run_catch_block() frame handler payload
+  extern "C"
+  unsigned cpprtl_eh_catch_block_handler
   (
-    ::EXCEPTION_RECORD    const&  exc_rec
-  , frame_ptr_t           const&  frame
-  , ::CONTEXT             const&  context
-  , ::DISPATCHER_CONTEXT  const&  dc
+    ::EXCEPTION_RECORD         * const  new_exc
+  , ::EXCEPTION_RECORD         * const  cur_exc
+  , void                  const* const
+  , ::DISPATCHER_CONTEXT       * const  dispatcher
   )
   {
-    // the function this handler is invoked on behalf of
-    func_descriptor_iterator const func_dsc(aux_::get_function_descriptor(dc));
-
-    //// check if this frame handler is responsible for the incoming EXCEPTION_RECORD
-    if ( eh::EXCEPTION_CODE_CPP == exc_rec.ExceptionCode )  // cpp-exception
+    if ( EXCEPTION_CODE_CPP == new_exc->ExceptionCode )
     {
-      if
-      (
-        ARRAYSIZE_EXCPTR_NOOBJ <= exc_rec.NumberParameters
-      && 
-        EXCEPTION_OPCODE_NO_EXC_OBJ == exc_rec.ExceptionInformation[EXCPTR_OPCODE]
-      )
+      if ( !(new_exc->ExceptionFlags & EXCEPTION_UNWIND) )  // passthrough the exception object when dispatching
       {
-        // no duties for this frame handler, the catch block handler is responsible for an exception object searching
-        return ::ExceptionContinueSearch;
-      }
-    }
-    else if ( STATUS_UNWIND_CONSOLIDATE != exc_rec.ExceptionCode )  // filter out other no cpp-exceptions
-    {
-      if
-      (
-        func_dsc->magic_number >= msvc_internal_data::eh::EH_VC8
-      &&
-        (func_dsc->flags & msvc_internal_data::eh::FLAG_EHs)
-      )
-      {
-        //  compiled with -EHs option - nothing to do with foreign structured exception codes (besides EXCEPTION_CODE_CPP)
-        return ::ExceptionContinueSearch;
-      }
-    }
-
-
-    //// proceed the unwind and return
-    if ( exc_rec.ExceptionFlags & EXCEPTION_UNWIND )
-    {
-      if ( func_dsc->unwind_array_size )
-      {
-        if
-        (
-          (exc_rec.ExceptionFlags & EXCEPTION_TARGET_UNWIND)
-        &&
-          STATUS_UNWIND_CONSOLIDATE == exc_rec.ExceptionCode
-        )
+        if ( new_exc->ExceptionInformation[EXCDATA_FLAGS] & EXCEPTION_FLAG_NO_EXCEPTION_OBJECT )
         {
-        // unwinding the target frame
-          if
-          (
-            ARRAYSIZE_EXCPTR_UNW == exc_rec.NumberParameters
-          &&
-            EXCEPTION_OPCODE_STACK_CONSOLIDATE == exc_rec.ExceptionInformation[EXCPTR_OPCODE]
-          )
-          {
-            unwind_frame
-            (
-              func_dsc
-            , reinterpret_cast<funcframe_ptr_t const> (exc_rec.ExceptionInformation[EXCPTR_UNW_FUNCTION_FRAME])
-            , static_cast<ehstate_t>                  (exc_rec.ExceptionInformation[EXCPTR_UNW_TARGET_STATE])
-            , dc
-            );
-          }
+          new_exc->ExceptionInformation[EXCDATA_THROW_OBJECT]    = cur_exc->ExceptionInformation[EXCDATA_THROW_OBJECT];
+          new_exc->ExceptionInformation[EXCDATA_THROW_INFO]      = cur_exc->ExceptionInformation[EXCDATA_THROW_INFO];
+          new_exc->ExceptionInformation[EXCDATA_THROW_IMAGEBASE] = cur_exc->ExceptionInformation[EXCDATA_THROW_IMAGEBASE];
+        // put the flag that our scope (and may be outer ones) is responsible of the exception object's lifetime
+          new_exc->ExceptionInformation[EXCDATA_FLAGS] |= EXCEPTION_FLAG_OBJECT_RETHROWN;
+          new_exc->ExceptionInformation[EXCDATA_FLAGS] &= ~EXCEPTION_FLAG_NO_EXCEPTION_OBJECT;
+          return ExceptionDispatchCPP;
         }
-        else
+        if (cur_exc->ExceptionInformation[EXCDATA_THROW_OBJECT] == new_exc->ExceptionInformation[EXCDATA_THROW_OBJECT])
         {
-        // unwinding the nested frames
-          funcframe_ptr_t func_frame = eh_state::function_frame(func_dsc, frame, dc);
-          ehstate_t target_state = -1;
-          ehstate_t const state = eh_state::from_dc(func_dsc, dc);
-          for ( try_rev_iterator try_block(*func_dsc, dc.ImageBase); try_block.valid(); try_block.next() )
-          {
-            if ( state > try_block->high_level && state <= try_block->catch_level )
-            {
-              target_state = try_block->high_level;
-              break;
-            }
-          }
-          unwind_frame(func_dsc, func_frame, target_state, dc);
-        }  
+        // our exception object is propagated to the next scope so we are no longer responsible for it's destruction.
+          cur_exc->ExceptionInformation[EXCDATA_FLAGS] |= EXCEPTION_FLAG_OBJECT_RETHROWN;
+        // delegate the exception object's destruction to the next scope's catch-block caller
+          new_exc->ExceptionInformation[EXCDATA_FLAGS] &= ~EXCEPTION_FLAG_OBJECT_RETHROWN;
+        }
+        if ( cur_exc->ExceptionInformation[EXCDATA_FLAGS] & EXCEPTION_FLAG_FH4 )
+        {
+          new_exc->ExceptionInformation[EXCDATA_FH4_TRANSIENT_STATE] = cur_exc->ExceptionInformation[EXCDATA_FH4_CATCH_LEVEL];
+          new_exc->ExceptionInformation[EXCDATA_FLAGS] |= EXCEPTION_FLAG_FH4_TRANSIENT_STATE;
+        }
       }
-
-      return ::ExceptionContinueSearch;
+      else  // unwind, destroy the exception object
+      {
+        if ( !(cur_exc->ExceptionInformation[EXCDATA_FLAGS] & (EXCEPTION_FLAG_OBJECT_RETHROWN | EXCEPTION_FLAG_OBJECT_DESTRUCTED)) )
+        {
+          exception_object(*cur_exc).destroy();
+          cur_exc->ExceptionInformation[EXCDATA_FLAGS] |= EXCEPTION_FLAG_OBJECT_DESTRUCTED;
+        }
+        if ( cur_exc->ExceptionInformation[EXCDATA_FLAGS] & EXCEPTION_FLAG_FH4 )
+        {
+          new_exc->ExceptionInformation[EXCDATA_FH4_TRANSIENT_STATE] = cur_exc->ExceptionInformation[EXCDATA_TARGET_STATE];
+          new_exc->ExceptionInformation[EXCDATA_FLAGS] |= EXCEPTION_FLAG_FH4_TRANSIENT_STATE;
+        }
+      }
+      dispatcher->EstablisherFrame = cur_exc->ExceptionInformation[EXCDATA_TARGET_FRAME];  // catch-block nesting scope
+      return ExceptionCollisionCPP;
     }
-
-
-    //// else find and invoke the handler
-    find_matching_catch_block
-    (
-      exc_rec
-    , func_dsc
-    , frame
-    , dc
-    );
-    //  does not return if matching catch-block has been found (if the standard NT exception dispatcher is used)
-    //  or returns and delegates the unwinding duties to a custom dispatching routine
     return ::ExceptionContinueSearch;
   }
 
 
-}  // namespace eh_engine
+  rva_t ip2rva(::DISPATCHER_CONTEXT const& dispatcher)
+  {
+    rva_t ip_rva = static_cast<rva_t>(dispatcher.ControlPc - dispatcher.ImageBase);  // NOTE narrowing
+  #if defined (_M_ARM)
+    if ( dispatcher.ControlPcIsUnwound )
+    {
+      ip_rva -= 2;
+    }
+  #elif defined (_M_ARM64)
+    if ( dispatcher.ControlPcIsUnwound )
+    {
+      ip_rva -= 4;
+    }
+  #endif
+    return ip_rva;
+  }
+}}  // namespace cpprtl::eh
 
 
-}  // namespace eh
-}  // namespace cpprtl
+namespace cpprtl { namespace eh { namespace fh3
+{
+  class function_frame_data
+  {
+    struct unwind_data_t
+    {
+      msvc_data::frame_state_t state;
+      msvc_data::frame_state_t max_state;
 
+      static unwind_data_t* get(msvc_data::function_descriptor const& function, size_t const function_frame_addr)
+      {
+        return reinterpret_cast<unwind_data_t*>(function_frame_addr + function.unwind_data_offset);
+      }
+    };
+
+    msvc_data::try_block_descriptor const* in_catch;
+    size_t                   function_frame_addr;
+    unwind_data_t*           unwind_data;
+    msvc_data::frame_state_t state_ip;
+
+    static msvc_data::frame_state_t ip2state(msvc_data::function_descriptor const& function, ::DISPATCHER_CONTEXT const& dispatcher)
+    {
+      rva_t const ip_rva = ip2rva(dispatcher);
+      msvc_data::frame_state_t state = msvc_data::frame_state::EMPTY;
+      for ( msvc_data::ip2state_iterator ip2state(function, dispatcher.ImageBase); ip2state.valid(); ip2state.next() )
+      {
+        if ( ip_rva < ip2state->ip_rva )
+        {
+          break;
+        }
+        state = ip2state->state;
+      }
+      return state;
+    }
+
+    void unwind_data_update() const
+    {
+      if ( unwind_data->max_state < state_ip )
+      {
+        unwind_data->state = unwind_data->max_state = state_ip;
+      }
+    }
+
+  public:
+    function_frame_data  // intermediate frames ctor
+    (
+      funclet_frame_t                 const   funclet_frame
+    , msvc_data::function_descriptor  const&  function
+    , ::DISPATCHER_CONTEXT            const&  dispatcher
+    )
+      : in_catch            ( 0 )
+      , function_frame_addr ( reinterpret_cast<size_t>(funclet_frame) )
+      , unwind_data         ( 0 )
+      , state_ip            ( ip2state(function, dispatcher) )
+    {
+      msvc_data::try_block_iterator try_block(function, dispatcher.ImageBase);
+      for ( try_block.last(); try_block.valid() && !in_catch; try_block.prev() )
+      {
+        if ( (state_ip > try_block->high_level) && (state_ip <= try_block->catch_level) )  // the state is in one of catch blocks of this try{}
+        {
+          for
+          (
+            msvc_data::catch_block_iterator catch_block(*try_block, dispatcher.ImageBase)
+          ; catch_block.valid()
+          ; catch_block.next()
+          )
+          {
+            if ( catch_block->funclet == dispatcher.FunctionEntry->BeginAddress )
+            {
+             // the catch block is found, obtain the hosting function frame
+            #if defined (_M_AMD64) || defined (_M_X64)
+              function_frame_addr = *reinterpret_cast<size_t const*>(function_frame_addr + catch_block->frame_offset);
+            #elif defined (_M_ARM) || defined (_M_ARM64)
+              function_frame_addr = *reinterpret_cast<size_t const*>(function_frame_addr);  // saved at cpprtl_eh_run_catch_block frame top
+            #else
+            #  error check $(target.arch)
+            #endif
+              in_catch = &*try_block;  // cache the try block by the way
+              break;
+            }
+          }
+        }
+      }
+      unwind_data = unwind_data_t::get(function, function_frame_addr);
+      unwind_data_update();
+    }
+
+    function_frame_data  // the target frame ctor
+    (
+      function_frame_t                const   function_frame
+    , msvc_data::function_descriptor  const&  function
+    , ::DISPATCHER_CONTEXT            const&  dispatcher
+    )
+      : in_catch            ( 0 )
+      , function_frame_addr ( reinterpret_cast<size_t>(function_frame) )
+      , unwind_data         ( unwind_data_t::get(function, function_frame_addr) )
+      , state_ip            ( ip2state(function, dispatcher) )
+    {
+      unwind_data_update();
+    }
+
+    bool is_catch_funclet() const  // NOTE irrelevant for target frames
+    {
+      return 0 != in_catch;
+    }
+
+    // frame raw value
+    operator function_frame_t() const { return reinterpret_cast<function_frame_t>(function_frame_addr); }
+
+    // target state for intermediate stack frames
+    msvc_data::frame_state_t intermediate_target_state() const
+    {
+      if ( in_catch )
+      {
+        return in_catch->high_level;
+      }
+      return msvc_data::frame_state::EMPTY;
+    }
+    // frame-stored unwind state access
+    msvc_data::frame_state_t current_state() const
+    {
+      if ( msvc_data::frame_state::INVALID == unwind_data->state )
+      {
+        return state_ip;
+      }
+      return unwind_data->state;
+    }
+    void current_state(msvc_data::frame_state_t st) const
+    {
+      unwind_data->state = st;
+    }
+    static void unwind_data_reset(msvc_data::function_descriptor const& function, function_frame_t const function_frame)
+    {
+      unwind_data_t* const unwind_data = unwind_data_t::get(function, reinterpret_cast<size_t>(function_frame));
+      unwind_data->state     = msvc_data::frame_state::INVALID;
+      unwind_data->max_state = msvc_data::frame_state::EMPTY;
+    }
+
+    void try_range
+    (
+      msvc_data::function_descriptor  const&  function
+    , ::DISPATCHER_CONTEXT            const&  dispatcher
+    , msvc_data::try_block_iterator        &  try_begin
+    , msvc_data::try_block_iterator        &  try_end
+    ) const
+    {
+      try_begin.deface();
+      try_end.deface();
+      msvc_data::frame_state_t const state = current_state();
+
+      for ( msvc_data::try_block_iterator try_block(function, dispatcher.ImageBase); try_block.valid(); try_block.next() )
+      {
+        if
+        (
+          in_catch  &&
+          ( (try_block->low_level <= in_catch->high_level) || (try_block->high_level > in_catch->catch_level) )
+        )
+        {
+          continue;
+        }
+        if ( (state >= try_block->low_level) && (state <= try_block->high_level) )
+        {
+          if ( !try_begin.valid() )
+          {
+            try_begin = try_block;
+          }
+          try_end = try_block;
+        }
+      } 
+      try_end.next();
+    }
+  };
+
+
+  size_t run_catch_block(::EXCEPTION_RECORD& exc_rec)
+  {
+    size_t const address = cpprtl_eh_run_catch_block
+    (
+      reinterpret_cast<msvc_data::funclet_ft> (exc_rec.ExceptionInformation[EXCDATA_FH3_CATCH_FUNCLET])
+    , reinterpret_cast<function_frame_t>      (exc_rec.ExceptionInformation[EXCDATA_FUNCTION_FRAME])
+    , &exc_rec
+    #if defined (_M_ARM) || defined (_M_ARM64)
+    , reinterpret_cast<void const*>           (exc_rec.ExceptionInformation[EXCDATA_NVCONTEXT])
+    #endif
+    );
+
+    if ( !(exc_rec.ExceptionInformation[EXCDATA_FLAGS] & (EXCEPTION_FLAG_OBJECT_RETHROWN | EXCEPTION_FLAG_OBJECT_DESTRUCTED)) )
+    {
+      exception_object(exc_rec).destroy();
+      exc_rec.ExceptionInformation[EXCDATA_FLAGS] |= EXCEPTION_FLAG_OBJECT_DESTRUCTED;
+    }
+
+    function_frame_data::unwind_data_reset
+    (
+      *reinterpret_cast<msvc_data::function_descriptor const*>(exc_rec.ExceptionInformation[EXCDATA_FH3_FUNCTION_DESCRIPTOR])
+    , reinterpret_cast<function_frame_t>(exc_rec.ExceptionInformation[EXCDATA_FUNCTION_FRAME])
+    );
+
+    return address;
+  }
+
+
+  void unwind_frame
+  (
+    msvc_data::function_descriptor  const&  function
+  , function_frame_data             const&  frame_data
+  , msvc_data::frame_state_t        const   target_state
+  , ::DISPATCHER_CONTEXT            const&  dispatcher
+  )
+  {
+    msvc_data::frame_state_t current_state = frame_data.current_state();
+    msvc_data::unwind_iterator unwind(function, dispatcher.ImageBase);
+    while ( current_state > target_state )
+    {
+      if ( !unwind.valid(current_state) )
+      {
+        aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_NO_UNWIND_DATA);
+      }
+      msvc_data::funclet_accessor unwind_funclet(unwind[current_state], dispatcher.ImageBase);
+      frame_data.current_state(current_state = unwind->prev_state);
+      if ( *unwind_funclet )  // may be empty
+      {
+        cpprtl_eh_run_unwind_funclet
+        (
+          0, frame_data, *unwind_funclet
+        #if defined (_M_ARM) || defined (_M_ARM64)
+        , dispatcher.NonVolatileRegisters
+        #endif
+        );
+      }
+    }
+  }
+
+
+  unsigned cpp_frame_handler  // fh3
+  (
+    ::EXCEPTION_RECORD                   &  exc_rec
+  , msvc_data::function_descriptor  const&  function
+  , funclet_frame_t                 const   funclet_frame
+  , ::DISPATCHER_CONTEXT            const&  dispatcher
+  )
+  {
+    // check if there are some duties for our frame handler
+    if ( EXCEPTION_CODE_CPP != exc_rec.ExceptionCode )  // filter out no cpp-exceptions, ignore -EHa
+    {
+      return ::ExceptionContinueSearch;
+    }
+    else if ( exc_rec.ExceptionInformation[EXCDATA_FLAGS] & EXCEPTION_FLAG_NO_EXCEPTION_OBJECT )  // filter out cpp-exceptions
+    {
+      // this handler is only responsible for catch-block matching and unwinding
+      return ::ExceptionContinueSearch;
+    }
+
+    // proceed the unwinding task and return...
+    if ( exc_rec.ExceptionFlags & EXCEPTION_UNWIND )
+    {
+      if ( exc_rec.ExceptionFlags & EXCEPTION_TARGET_UNWIND )
+      {
+        // the target frame, unwind the try block
+        if ( function.unwind_array_size )
+        {
+          function_frame_data const frame_data(reinterpret_cast<function_frame_t>(exc_rec.ExceptionInformation[EXCDATA_FUNCTION_FRAME]), function, dispatcher);
+          msvc_data::frame_state_t const target_state = static_cast<msvc_data::frame_state_t>(exc_rec.ExceptionInformation[EXCDATA_TARGET_STATE]);
+          unwind_frame(function, frame_data, target_state, dispatcher);
+        }
+        return ExceptionDispatchCPP;
+      }
+      else
+      {
+        // an intermediate stack frame
+        if ( function.unwind_array_size )
+        {
+          function_frame_data const frame_data(funclet_frame, function, dispatcher);
+          msvc_data::frame_state_t const target_state = frame_data.intermediate_target_state();
+          unwind_frame(function, frame_data, target_state, dispatcher);
+        }  
+      }
+      return ::ExceptionContinueSearch;
+    }
+
+    // ...or find the matching catch-block and init the stack unwind
+    {
+      exception_object exc_object(exc_rec);
+
+      function_frame_data function_frame(funclet_frame, function, dispatcher);
+      msvc_data::frame_state_t const state = function_frame.current_state();
+
+      msvc_data::try_block_iterator try_block(function, dispatcher.ImageBase);
+      msvc_data::try_block_iterator try_end = try_block;
+      function_frame.try_range(function, dispatcher, try_block, try_end);
+
+      for ( ; try_block != try_end; try_block.next() )
+      {
+        if ( try_block->low_level <= state && state <= try_block->high_level )
+        {
+          for ( msvc_data::catch_block_iterator catch_block(*try_block, dispatcher.ImageBase); catch_block.valid(); catch_block.next() )
+          {
+            if
+            (
+              msvc_data::catchable_type_descriptor const* const catchable_type =
+                exc_object.match(&*msvc_data::type_descriptor_accessor(*catch_block, dispatcher.ImageBase), catch_block->attributes)
+            )
+            {
+              exc_object.copy_to_catch_object(*catch_block, function_frame, *catchable_type);
+              // the catch block responsible for the exception have been found
+              exc_rec.ExceptionInformation[EXCDATA_CATCH_IMAGEBASE]          = dispatcher.ImageBase;
+              exc_rec.ExceptionInformation[EXCDATA_FUNCTION_FRAME]           = reinterpret_cast< ::ULONG_PTR>(function_frame_t(function_frame));
+              exc_rec.ExceptionInformation[EXCDATA_TARGET_FRAME]             = reinterpret_cast< ::ULONG_PTR>(funclet_frame);
+              exc_rec.ExceptionInformation[EXCDATA_TARGET_STATE]             = try_block->low_level;
+              exc_rec.ExceptionInformation[EXCDATA_RUN_CATCH_BLOCK]          = reinterpret_cast< ::ULONG_PTR>(run_catch_block);
+              exc_rec.ExceptionInformation[EXCDATA_FH3_FUNCTION_DESCRIPTOR]  = reinterpret_cast< ::ULONG_PTR>(&function);
+              exc_rec.ExceptionInformation[EXCDATA_FH3_CATCH_FUNCLET]        = reinterpret_cast< ::ULONG_PTR>(*msvc_data::funclet_accessor(*catch_block, dispatcher.ImageBase));
+              exc_rec.NumberParameters = ARRAYSIZE_EXCDATA_FH3;
+              // pass the unwind duties back through the stack_walk()
+              return ExceptionDispatchCPP;
+            }
+          }
+        }
+      }
+      // no matching catch-block found, check the function isn't 'noexcept'-specified
+      if ( !function_frame.is_catch_funclet() )
+      {
+        if ( (function.signature >= msvc_data::MARK_VC8) && (function.flags & msvc_data::FUNCTION_NOEXCEPT) )
+        {
+          aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_NOEXCEPT_THROW);
+        }
+      }
+    }
+    return ::ExceptionContinueSearch;
+  }
+
+}}}  // namespace cpprtl::eh::fh3
+
+
+namespace cpprtl { namespace eh { namespace fh4
+{
+  size_t run_catch_block(::EXCEPTION_RECORD& exc_rec)
+  {
+    msvc_data::fh4::catch_block_descriptor const catch_block
+    (
+      reinterpret_cast<msvc_data::fh4::catch_block_data_packed> (exc_rec.ExceptionInformation[EXCDATA_FH4_CATCH_BLOCK_DATA])
+    , static_cast<rva_t>                                        (exc_rec.ExceptionInformation[EXCDATA_FH4_FUNCLET_ENTRY])
+    , static_cast<imagebase_t>                                  (exc_rec.ExceptionInformation[EXCDATA_CATCH_IMAGEBASE])
+    );
+
+    size_t address = cpprtl_eh_run_catch_block
+    (
+      catch_block.catch_funclet
+    , reinterpret_cast<function_frame_t> (exc_rec.ExceptionInformation[EXCDATA_FUNCTION_FRAME])
+    , &exc_rec
+    #if defined (_M_ARM) || defined (_M_ARM64)
+    , reinterpret_cast<void const*>      (exc_rec.ExceptionInformation[EXCDATA_NVCONTEXT])
+    #endif
+    );
+
+    exc_rec.ExceptionInformation[EXCDATA_FLAGS] &= ~EXCEPTION_FLAG_FH4_TRANSIENT_STATE;
+
+    if ( address < msvc_data::fh4::catch_block_descriptor::CONTINUATION_ARRAY_LEN )
+    {
+      if ( !(address < catch_block.continuation_count()) )
+      {
+        aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_NO_CONTINUATION_ADDRESS);
+      }
+      address = catch_block.continuation[address];
+    }
+
+    if ( !(exc_rec.ExceptionInformation[EXCDATA_FLAGS] & (EXCEPTION_FLAG_OBJECT_RETHROWN | EXCEPTION_FLAG_OBJECT_DESTRUCTED)) )
+    {
+      exception_object(exc_rec).destroy();
+      exc_rec.ExceptionInformation[EXCDATA_FLAGS] |= EXCEPTION_FLAG_OBJECT_DESTRUCTED;
+    }
+    return address;
+  }
+
+
+  namespace { enum { FRAME_STATE_SHIFT = 2 }; }
+
+  void unwind_frame
+  (
+    msvc_data::fh4::function_descriptor  const&  function
+  , ::EXCEPTION_RECORD                        &  exc_rec
+  , ::DISPATCHER_CONTEXT                 const&  dispatcher
+  , msvc_data::frame_state_t                     current_state
+  , msvc_data::frame_state_t             const   target_state
+  )
+  {
+    msvc_data::fh4::unwind_iterator unwind(function, function_frame_t(function), function.image_base);
+    unwind.state(current_state);
+    while ( current_state > target_state )
+    {
+      if ( !unwind.valid() )
+      {
+        aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_NO_UNWIND_DATA);
+      }
+      msvc_data::funclet_ft const unwind_funclet = unwind->funclet;
+      msvc_data::object_type* const pobj = unwind->object;
+      unwind.prev();
+      current_state = unwind.state();
+    // TODO is it necessary to keep track of all unwound states? anyway the collided unwind is prevented by cpprtl_eh_unwind_handler()
+      exc_rec.ExceptionInformation[EXCDATA_FH4_UNWIND_STATE] = current_state + FRAME_STATE_SHIFT;
+      if ( unwind_funclet )  // may be empty
+      {
+        cpprtl_eh_run_unwind_funclet
+        (
+          pobj, function, unwind_funclet
+        #if defined (_M_ARM) || defined (_M_ARM64)
+        , dispatcher.NonVolatileRegisters
+        #endif
+        );
+      }
+    }
+  }
+
+
+  unsigned cpp_frame_handler  // fh4
+  (
+    ::EXCEPTION_RECORD                         &  exc_rec
+  , msvc_data::fh4::function_data_packed  const   function_data
+  , funclet_frame_t                       const   funclet_frame
+  , ::DISPATCHER_CONTEXT                  const&  dispatcher
+  )
+  {
+    // check if there are some duties for our frame handler
+    if ( EXCEPTION_CODE_CPP != exc_rec.ExceptionCode )  // filter out no cpp-exceptions, ignore -EHa
+    {
+      return ::ExceptionContinueSearch;
+    }
+    else if ( exc_rec.ExceptionInformation[EXCDATA_FLAGS] & EXCEPTION_FLAG_NO_EXCEPTION_OBJECT )  // filter out cpp-exceptions
+    {
+      // this handler is only responsible for catch-block matching and unwinding
+      return ::ExceptionContinueSearch;
+    }
+    msvc_data::fh4::function_descriptor const function(function_data, funclet_frame, dispatcher.FunctionEntry->BeginAddress, dispatcher.ImageBase);
+    msvc_data::frame_state_t state = msvc_data::frame_state::EMPTY;
+    if ( exc_rec.ExceptionInformation[EXCDATA_FLAGS] & EXCEPTION_FLAG_FH4_TRANSIENT_STATE )
+    {
+      state = msvc_data::frame_state_t(exc_rec.ExceptionInformation[EXCDATA_FH4_TRANSIENT_STATE]);
+      exc_rec.ExceptionInformation[EXCDATA_FLAGS] &= ~EXCEPTION_FLAG_FH4_TRANSIENT_STATE;
+    }
+    else
+    {
+      state = function.ip2state(ip2rva(dispatcher));
+    }
+
+    // proceed the unwinding task and return...
+    if ( exc_rec.ExceptionFlags & EXCEPTION_UNWIND )
+    {
+      exc_rec.ExceptionInformation[EXCDATA_FH4_UNWIND_STATE] = state + FRAME_STATE_SHIFT;
+      if ( exc_rec.ExceptionFlags & EXCEPTION_TARGET_UNWIND )
+      {
+        // the target frame, unwind the try block
+        if ( function.has_unwind_table() )
+        {
+          msvc_data::frame_state_t const target_state = static_cast<msvc_data::frame_state_t>(exc_rec.ExceptionInformation[EXCDATA_TARGET_STATE]);
+          unwind_frame(function, exc_rec, dispatcher, state, target_state);
+        }
+        return ExceptionDispatchCPP;
+      }
+      else
+      {
+        // an intermediate stack frame
+        if ( function.has_unwind_table() )
+        {
+          unwind_frame(function, exc_rec, dispatcher, state, msvc_data::frame_state::EMPTY);
+        }
+      }
+      return ::ExceptionContinueSearch;
+    }
+
+    // ...or find the matching catch-block and init the stack unwind
+    {
+      exception_object exc_object(exc_rec);
+      // TODO try_range()
+      for ( msvc_data::fh4::try_block_iterator try_block(function, function.image_base); try_block.valid(); try_block.next() )
+      {
+        if ( try_block->low_level <= state && state <= try_block->high_level )
+        {
+          for
+          (
+            msvc_data::fh4::catch_block_iterator catch_block(try_block->catch_block_table, function.entry, function.image_base)
+          ; catch_block.valid()
+          ; catch_block.next()
+          )
+          {
+            if ( msvc_data::catchable_type_descriptor const* const catchable_type = exc_object.match(catch_block->type_info, catch_block->attributes) )
+            {
+              exc_object.copy_to_catch_object(catch_block.descriptor(), function, *catchable_type);
+              // the catch block responsible for the exception have been found
+              exc_rec.ExceptionInformation[EXCDATA_CATCH_IMAGEBASE]       = function.image_base;
+              exc_rec.ExceptionInformation[EXCDATA_FUNCTION_FRAME]        = reinterpret_cast< ::ULONG_PTR>(function_frame_t(function));
+              exc_rec.ExceptionInformation[EXCDATA_TARGET_FRAME]          = reinterpret_cast< ::ULONG_PTR>(funclet_frame);
+              exc_rec.ExceptionInformation[EXCDATA_TARGET_STATE]          = try_block->low_level;
+              exc_rec.ExceptionInformation[EXCDATA_RUN_CATCH_BLOCK]       = reinterpret_cast< ::ULONG_PTR>(run_catch_block);
+              exc_rec.ExceptionInformation[EXCDATA_FH4_CATCH_BLOCK_DATA]  = reinterpret_cast< ::ULONG_PTR>(catch_block.data());
+              exc_rec.ExceptionInformation[EXCDATA_FH4_FUNCLET_ENTRY]     = function.entry;
+              exc_rec.ExceptionInformation[EXCDATA_FH4_CATCH_LEVEL]       = try_block->catch_level;
+              exc_rec.ExceptionInformation[EXCDATA_FLAGS]                |= EXCEPTION_FLAG_FH4;
+              exc_rec.NumberParameters = ARRAYSIZE_EXCDATA_FH4;
+              // pass the unwind duties back through the stack_walk()
+              return ExceptionDispatchCPP;
+            }
+          }
+        }
+      }
+      // no matching catch-block found, check the function isn't 'noexcept'-specified
+      if ( !function.is_catch_funclet() && function.is_noexcept() )
+      {
+        aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_NOEXCEPT_THROW);
+      }
+    }
+    return ::ExceptionContinueSearch;
+  }
+}}}  // namespace cpprtl::eh::fh4
+
+
+//=======================================================
+// msvc internally pre-declared EH routines' entry points
+//-------------------------------------------------------
+namespace cpprtl { namespace eh
+{
+  extern "C"
+  void _CxxThrowException(void* exc_object, ::_ThrowInfo const* exc_dsc)
+  {
+    nvcontext ctx;
+    ::EXCEPTION_RECORD exc_rec;
+    for ( size_t idx = 0; idx < EXCEPTION_MAXIMUM_PARAMETERS; ++idx )
+    {
+      exc_rec.ExceptionInformation[idx] = 0;
+    }
+    exc_rec.ExceptionCode    = EXCEPTION_CODE_CPP;
+    exc_rec.ExceptionFlags   = EXCEPTION_NONCONTINUABLE;
+    exc_rec.ExceptionRecord  = 0;
+    exc_rec.ExceptionAddress = 0;
+    exc_rec.NumberParameters = ARRAYSIZE_EXCDATA_EH;
+    exc_rec.ExceptionInformation[EXCDATA_THROW_OBJECT]  = reinterpret_cast< ::ULONG_PTR>(exc_object);
+    exc_rec.ExceptionInformation[EXCDATA_THROW_INFO]    = reinterpret_cast< ::ULONG_PTR>(exc_dsc);
+    if ( exc_dsc )
+    {
+      IRQL_CHECK ( <=DISPATCH_LEVEL )  // RtlPcToFileHeader()
+      exc_rec.ExceptionInformation[EXCDATA_THROW_IMAGEBASE] = reinterpret_cast< ::ULONG_PTR>
+      (
+        ::RtlPcToFileHeader
+        (
+          reinterpret_cast<void*>  (exc_rec.ExceptionInformation[EXCDATA_THROW_INFO])
+        , reinterpret_cast<void**> (&exc_rec.ExceptionInformation[EXCDATA_THROW_IMAGEBASE])
+        )
+      );
+    }
+    else
+    {
+      // 'throw;' statement occured and we have to try to get exception info from the previous scope's catch-block handler
+      exc_rec.ExceptionInformation[EXCDATA_FLAGS] |= EXCEPTION_FLAG_NO_EXCEPTION_OBJECT;
+      stack_walk(exc_rec, ctx);
+    }
+    // dispatching
+    stack_walk(exc_rec, ctx);
+    if ( !exc_rec.ExceptionInformation[EXCDATA_TARGET_FRAME] )
+    {
+      aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_ENGINE_DISPATCHING_ERROR);
+    }
+
+    // unwinding
+    stack_walk(exc_rec, ctx, exc_rec.ExceptionInformation[EXCDATA_TARGET_FRAME]);
+
+    // run catch block 
+  #if defined (_M_ARM) || defined (_M_ARM64)
+    exc_rec.ExceptionInformation[EXCDATA_NVCONTEXT] = reinterpret_cast< ::ULONG_PTR>(ctx.NV());
+  #endif
+    ctx.IP() = reinterpret_cast<size_t(*)(::EXCEPTION_RECORD&)>(exc_rec.ExceptionInformation[EXCDATA_RUN_CATCH_BLOCK])(exc_rec);
+
+    // continuation
+    ctx.start();
+
+    // never returns
+    aux_::terminate(EXCEPTION_CODE_CPP, EXCEPTION_SUBCODE_ENGINE_CONTINUATION_ERROR);
+  }
+}}  // namespace cpprtl::eh
+
+
+extern "C"
+unsigned __CxxFrameHandler3(::EXCEPTION_RECORD* exc_rec, void* frame, ::CONTEXT*, ::DISPATCHER_CONTEXT* dispatcher)
+{
+  using namespace cpprtl; using namespace cpprtl::eh;
+  return eh::fh3::cpp_frame_handler
+  (
+    *exc_rec
+  , *reinterpret_cast<msvc_data::function_descriptor const*>(dispatcher->ImageBase + reinterpret_cast<rva_t*>(dispatcher->HandlerData)[0])
+  , reinterpret_cast<funclet_frame_t>(frame)
+  , *dispatcher
+  );
+}
+
+extern "C"
+unsigned __CxxFrameHandler4(::EXCEPTION_RECORD* exc_rec, void* frame, ::CONTEXT*, ::DISPATCHER_CONTEXT* dispatcher)
+{
+  using namespace cpprtl; using namespace cpprtl::eh;
+  return fh4::cpp_frame_handler
+  (
+    *exc_rec
+  , reinterpret_cast<msvc_data::fh4::function_data_packed>(dispatcher->ImageBase + reinterpret_cast<rva_t*>(dispatcher->HandlerData)[0])
+  , reinterpret_cast<funclet_frame_t>(frame)
+  , *dispatcher
+  );
+}
+
+//==========================================================
+// msvc internally pre-declared GS_EH routines' entry points
+//----------------------------------------------------------
+#if (_MSC_FULL_VER >= 140050320)  // >=msvc2005
+namespace cpprtl { struct gs_handler_data; }
+
+// ntoskrnl.lib for NT_KERNEL_MODE
+extern "C" void __GSHandlerCheckCommon(void* frame, ::DISPATCHER_CONTEXT* dispatcher, cpprtl::gs_handler_data const* data);
+
+extern "C"
+unsigned __GSHandlerCheck_EH(::EXCEPTION_RECORD* exc_rec, void* frame, ::CONTEXT* context, ::DISPATCHER_CONTEXT* dispatcher)
+{
+  using namespace cpprtl;
+  __GSHandlerCheckCommon(frame, dispatcher, reinterpret_cast<gs_handler_data const*>(&reinterpret_cast<rva_t*>(dispatcher->HandlerData)[1]));
+  return __CxxFrameHandler3(exc_rec, frame, context, dispatcher);
+}
+
+extern "C"
+unsigned __GSHandlerCheck_EH4(::EXCEPTION_RECORD* exc_rec, void* frame, ::CONTEXT* context, ::DISPATCHER_CONTEXT* dispatcher)
+{
+  using namespace cpprtl;
+  __GSHandlerCheckCommon(frame, dispatcher, reinterpret_cast<gs_handler_data const*>(&reinterpret_cast<rva_t*>(dispatcher->HandlerData)[1]));
+  return __CxxFrameHandler4(exc_rec, frame, context, dispatcher);
+}
+#endif  // _MSC_FULL_VER

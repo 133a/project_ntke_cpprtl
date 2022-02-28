@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #include "ntddk.include.h"
@@ -22,7 +21,7 @@ static void DriverUnload(DRIVER_OBJECT* pDriverObject)
 }
 
 
-extern "C" NTSTATUS DriverEntry(DRIVER_OBJECT* pDriverObject, UNICODE_STRING* /*pRegistryPath*/)
+extern "C" NTSTATUS ntkeDriverEntry(DRIVER_OBJECT* pDriverObject, UNICODE_STRING* /*pRegistryPath*/)
 {
   DbgPrint("cpprtl_test.DriverEntry()\n");
   pDriverObject->DriverUnload = &DriverUnload;

@@ -1,16 +1,14 @@
-module.sources         = eh_msvc_entry_points.cpp \
-                         eh_msvc_array_support.cpp \
-                         eh_msvc_internal_data.cpp \
-                         eh_msvc_internal_data_aux.cpp \
-                         eh_aux.cpp \
-                         eh_engine.cpp \
+module.sources         = eh_engine.cpp \
+                         eh_stack_walk.cpp \
+                         eh_array_support.cpp \
+                         eh_aux.cpp
 
-module.sources.x86    += eh_exception_registration.cpp \
-                         eh_stack_walker.cpp \
-                         eh_except_list.x86.asm
+module.sources.x86    += eh_funclet.cpp \
+                         eh_seh_reg.cpp \
+                         eh_safeseh.x86.asm
 
 ifdef toolset.not_supported.thiscall
-  module.sources.x86  += eh_msvc_array_support_thunk.x86.asm
+  module.sources.x86  += eh_array_support_thunk.x86.asm
 endif
 
 

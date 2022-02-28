@@ -30,6 +30,11 @@
   assembler.options += -W3
   assembler.options += -Zd
   assembler.options += -Zi
+ifndef toolset.not_supported.safeseh
+  ifneq '$(target.kernel)' 'nt5.0'
+    assembler.options.x86 += -safeseh
+  endif
+endif
 
 
 

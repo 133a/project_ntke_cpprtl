@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef EH_ENGINE_H_
@@ -10,56 +9,42 @@
 
 
 #include "eh_config.h"
-#include "eh_framework_specific_header.h"
+#include <check_ct.h>
 
 
-namespace cpprtl
+namespace cpprtl { namespace eh
 {
+//========================
+// EXCEPTION_RECORD layout
+//------------------------
 
-  namespace msvc_internal_data
+  // exception flags at the ExceptionInformation[EXCDATA_FLAGS]
+  enum
   {
-    namespace eh
-    {
-      struct exception_descriptor;
-      struct func_descriptor;
-      struct exception_registration;
-    }
-  }
+    EXCEPTION_FLAG_NO_EXCEPTION_OBJECT = 1 << 0
+  , EXCEPTION_FLAG_OBJECT_RETHROWN     = 1 << 1
+  , EXCEPTION_FLAG_OBJECT_DESTRUCTED   = 1 << 2
+  };
 
 
-  namespace eh
+  // ExceptionInformation[] layout
+  enum 
   {
+    EXCDATA_FLAGS                         // EXCEPTION_FLAG_xxx
+  , EXCDATA_THROW_OBJECT                  // exception object address
+  , EXCDATA_THROW_INFO                    // exception_object_descriptor*
+  , EXCDATA_UW_CPP_REGISTRATION           // cpp_registration*
+  , EXCDATA_UW_FUNCTION_DESCRIPTOR        // function_descriptor*
+  , EXCDATA_UW_TRY_BLOCK_DESCRIPTOR       // try_block_descriptor*
+  , EXCDATA_UW_CATCH_BLOCK_DESCRIPTOR     // catch_block_descriptor*
+  , EXCDATA_UW_CATCHABLE_TYPE_DESCRIPTOR  // catchable_type_descriptor*, unused
+  , EXCDATA_UW_CATCH_DEPTH                // int
+  , EXCDATA_UW_TARGET_SEH_REGISTRATION    // seh::registration*
+  , ARRAYSIZE_EXCDATA_EH
+  };
+  COMPILE_TIME_CHECK (ARRAYSIZE_EXCDATA_EH <= EXCEPTION_MAXIMUM_PARAMETERS, EXCEPTION_INFORMATION_MAXIMUM_PARAMETERS_EXCEEDED)
 
-    namespace eh_engine
-    {
-
-      using msvc_internal_data::eh::exception_registration;
-
-
-      void throw_exception
-      (
-        void                                          const* const  exc_object
-      , msvc_internal_data::eh::exception_descriptor  const* const  exc_descr
-      );
-
-
-      ::EXCEPTION_DISPOSITION frame_handler3
-      (
-        ::EXCEPTION_RECORD                            *        exc_rec
-      , exception_registration                        *        exc_reg
-      , void                                     const* const  context
-      , void                                     const* const  dc
-      , msvc_internal_data::eh::func_descriptor  const* const  func_descr
-      , exception_registration                        *        cg_reg       = 0
-      , int                                                    catch_depth  = 0
-      );
-
-    }  // namespace eh_engine
-
-  }  // namespace eh
-
-}  // namespace cpprtl
+}}  // namespace cpprtl::eh
 
 
 #endif  // include guard
-

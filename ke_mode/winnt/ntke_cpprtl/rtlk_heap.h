@@ -1,29 +1,22 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef RTLK_HEAP_H_
 #define RTLK_HEAP_H_
 
 
-#include "rtl_framework_specific_header.h"
+#include "rtl_framework.h"
 
 
-namespace cpprtl
+namespace cpprtl { namespace heap
 {
-namespace heap
-{
-
-  void*     alloc(size_t const& sz, POOL_TYPE const& pt, ULONG const& tag);
-  void      dealloc(void* const ptr);
-  void      dealloc(void* const ptr, POOL_TYPE const& pt);
-
-}  // namespace heap
-}  // namespace cpprtl
+  void* alloc(size_t const& sz, POOL_TYPE const& pt, ULONG const& tag);
+  void  dealloc(void* const ptr);
+  void  dealloc(void* const ptr, POOL_TYPE const& pt);
+}}  // namespace cpprtl::heap
 
 
 #endif  // include guard
-

@@ -19,7 +19,7 @@ include $(wdk.dir.toolset)/target.profile/$(target.profile).cl.mak
 #      include sdk variables
 ###############################################
 
-include $(make.dir.toolsets)/_winnt/sdk.defs.winnt.mak
+include $(make.dir.toolsets)/_win32/sdk_defs.mak
 
 
 

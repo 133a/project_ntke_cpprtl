@@ -1,9 +1,3 @@
-# $1 - variable to forward
-define var_forward
-$(if $($1),$1=$($1),)
-endef
-
-
 # $1 - string
 define winslash
 $(subst /,\,$1)

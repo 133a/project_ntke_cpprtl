@@ -29,7 +29,7 @@
 #  if defined (_MIPSEB)
 #    define _STLP_BIG_ENDIAN 1
 #  endif
-#  if defined (__i386) || defined (_M_IX86) || defined (_M_ARM) || \
+#  if defined (__i386) || defined (_M_IX86) || defined (_M_ARM) || defined (_M_ARM64) || \
       defined (__amd64__) || defined (_M_AMD64) || defined (__x86_64__) || \
       defined (__alpha__)
 #    define _STLP_LITTLE_ENDIAN 1

@@ -1,41 +1,28 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef EH_CONFIG_H_
 #define EH_CONFIG_H_
 
 
-#include "eh_cfg_common.h"
-
-
-#define CFG_EH_TABLE_BASED
-#define CFG_RVA
-
-#ifndef NTKE_EH_CONFIG_DO_NOT_USE_STACK_WALKER
-#  define CFG_EH_STACK_WALKER
-#endif
-
-
-
-#ifndef _MSC_VER
-typedef unsigned long long int size_t;
-#endif
+#define CPPRTL_CFG_RVA
+#define CPPRTL_EH_CFG_RVA
+#define CPPRTL_EH_CFG_TABLEBASED
 
 namespace cpprtl
 {
-  namespace msvc_internal_data
-  {
-    typedef unsigned int array_length_t;
-  }
+  typedef ::size_t size_t;
+  typedef int      rva_t;
+  typedef ::size_t imagebase_t;
 
-  typedef unsigned int   rva_t;
-  typedef ::size_t       image_base_t;
+
+  typedef signed   char int8_t;    // to feed up msvc_data_4
+  typedef unsigned char uint8_t;   // ^
+  typedef int           int32_t;   // ^
+  typedef unsigned      uint32_t;  // ^
 }
 
-
 #endif  // include guard
-

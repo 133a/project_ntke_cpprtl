@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
 #ifndef AUX_APC_H_
@@ -76,7 +75,7 @@ extern "C"
   (
     PKAPC Apc
   );
-}
+}  // extern "C"
 
 
 namespace aux_
@@ -178,7 +177,6 @@ namespace aux_
     kapc(kapc const&);
     kapc& operator=(kapc const&);
   };
-
 
 }  // namespace aux_
 

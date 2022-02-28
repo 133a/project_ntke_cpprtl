@@ -13,10 +13,11 @@
 
   linker.enum   = $(target.kernel) \
                   $(target.arch) \
+                  $(target.kernel)-$(target.arch) \
                   $(target.profile) \
                   $(target.profile).$(target.kernel) \
                   $(target.profile).$(target.arch) \
-                  $(target.profile).$(target.kernel).$(target.arch)
+                  $(target.profile).$(target.kernel)-$(target.arch)
 
 
 
@@ -60,7 +61,7 @@ endif
 
 .PHONY : $(target.lib.depend)
 $(target.lib.depend) :
-	"$(make.make)" --directory=$(if $(filter .%,$@),,$(project.dir.root)/)$(dir $@) -f $(make.makefile) $(make.forward)
+	"$(MAKE)" --directory=$(if $(filter .%,$@),,$(project.dir.root)/)$(dir $@) -f $(make.makefile)
 
 
 

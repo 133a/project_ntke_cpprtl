@@ -1,75 +1,121 @@
-/////////////////////////////////////////////////////////////////////////////
-////    copyright (c) 2012-2017 project_ntke_cpprtl
-////    mailto:kt133a@seznam.cz
-////    license: the MIT license
-/////////////////////////////////////////////////////////////////////////////
+//============================================
+// copyright (c) 2012-2022 project_ntke_cpprtl
+// license: the MIT license
+//--------------------------------------------
 
 
-/////////////////////////////////////////////
-////
-////  testing built-in type rethrow
-////  MT-safe
-/////////////////////////////////////////////
-
-
+// nested exceptions in exception object cctor/dtor or unwind action scope
+// NOTE these exceptions are dispatched on top of the stack_walk() unwinding loop
+// MT-safe
 #include "context.h"
 
 
-namespace
+namespace cpprtl { namespace eh { namespace test
 {
-  enum
+  namespace
   {
-    EH_OK              = 0
-  , UNEXPECTED_CATCH1  = 91
-  , UNEXPECTED_CATCH2  = 92
-  , THROW09            = 99
-  };
-
-
-  void ff_throw(context& ctx)
-  {
-    try
+    enum
     {
-      throw ; // !
-    }
-    catch (float)
-    {
-      ctx.state = UNEXPECTED_CATCH2;
-    }
-    catch (int i)
-    {
-      ctx.state = i;
-    }
+      THROW      = 29
+    , CATCH      = 31
+    , UNEXPECTED = 37
+    };
+    typedef xtor_counter<0> UDT;
+    typedef xtor_counter<THROW> EXC;
   }
 
-}  // namespace
-
-
-namespace cpprtl { namespace test { namespace eh
-{
-
-  int test09()
+  namespace
   {
-    context ctx(THROW09);
+    int f_00(context& ctx)
+    {
+      UDT udt1(ctx);
+      UDT udt2(ctx);
+      try
+      {
+        UDT udt1(ctx);
+        UDT udt2(ctx);
+        try
+        {
+          UDT udt1(ctx);
+          UDT udt2(ctx);
+          throw EXC(ctx);
+        }
+        catch (EXC const& exc)
+        {
+          ctx.state += exc.val;
+        }
+      }
+      catch (...)
+      {
+        return UNEXPECTED;
+      }
+      return THROW;
+    }
 
+    struct test
+    {
+      context& ctx;
+
+      explicit test(context& c)
+        : ctx ( c )
+      {
+        ctx.ctor();
+      }
+      test(test const& src)
+        : ctx ( src.ctx )
+      {
+        ctx.state += f_00(ctx);
+        ctx.cctor();
+      }
+      ~test()
+      {
+        ctx.state += f_00(ctx);
+        ctx.dtor();
+      }
+    };
+  }  // namespace
+
+//===============================================================
+// exception handling in scope of the exception object cctor/dtor
+//---------------------------------------------------------------
+  bool test_0901()
+  {
+    context ctx(2*THROW + 4*THROW + CATCH);
     try
     {
-      throw int(THROW09);
+      throw test(ctx);
     }
-    catch (int)
+    catch (test exc)
     {
-      try 
-      {
-        ff_throw(ctx);
-      }
-      catch (int)
-      {
-        ctx.state = UNEXPECTED_CATCH1;
-      }
+      ctx.state += CATCH;
     }
-  
-    return ctx.balance();
+    return ctx.ok();
   }
 
-}  }  }
+//=====================================
+// exception handling in unwind actions
+//-------------------------------------
+  bool test_0902()
+  {
+    context ctx(4*THROW + THROW);
+    try
+    {
+      test t(ctx);
+      try
+      {
+        test t(ctx);
+        throw EXC(ctx);
+      }
+      catch (UDT&)
+      {
+        ctx.state += UNEXPECTED;
+      }
+    }
+    catch (EXC const& exc)
+    {
+      ctx.state += exc.val;
+    }
+    return ctx.ok();
+  }
 
+}}}  // namespace cpprtl::eh::test
