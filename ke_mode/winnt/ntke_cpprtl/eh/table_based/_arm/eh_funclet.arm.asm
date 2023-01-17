@@ -21,7 +21,6 @@
     PROLOG_PUSH {r1, r4-r11, lr}  ; TODO is it necessary to keep r1 at the stack top for unwind funclets?
     ldm  r3 , {r4-r11} ; load the funclet {r4-r11} nv-context
     blx  r2            ; run the funclet
-    nop                ; required for unwind
     EPILOG_POP  {r3-r11, pc}
   NESTED_END
 
@@ -56,7 +55,6 @@
     PROLOG_PUSH {r4, lr}
     ldr  r1 , [r1, #exc_rec_base_offset]  ; fwd the previous exception record
     blx  cpprtl_eh_catch_block_handler    ; run the handler main payload
-    nop                                   ; required for unwind
     EPILOG_POP  {r4, pc}
   NESTED_END
 
@@ -68,7 +66,6 @@
     PROLOG_PUSH {r1-r11, lr}
     ldm  r3 , {r4-r11}        ; load the funclet {r4-r11} nv-context
     blx  r0                   ; run the catch block, returns r0=continuation
-    nop                       ; required for unwind
     EPILOG_POP  {r1-r11, pc}
   NESTED_END
 
@@ -84,7 +81,6 @@
   NESTED_ENTRY cpprtl_eh_run_dtor, , cpprtl_eh_dtor_handler
     PROLOG_PUSH {r4, lr}  ; save r4 as aligner
     blx  r1               ; run the dtor
-    nop                   ; required for unwind
     EPILOG_POP  {r4, pc}
   NESTED_END
 
@@ -101,7 +97,6 @@
   NESTED_ENTRY cpprtl_eh_run_cctor, , cpprtl_eh_cctor_handler
     PROLOG_PUSH {r4, lr}  ; save r4 as aligner
     blx  r2               ; run the cctor
-    nop                   ; required for unwind
     EPILOG_POP  {r4, pc}
   NESTED_END
 
@@ -112,7 +107,6 @@
   NESTED_ENTRY cpprtl_eh_run_cctor_vb, , cpprtl_eh_cctor_handler
     PROLOG_PUSH {r4, lr}  ; save r4 as aligner
     blx  r3               ; run the cctor_vb
-    nop                   ; required for unwind
     EPILOG_POP  {r4, pc}
   NESTED_END
 

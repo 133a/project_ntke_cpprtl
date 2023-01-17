@@ -46,7 +46,8 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace seh
   {
     __asm
     {
-      mov eax , -1
+      xor eax , eax
+      dec eax
       ret
     }
   }

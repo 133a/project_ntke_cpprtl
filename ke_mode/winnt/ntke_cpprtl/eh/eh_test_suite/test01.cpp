@@ -139,4 +139,22 @@ namespace cpprtl { namespace eh { namespace test
     return ctx.ok();
   }
 
+//===============
+// 'catch(void*)'
+//---------------
+  bool test_0108() 
+  {
+    context ctx(THROW);
+    int val = THROW;
+    try
+    {
+      throw &val;
+    }
+    catch (void* ptr)
+    {
+      ctx.state = *reinterpret_cast<int*>(ptr);
+    }
+    return ctx.ok();
+  }
+
 }}}  // namespace cpprtl::eh::test

@@ -13,8 +13,7 @@
     vldm  r0! , {d8-d15}
     ldm   r0! , {r4-r11}
     ldr   sp  , [r0]
-    ldr   lr  , [r0, #4]  ; load lr from ctx.pc ; TODO is it necessary to restore unwound lr for cpp-functions?
-    orr   lr  , lr , #1   ; thumb-2 address bit ; TODO is it relevant here?
+    ldr   lr  , [r0, #4]  ; load lr from ctx.pc
     bx    lr
 
   LEAF_END_NO_PDATA

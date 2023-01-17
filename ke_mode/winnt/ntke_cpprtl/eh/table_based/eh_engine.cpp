@@ -348,8 +348,6 @@ namespace cpprtl { namespace eh { namespace fh3
               function_frame_addr = *reinterpret_cast<size_t const*>(function_frame_addr + catch_block->frame_offset);
             #elif defined (_M_ARM) || defined (_M_ARM64)
               function_frame_addr = *reinterpret_cast<size_t const*>(function_frame_addr);  // saved at cpprtl_eh_run_catch_block frame top
-            #else
-            #  error check $(target.arch)
             #endif
               in_catch = &*try_block;  // cache the try block by the way
               break;
@@ -628,8 +626,6 @@ namespace cpprtl { namespace eh { namespace fh4
     , reinterpret_cast<void const*>      (exc_rec.ExceptionInformation[EXCDATA_NVCONTEXT])
     #endif
     );
-
-    exc_rec.ExceptionInformation[EXCDATA_FLAGS] &= ~EXCEPTION_FLAG_FH4_TRANSIENT_STATE;
 
     if ( address < msvc_data::fh4::catch_block_descriptor::CONTINUATION_ARRAY_LEN )
     {

@@ -91,7 +91,7 @@ void stack_walk
       , dispatcher.FunctionEntry
       , dispatcher.ContextRecord
       , &dispatcher.HandlerData
-      , &dispatcher.EstablisherFrame
+      , &dispatcher.EstablisherFrame  // frame top for x64, frame base for arm/arm64
       , 0
       );
     // ctx contains the previous function context

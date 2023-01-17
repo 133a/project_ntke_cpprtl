@@ -18,7 +18,7 @@ namespace cpprtl { namespace eh
   void stack_walk
   (
     ::EXCEPTION_RECORD            &       exc_rec
-  , msvc_data::seh::registration  * const target_reg = 0  // when ==0 the dispathing is running, unwinding otherwise
+  , msvc_data::seh::registration  * const target_reg = 0  // when ==0 the dispatching is running, unwinding otherwise
   )
   {
     for

@@ -16,7 +16,7 @@ namespace cpprtl { namespace eh { namespace msvc_data
   __declspec(noreturn,naked)
   void __fastcall continuation::start(continuation_ft const continuation, size_t const frame_base, size_t const stack_pointer)
   {
-    //  ecx=continuation, edx=frame_base, [esp+4]=stack_pointer
+    // ecx=continuation, edx=frame_base, [esp+4]=stack_pointer
     __asm
     {
       // set up the stack frame

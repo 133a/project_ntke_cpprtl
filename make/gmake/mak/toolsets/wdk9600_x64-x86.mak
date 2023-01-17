@@ -51,22 +51,15 @@ winsdk8.1.pvk2pfx   = $(winsdk8.1.dir.bin)/x64/pvk2pfx.exe
 wdk.pvk2pfx         = $(winsdk8.1.pvk2pfx)
 
 
-#'$(target.kernel)' < 'nt6.1' is unsupported
-ifeq      '$(target.kernel)'  'nt6.1'
-  wdk9600.dir.lib.kernel = win7
-else ifeq '$(target.kernel)'  'nt6.2'
-  wdk9600.dir.lib.kernel = win8
-else ifeq '$(target.kernel)'  'nt6.3'
-  wdk9600.dir.lib.kernel = winv6.3
-else 
-  $(error unknown target.kernel=$(target.kernel))
-endif
+wdk9600.dir.lib.nt6.1       = win7
+wdk9600.dir.lib.nt6.2       = win8
+wdk9600.dir.lib.nt6.3       = winv6.3
 
 
 wdk9600.dir.include.km      = $(winsdk8.1.dir)/Include/km
 wdk9600.dir.include.crt     = $(winsdk8.1.dir)/Include/km/crt
 wdk9600.dir.include.shared  = $(winsdk8.1.dir)/Include/shared
-wdk9600.dir.lib             = $(winsdk8.1.dir)/Lib/$(wdk9600.dir.lib.kernel)/km/x86
+wdk9600.dir.lib             = $(winsdk8.1.dir)/Lib/$(wdk9600.dir.lib.$(target.kernel))/km/x86
 
 
 sdk.dir.include.1           = $(msvc.dir.include)

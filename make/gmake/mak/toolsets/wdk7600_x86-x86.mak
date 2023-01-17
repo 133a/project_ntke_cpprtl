@@ -42,33 +42,26 @@ wdk7600.pvk2pfx      = $(wdk7600.dir.bin)/x86/pvk2pfx.exe
 wdk.pvk2pfx          = $(wdk7600.pvk2pfx)
 
 
-ifeq      '$(target.kernel)'  'nt5.1'
-  wdk7600.dir.lib.kernel = wxp
-else ifeq '$(target.kernel)'  'nt5.2'
-  wdk7600.dir.lib.kernel = wnet
-else ifeq '$(target.kernel)'  'nt6.0'
-  wdk7600.dir.lib.kernel = wlh
-else ifeq '$(target.kernel)'  'nt6.1'
-  wdk7600.dir.lib.kernel = win7
-else 
-  $(error unknown target.kernel=$(target.kernel))
-endif
+wdk7600.dir.lib.nt5.1  = wxp
+wdk7600.dir.lib.nt5.2  = wnet
+wdk7600.dir.lib.nt6.0  = wlh
+wdk7600.dir.lib.nt6.1  = win7
 
 
-wdk.dir.include.api   = $(wdk7600.dir.include)/api
-wdk.dir.include.crt   = $(wdk7600.dir.include)/crt
-wdk.dir.include.wdm   = $(wdk7600.dir.include)/ddk
-wdk.dir.lib.wdm       = $(wdk7600.dir.lib)/$(wdk7600.dir.lib.kernel)/i386
-wdk.dir.include.kmdf  = $(wdk7600.dir.include)/wdf/kmdf/1.9
-wdk.dir.lib.kmdf      = $(wdk7600.dir.lib)/wdf/kmdf/i386/1.9
+wdk.dir.include.api    = $(wdk7600.dir.include)/api
+wdk.dir.include.crt    = $(wdk7600.dir.include)/crt
+wdk.dir.include.wdm    = $(wdk7600.dir.include)/ddk
+wdk.dir.lib.wdm        = $(wdk7600.dir.lib)/$(wdk7600.dir.lib.$(target.kernel))/i386
+wdk.dir.include.kmdf   = $(wdk7600.dir.include)/wdf/kmdf/1.9
+wdk.dir.lib.kmdf       = $(wdk7600.dir.lib)/wdf/kmdf/i386/1.9
 
-sdk.dir.include.1     = $(wdk.dir.include.api)
-sdk.dir.include.2     = $(wdk.dir.include.crt)
-sdk.dir.include.3     = $(wdk.dir.include.wdm)
-sdk.dir.include.4     = $(wdk.dir.include.kmdf)
+sdk.dir.include.1      = $(wdk.dir.include.api)
+sdk.dir.include.2      = $(wdk.dir.include.crt)
+sdk.dir.include.3      = $(wdk.dir.include.wdm)
+sdk.dir.include.4      = $(wdk.dir.include.kmdf)
 
-sdk.dir.lib.1         = $(wdk.dir.lib.wdm)
-sdk.dir.lib.2         = $(wdk.dir.lib.kmdf)
+sdk.dir.lib.1          = $(wdk.dir.lib.wdm)
+sdk.dir.lib.2          = $(wdk.dir.lib.kmdf)
 
 
 wdk.df = $(make.dir.bin)/x86/df.exe

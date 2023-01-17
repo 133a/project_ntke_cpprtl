@@ -54,15 +54,9 @@ winsdk10.pvk2pfx   = $(winsdk10.dir.bin)/x86/pvk2pfx.exe
 wdk.pvk2pfx        = $(winsdk10.pvk2pfx)
 
 
-ifeq      '$(target.kernel)'  'nt6.2'
-  wdk10240.dir.lib.kernel = win8
-else ifeq '$(target.kernel)'  'nt6.3'
-  wdk10240.dir.lib.kernel = winv6.3
-else ifeq '$(target.kernel)'  'nt10.0'
-  wdk10240.dir.lib.kernel = $(wdk10240.build)
-else 
-  $(error unknown target.kernel=$(target.kernel))
-endif
+wdk10240.dir.lib.nt6.2       = win8
+wdk10240.dir.lib.nt6.3       = winv6.3
+wdk10240.dir.lib.nt10.0      = $(wdk10240.build)
 
 
 wdk10240.dir.include.km      = $(winsdk10.dir)/Include/$(wdk10240.build)/km
@@ -70,7 +64,7 @@ wdk10240.dir.include.ucrt    = $(winsdk10.dir)/Include/$(winsdk10.build)/ucrt
 wdk10240.dir.include.crt     = $(winsdk10.dir)/Include/$(wdk10240.build)/km/crt
 wdk10240.dir.include.shared  = $(winsdk10.dir)/Include/$(winsdk10.build)/shared
 wdk10240.dir.include.um      = $(winsdk10.dir)/Include/$(winsdk10.build)/um
-wdk10240.dir.lib             = $(winsdk10.dir)/Lib/$(wdk10240.dir.lib.kernel)/km/arm
+wdk10240.dir.lib             = $(winsdk10.dir)/Lib/$(wdk10240.dir.lib.$(target.kernel))/km/arm
 
 
 sdk.dir.include.1            = $(msvc.dir.include)

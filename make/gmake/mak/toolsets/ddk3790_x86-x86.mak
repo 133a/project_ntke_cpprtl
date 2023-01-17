@@ -30,22 +30,16 @@ ddk3790.libmgr       = $(ddk3790.dir.bin)/x86/lib.exe
 wdk.libmgr           = $(ddk3790.libmgr)
 
 
-ifeq      '$(target.kernel)'  'nt5.0'
-  ddk3790.dir.kernel = w2k
-else ifeq '$(target.kernel)'  'nt5.1'
-  ddk3790.dir.kernel = wxp
-else ifeq '$(target.kernel)'  'nt5.2'
-  ddk3790.dir.kernel = wnet
-else 
-  $(error unknown target.kernel=$(target.kernel))
-endif
+ddk3790.dir.nt5.0      = w2k
+ddk3790.dir.nt5.1      = wxp
+ddk3790.dir.nt5.2      = wnet
 
 
-wdk.dir.include.win32  = $(ddk3790.dir.include)/$(ddk3790.dir.kernel)
+wdk.dir.include.win32  = $(ddk3790.dir.include)/$(ddk3790.dir.$(target.kernel))
 wdk.dir.include.crt    = $(ddk3790.dir.include)/crt
-wdk.dir.include.ddk    = $(ddk3790.dir.include)/ddk/$(ddk3790.dir.kernel)
-wdk.dir.include.wdm    = $(ddk3790.dir.include)/ddk/wdm/$(ddk3790.dir.kernel)
-wdk.dir.lib.wdm        = $(ddk3790.dir.lib)/$(ddk3790.dir.kernel)/i386
+wdk.dir.include.ddk    = $(ddk3790.dir.include)/ddk/$(ddk3790.dir.$(target.kernel))
+wdk.dir.include.wdm    = $(ddk3790.dir.include)/ddk/wdm/$(ddk3790.dir.$(target.kernel))
+wdk.dir.lib.wdm        = $(ddk3790.dir.lib)/$(ddk3790.dir.$(target.kernel))/i386
 
 
 sdk.dir.include.1      = $(wdk.dir.include.win32)

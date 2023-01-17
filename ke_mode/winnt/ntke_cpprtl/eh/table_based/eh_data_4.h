@@ -3,14 +3,15 @@
 // license: the MIT license
 //--------------------------------------------
 
+// FH4 appeared at {msvc2019/ewdk18362}-14.20.27508-x64; turn on by switch `cl -d2FH4', `link -d2:-FH4'
+// FH4 became default at {msvc2019/ewdk19041}-14.27.29110-x64; turn off by switch `cl -d2FH4-', `link -d2:-FH4-'
+// TODO arm64 is expected to add FH4 support while looks like x86/arm will remain FH3 only
+
 
 #ifndef EH_DATA_4_H_
 #define EH_DATA_4_H_
 
 
-// FH4 appeared at {msvc2019/ewdk18362}-14.20.27508-x64; turn on by switch `cl -d2FH4', `link -d2:-FH4'
-// FH4 became deafault at {msvc2019/ewdk19041}-14.27.29110-x64; turn off by switch `cl -d2FH4-', `link -d2:-FH4-'
-// TODO arm64 is expected to add FH4 support while looks like x86 and arm will remain FH3 only
 #include "eh_config.h"
 #include "eh_data.h"
 
@@ -59,10 +60,10 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     struct unwind_data;
     // uint32   : array size N
     // [N]
-    //   uint32 : (prev_offset<<2)|action_type
-    //   int32  : rva(funclet_ft) if(!action_type.is_empty)
-    //   uint32 : object frame-based offset if(action_type.object_direct_offset), 
-    //            frame-based offset of pointer to object if(action_type.object_indirect_offset)
+    //   uint32 : (prev_offset<<2)|action_mode
+    //   int32  : rva(funclet_ft) if(!action_mode.is_empty)
+    //   uint32 : object frame-based offset if(action_mode.object_direct_offset), 
+    //            frame-based offset of pointer to object if(action_mode.object_indirect_offset)
 
     struct function_data;
     // uint8  : flags
@@ -83,7 +84,8 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
       uint32_t uint32 ();
       int32_t  int32  ();
       uint8_t  uint8  () { return *(pdata++); }
-      template <typename T> T capture() const { return reinterpret_cast<T>(pdata); }
+      template <typename T>    T capture()     const { return reinterpret_cast<T>(pdata); }
+      template <typename T> void capture(T& p) const { p = capture<T>(); }
     };
   }  // namespace packed
 
@@ -114,11 +116,11 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
   template <typename DSC>
   class fwd_index
   {
-    typedef typename DSC::descriptor_type   descriptor_type;
+  protected:
+    typedef          DSC                    descriptor_type;
     typedef typename DSC::data_packed_type  data_packed_type;
     typedef typename DSC::table_packed_type table_packed_type;
 
-  protected:
     size_t            array_size;
     size_t            array_index;
     packed::cursor    cursor;
@@ -155,20 +157,18 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
       if ( table_packed )
       {
         array_size = cursor.uint32();
-        next();
       }
+      next();
     }
     void next()
     {
       if ( ++array_index < array_size )
       {
-        data_packed = cursor.capture<data_packed_type>();
+        cursor.capture(data_packed);
         dsc.unpack(cursor);
+        return;
       }
-      else
-      {
-        upset();
-      }
+      upset();
     }
     descriptor_type const* operator->() const { return &dsc; }
     descriptor_type const& descriptor() const { return dsc; }
@@ -182,19 +182,12 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     rva_t         ip_rva;
     frame_state_t state;
 
-    typedef ip2state_descriptor   descriptor_type;
     typedef ip2state_data_packed  data_packed_type;
     typedef ip2state_table_packed table_packed_type;
 
-    ip2state_descriptor(ip2state_data_packed const data, rva_t const prev_ip_rva)
-      : ip_rva ( prev_ip_rva )
-    {
-      packed::cursor c(data);
-      unpack(c);
-    }
-
-    friend fwd_index<ip2state_descriptor>;
   private:
+    friend fwd_index<ip2state_descriptor>;
+
     ip2state_descriptor() {}
 
     void unpack(packed::cursor& cursor)
@@ -205,14 +198,19 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     }
   };
 
-  struct ip2state_iterator : public fwd_index<ip2state_descriptor>
+  struct ip2state_iterator : fwd_index<ip2state_descriptor>
   {
-    ip2state_iterator(ip2state_table_packed const table, rva_t const fep_rva)
-      : fwd_index<ip2state_descriptor> ( table )
+    ip2state_iterator(table_packed_type const table, rva_t const fep_rva)
+      : fwd_index ( table )
     {
       dsc.ip_rva = fep_rva;
-      dsc.state = frame_state::INVALID;
       next();
+    }
+
+    void reset(rva_t const fep_rva)
+    {
+      dsc.ip_rva = fep_rva;
+      fwd_index::reset();
     }
   };
 
@@ -223,19 +221,19 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     ip2state_table_packed ip2state_table;
     imagebase_t           image_base;
 
-    typedef funclet2state_descriptor   descriptor_type;
     typedef funclet2state_data_packed  data_packed_type;
     typedef funclet2state_table_packed table_packed_type;
 
-    funclet2state_descriptor(funclet2state_data_packed const data, imagebase_t const ib)
+    funclet2state_descriptor(data_packed_type const data, imagebase_t const ib)
       : image_base ( ib )
     {
       packed::cursor c(data);
       unpack(c);
     }
 
-    friend fwd_index<funclet2state_descriptor>;
   private:
+    friend fwd_index<funclet2state_descriptor>;
+
     funclet2state_descriptor() {}
 
     void unpack(packed::cursor& cursor)
@@ -245,10 +243,10 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     }
   };
 
-  struct funclet2state_iterator : public fwd_index<funclet2state_descriptor>
+  struct funclet2state_iterator : fwd_index<funclet2state_descriptor>
   {
-    funclet2state_iterator(funclet2state_table_packed const table, imagebase_t const ib)
-      : fwd_index<funclet2state_descriptor> ( table )
+    funclet2state_iterator(table_packed_type const table, imagebase_t const ib)
+      : fwd_index ( table )
     {
       dsc.image_base = ib;
       next();
@@ -264,19 +262,19 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     catch_block_table_packed catch_block_table;
     imagebase_t              image_base;
 
-    typedef try_block_descriptor   descriptor_type;
     typedef try_block_data_packed  data_packed_type;
     typedef try_block_table_packed table_packed_type;
 
-    try_block_descriptor(try_block_data_packed const data, imagebase_t ib)
+    try_block_descriptor(data_packed_type const data, imagebase_t ib)
       : image_base ( ib )
     {
       packed::cursor c(data);
       unpack(c);
     }
 
-    friend fwd_index<try_block_descriptor>;
   private:
+    friend fwd_index<try_block_descriptor>;
+
     try_block_descriptor() {}
 
     void unpack(packed::cursor& cursor)
@@ -288,10 +286,10 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     }
   };
 
-  struct try_block_iterator : public fwd_index<try_block_descriptor>
+  struct try_block_iterator : fwd_index<try_block_descriptor>
   {
-    try_block_iterator(try_block_table_packed const table, imagebase_t const ib)
-      : fwd_index<try_block_descriptor> ( table )
+    try_block_iterator(table_packed_type const table, imagebase_t const ib)
+      : fwd_index ( table )
     {
       dsc.image_base = ib;
       next();
@@ -318,16 +316,15 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     int                    object_offset;
     funclet_ft             catch_funclet;
     size_t                 continuation[CONTINUATION_ARRAY_LEN];
-    rva_t                  funclet_entry;
+    rva_t                  function_entry;
     imagebase_t            image_base;
 
-    typedef catch_block_descriptor   descriptor_type;
     typedef catch_block_data_packed  data_packed_type;
     typedef catch_block_table_packed table_packed_type;
 
-    catch_block_descriptor(catch_block_data_packed const data, rva_t const fep_rva, imagebase_t const ib)
-      : funclet_entry ( fep_rva )
-      , image_base    ( ib )
+    catch_block_descriptor(data_packed_type const data, rva_t const fep_rva, imagebase_t const ib)
+      : function_entry ( fep_rva )
+      , image_base     ( ib )
     {
       packed::cursor c(data);
       unpack(c);
@@ -339,8 +336,9 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     bool is_continuation_rva()    const { return !!(flags & CONTINUATION_RVA); }
     unsigned continuation_count() const { return (flags >> CONTINUATION_COUNT_RSHIFT & CONTINUATION_COUNT_MASK); }
 
-    friend fwd_index<catch_block_descriptor>;
   private:
+    friend fwd_index<catch_block_descriptor>;
+
     catch_block_descriptor() {}
 
     void unpack(packed::cursor& cursor)
@@ -350,25 +348,25 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
       type_info = has_type_info() ? rva_cast<type_descriptor const*>(cursor.int32(), image_base) : 0;
       object_offset = has_catch_object() ? cursor.uint32() : 0;
       catch_funclet = rva_cast<funclet_ft>(cursor.int32(), image_base);
-      for (size_t idx = 0; idx < CONTINUATION_ARRAY_LEN; ++idx)
+      for ( size_t idx = 0; idx < CONTINUATION_ARRAY_LEN; ++idx )
       {
         continuation[idx] = 0;
         if ( idx < continuation_count() )
         {
           continuation[idx] = is_continuation_rva()
             ? image_base + cursor.int32()
-            : image_base + funclet_entry + cursor.uint32();
+            : image_base + function_entry + cursor.uint32();
         }
       }
     }
   };
 
-  struct catch_block_iterator : public fwd_index<catch_block_descriptor>
+  struct catch_block_iterator : fwd_index<catch_block_descriptor>
   {
-    catch_block_iterator(catch_block_table_packed const table, rva_t const fep_rva, imagebase_t const ib)
-      : fwd_index<catch_block_descriptor> ( table )
+    catch_block_iterator(table_packed_type const table, rva_t const fep_rva, imagebase_t const ib)
+      : fwd_index ( table )
     {
-      dsc.funclet_entry = fep_rva;
+      dsc.function_entry = fep_rva;
       dsc.image_base = ib;
       next();
     }
@@ -382,23 +380,22 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
       NO_ACTION              = 0
     , OBJECT_DIRECT_OFFSET   = 1
     , OBJECT_INDIRECT_OFFSET = 2
-    , FUNCLET_RVA            = 3
+    , NO_OBJECT              = 3
     , OFFSET_RSHIFT          = 2
-    , ACTION_TYPE_MASK       = 3
+    , ACTION_MODE_MASK       = 3
     };
 
-    unsigned     action_type;
+    unsigned     action_mode;
     unsigned     prev_offset;
     funclet_ft   funclet;
     object_type* object;
     size_t       function_frame;
     imagebase_t  image_base;
 
-    typedef unwind_descriptor   descriptor_type;
     typedef unwind_data_packed  data_packed_type;
     typedef unwind_table_packed table_packed_type;
 
-    unwind_descriptor(unwind_data_packed const data, function_frame_t const ff, imagebase_t const ib)
+    unwind_descriptor(data_packed_type const data, function_frame_t const ff, imagebase_t const ib)
       : function_frame ( reinterpret_cast<size_t>(ff) )
       , image_base     ( ib )
     {
@@ -406,18 +403,19 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
       unpack(c);
     }
 
-    bool object_direct_offset()   const { return OBJECT_DIRECT_OFFSET == action_type; }
-    bool object_indirect_offset() const { return OBJECT_INDIRECT_OFFSET == action_type; }
-    bool is_empty()               const { return NO_ACTION == action_type; }
+    bool object_direct_offset()   const { return OBJECT_DIRECT_OFFSET == action_mode; }
+    bool object_indirect_offset() const { return OBJECT_INDIRECT_OFFSET == action_mode; }
+    bool is_empty()               const { return NO_ACTION == action_mode; }
 
-    friend fwd_index<unwind_descriptor>;
   private:
+    friend fwd_index<unwind_descriptor>;
+
     unwind_descriptor() {}
 
     void unpack(packed::cursor& cursor)
     {
       prev_offset = cursor.uint32();
-      action_type = prev_offset & ACTION_TYPE_MASK;
+      action_mode = prev_offset & ACTION_MODE_MASK;
       prev_offset >>= OFFSET_RSHIFT;
       funclet = 0;
       object = 0;
@@ -438,67 +436,63 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     }
   };
 
-  class unwind_iterator : public fwd_index<unwind_descriptor>
+  struct unwind_iterator : fwd_index<unwind_descriptor>
   {
-    unwind_data_packed unwind_data_0;
-
-  public:
-    unwind_iterator(unwind_table_packed const table, function_frame_t const ff, imagebase_t const ib)
-      : fwd_index<unwind_descriptor> ( table )
-      , unwind_data_0                ( cursor.capture<unwind_data_packed>() )
+    unwind_iterator(table_packed_type const table, function_frame_t const ff, imagebase_t const ib)
+      : fwd_index ( table )
+      , data_0    ( 0 )
     {
       dsc.image_base = ib;
       dsc.function_frame = reinterpret_cast<size_t>(ff);
+      cursor.capture(data_0);
       next();
     }
 
-    msvc_data::frame_state_t state() const
+    frame_state_t state() const
     {
       return valid()
-        ? static_cast<msvc_data::frame_state_t>(array_index)
-        : msvc_data::frame_state::EMPTY;
+        ? static_cast<frame_state_t>(array_index)
+        : frame_state::EMPTY;
     }
 
-    void state(msvc_data::frame_state_t const state)
+    void state(frame_state_t const state)
     {
-      if ( state > msvc_data::frame_state::EMPTY )
+      if ( state > frame_state::EMPTY )
       {
         size_t const idx = state;
-        if ( idx > array_index )
+        if ( idx < array_index )
         {
           reset();
         }
-        while ( idx != array_index && valid() )
+        while ( valid() && idx != array_index )
         {
           next();
         }
+        return;
       }
-      else
-      {
-        upset();
-      }
+      upset();
     }
 
     void prev()
     {
       if ( valid() )
       {
-        unwind_data_packed const prev_unwind_data = reinterpret_cast<unwind_data_packed>(reinterpret_cast<size_t>(data()) - dsc.prev_offset);
-        if ( prev_unwind_data < unwind_data_0 )
+        data_packed_type const prev_data = reinterpret_cast<data_packed_type>(reinterpret_cast<size_t>(data()) - dsc.prev_offset);
+        if ( prev_data < data_0 )
         {
           upset();
           return;
         }
-        else
+        reset();
+        while ( data() < prev_data )
         {
-          reset();
-          while ( data() < prev_unwind_data )
-          {
-            next();
-          }
+          next();
         }
       }
     }
+
+  private:
+    data_packed_type data_0;
   };
 
 
@@ -590,9 +584,9 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4
     operator ip2state_table_packed()  const { return ip2state_table; }
     operator function_frame_t()       const { return reinterpret_cast<function_frame_t>(frame); }
 
-    msvc_data::frame_state_t ip2state(rva_t const ip_rva) const
+    frame_state_t ip2state(rva_t const ip_rva) const
     {
-      msvc_data::frame_state_t state = msvc_data::frame_state::EMPTY;
+      frame_state_t state = frame_state::EMPTY;
       for ( ip2state_iterator ip2state(ip2state_table, entry); ip2state.valid(); ip2state.next() )
       {
         if ( ip_rva < ip2state->ip_rva )
@@ -612,8 +606,8 @@ namespace cpprtl { namespace eh { namespace msvc_data { namespace fh4 { namespac
 {
   namespace
   {
-  	uint8_t const lengths[16] = { 1,  2,  1,  3,  1,  2,  1,  4, 1,  2,  1,  3,  1,  2,  1,  5 };
-    uint8_t const shifts[16] =  { 25, 18, 25, 11, 25, 18, 25, 4, 25, 18, 25, 11, 25, 18, 25, 0 };
+    uint8_t const lengths [16] = { 1,  2,  1,  3,  1,  2,  1,  4, 1,  2,  1,  3,  1,  2,  1,  5 };
+    uint8_t const shifts  [16] = { 25, 18, 25, 11, 25, 18, 25, 4, 25, 18, 25, 11, 25, 18, 25, 0 };
   }  // namespace
 
   inline uint32_t cursor::uint32()

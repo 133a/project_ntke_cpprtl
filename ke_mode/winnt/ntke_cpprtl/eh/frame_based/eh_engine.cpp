@@ -383,11 +383,11 @@ namespace cpprtl { namespace eh
           {
             for ( msvc_data::try_block_iterator try_block(function); try_block.valid(); try_block.next() )
             {
-             if ( try_block->high_level < current_state && current_state <= try_block->catch_level )
-             {
-               target_state = msvc_data::unwind_iterator(function)[try_block->high_level + 1].prev_state;  // try_block->high_level
-               break;
-             }
+              if ( try_block->high_level < current_state && current_state <= try_block->catch_level )
+              {
+                target_state = msvc_data::unwind_iterator(function)[try_block->high_level + 1].prev_state;  // try_block->high_level
+                break;
+              }
             }
           }
           unwind_frame(*cpp_reg, function, current_state, target_state);

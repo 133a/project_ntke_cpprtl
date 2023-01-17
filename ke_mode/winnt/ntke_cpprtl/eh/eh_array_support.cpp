@@ -123,7 +123,7 @@ namespace
 
   public:
     bool valid() const { return current < array_len; }
-    void* get() const  { return reinterpret_cast<void*>(reinterpret_cast<size_type>(array) + current * obj_size); }
+    void* element() const { return reinterpret_cast<void*>(reinterpret_cast<size_type>(array) + current * obj_size); }
   };
 
   class fwd_array_iterator
@@ -171,11 +171,6 @@ namespace
 }  // namespace
 
 
-////////////////////////////////////////////////////
-////  msvc internally pre-declared EH entry points 
-////  for array constructing/unwinding routines
-////////////////////////////////////////////////////
-
 //================================
 // `eh vector destructor iterator'
 //--------------------------------
@@ -185,34 +180,33 @@ namespace
   void __stdcall __ehvec_dtor
 #endif
 (
-  void*       array
+  void*       arr
 , size_type   obj_size
-, index_type  array_len
+, index_type  arr_len
 , dtor_ft     dtor
 )
 {
-  rev_array_iterator arr(array, obj_size, array_len);
-  try
-  {
-    for ( ; arr.valid() ; arr.next() )
-    {
-      dtor_thunk(dtor, arr.get());
-    }
-  }
-  catch (...)
+  for ( rev_array_iterator array(arr, obj_size, arr_len) ; array.valid() ; array.next() )
   {
     try
     {
-      for ( arr.next() ; arr.valid() ; arr.next() )  // skip the thrown array element
-      {
-        dtor_thunk(dtor, arr.get());
-      }
+      dtor_thunk(dtor, array.element());
     }
     catch (...)
     {
-      terminate_array_unwind();
+      for ( array.next() ; array.valid() ; array.next() )  // skip the thrown array element
+      {
+        try
+        {
+          dtor_thunk(dtor, array.element());
+        }
+        catch (...)
+        {
+          terminate_array_unwind();
+        }
+      }
+      throw;
     }
-    throw;
   }
 }
 
@@ -225,35 +219,34 @@ namespace
   void __stdcall __ehvec_ctor
 #endif
 (
-  void*       array
+  void*       arr
 , size_type   obj_size
-, index_type  array_len
+, index_type  arr_len
 , ctor_ft     ctor
 , dtor_ft     dtor
 )
 {
-  fwd_array_iterator arr(array, obj_size, array_len);
-  try
-  {
-    for ( ; arr.valid() ; arr.next() )
-    {
-      ctor_thunk(ctor, arr.get());
-    }
-  }
-  catch (...)
+  for ( fwd_array_iterator array(arr, obj_size, arr_len) ; array.valid() ; array.next() )
   {
     try
     {
-      for ( arr.prev() ; arr.valid() ; arr.prev() )  // skip the thrown array element
-      {
-        dtor_thunk(dtor, arr.get());
-      }
+      ctor_thunk(ctor, array.element());
     }
     catch (...)
     {
-      terminate_array_unwind();
+      for ( array.prev() ; array.valid() ; array.prev() )  // skip the thrown array element
+      {
+        try
+        {
+          dtor_thunk(dtor, array.element());
+        }
+        catch (...)
+        {
+          terminate_array_unwind();
+        }
+      }
+      throw;
     }
-    throw;
   }
 }
 
@@ -268,35 +261,34 @@ namespace
   // note the type 'ctor_ft' instead of 'ctor_vb_ft' - it is to match the internal msvc type of this entry point, 
   // but the actual type is 'ctor_vb_ft', so we have to cast in the ctor_vb_thunk()
 (
-  void*       array
+  void*       arr
 , size_type   obj_size
-, index_type  array_len
+, index_type  arr_len
 , ctor_ft     ctor_vb
 , dtor_ft     dtor
 )
 {
-  fwd_array_iterator arr(array, obj_size, array_len);
-  try
-  {
-    for ( ; arr.valid() ; arr.next() )
-    {
-      ctor_vb_thunk(ctor_vb, arr.get());
-    }
-  }
-  catch (...)
+  for ( fwd_array_iterator array(arr, obj_size, arr_len) ; array.valid() ; array.next() )
   {
     try
     {
-      for ( arr.prev() ; arr.valid() ; arr.prev() )  // skip the thrown array element
-      {
-        dtor_thunk(dtor, arr.get());
-      }
+      ctor_vb_thunk(ctor_vb, array.element());
     }
     catch (...)
     {
-      terminate_array_unwind();
+      for ( array.prev() ; array.valid() ; array.prev() )  // skip the thrown array element
+      {
+        try
+        {
+          dtor_thunk(dtor, array.element());
+        }
+        catch (...)
+        {
+          terminate_array_unwind();
+        }
+      }
+      throw;
     }
-    throw;
   }
 }
 
@@ -309,41 +301,40 @@ namespace
   void __stdcall __ehvec_copy_ctor
 #endif
 (
-  void*       dst_array
-, void*       src_array
+  void*       dst
+, void*       src
 , size_type   obj_size
-, index_type  array_len
+, index_type  arr_len
 , cctor_ft    cctor
 , dtor_ft     dtor
 )
 {
-  fwd_array_iterator dst(dst_array, obj_size, array_len);
-  try
-  {
-    for
-    (
-      fwd_array_iterator src(src_array, obj_size, array_len)
-    ; dst.valid()
-    ; dst.next() , src.next()
-    )
-    {
-      cctor_thunk(cctor, dst.get(), src.get());
-    }
-  }
-  catch (...)
+  for
+  (
+    fwd_array_iterator src_array(src, obj_size, arr_len), dst_array(dst, obj_size, arr_len)
+  ; src_array.valid()
+  ; src_array.next(), dst_array.next()
+  )
   {
     try
     {
-      for ( dst.prev() ; dst.valid() ; dst.prev() )  // skip the thrown array element
-      {
-        dtor_thunk(dtor, dst.get());
-      }
+      cctor_thunk(cctor, dst_array.element(), src_array.element());
     }
     catch (...)
     {
-      terminate_array_unwind();
+      for ( dst_array.prev() ; dst_array.valid() ; dst_array.prev() )  // skip the thrown destination array element
+      {
+        try
+        {
+          dtor_thunk(dtor, dst_array.element());
+        }
+        catch (...)
+        {
+          terminate_array_unwind();
+        }
+      }
+      throw;
     }
-    throw;
   }
 }
 
@@ -358,40 +349,39 @@ namespace
   // note the type 'cctor_ft' instead of 'cctor_vb_ft' - it is to match the internal msvc type of this entry point, 
   // but the actual type is 'cctor_vb_ft', so we have to cast in cctor_vb_thunk()
 (
-  void*       dst_array
-, void*       src_array
+  void*       dst
+, void*       src
 , size_type   obj_size
-, index_type  array_len
+, index_type  arr_len
 , cctor_ft    cctor_vb
 , dtor_ft     dtor
 )
 {
-  fwd_array_iterator dst(dst_array, obj_size, array_len);
-  try
-  {
-    for
-    (
-      fwd_array_iterator src(src_array, obj_size, array_len)
-    ; dst.valid()
-    ; dst.next() , src.next()
-    )
-    {
-      cctor_vb_thunk(cctor_vb, dst.get(), src.get());
-    }
-  }
-  catch (...)
+  for
+  (
+    fwd_array_iterator src_array(src, obj_size, arr_len), dst_array(dst, obj_size, arr_len)
+  ; src_array.valid()
+  ; src_array.next(), dst_array.next()
+  )
   {
     try
     {
-      for ( dst.prev() ; dst.valid() ; dst.prev() )  // skip the thrown array element
-      {
-        dtor_thunk(dtor, dst.get());
-      }
+      cctor_vb_thunk(cctor_vb, dst_array.element(), src_array.element());
     }
     catch (...)
     {
-      terminate_array_unwind();
+      for ( dst_array.prev() ; dst_array.valid() ; dst_array.prev() )  // skip the thrown destination array element
+      {
+        try
+        {
+          dtor_thunk(dtor, dst_array.element());
+        }
+        catch (...)
+        {
+          terminate_array_unwind();
+        }
+      }
+      throw;
     }
-    throw;
   }
 }

@@ -17,7 +17,7 @@ namespace cpprtl { namespace msvc_data_aux
 {
   using namespace eh::msvc_data;
 
-  // try_iterator
+  // try_block_iterator
   typedef iterator<direct<try_block_descriptor> > try_block_iterator;
 
   template <> struct descriptor2<try_block_descriptor>

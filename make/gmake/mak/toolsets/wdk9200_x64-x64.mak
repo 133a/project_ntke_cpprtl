@@ -52,31 +52,23 @@ winsdk8.0.pvk2pfx   = $(winsdk8.0.dir.bin)/x64/pvk2pfx.exe
 wdk.pvk2pfx         = $(winsdk8.0.pvk2pfx)
 
 
-#'$(target.kernel)' < 'nt6.0' is unsupported
-ifeq      '$(target.kernel)'  'nt6.0'
-  wdk9200.dir.lib.kernel = wlh
-else ifeq '$(target.kernel)'  'nt6.1'
-  wdk9200.dir.lib.kernel = win7
-else ifeq '$(target.kernel)'  'nt6.2'
-  wdk9200.dir.lib.kernel = win8
-else 
-  $(error unknown target.kernel=$(target.kernel))
-endif
+wdk9200.dir.lib.nt6.0       = wlh
+wdk9200.dir.lib.nt6.1       = win7
+wdk9200.dir.lib.nt6.2       = win8
 
 
 wdk9200.dir.include.km      = $(winsdk8.0.dir)/Include/km
 wdk9200.dir.include.crt     = $(winsdk8.0.dir)/Include/km/crt
 wdk9200.dir.include.shared  = $(winsdk8.0.dir)/Include/shared
 wdk9200.dir.include.um      = $(winsdk8.0.dir)/Include/um
-wdk9200.dir.lib             = $(winsdk8.0.dir)/Lib/$(wdk9200.dir.lib.kernel)/km/x64
+wdk9200.dir.lib             = $(winsdk8.0.dir)/Lib/$(wdk9200.dir.lib.$(target.kernel))/km/x64
 
 
 sdk.dir.include.1           = $(msvc.dir.include)
 sdk.dir.include.2           = $(wdk9200.dir.include.km)
 sdk.dir.include.3           = $(wdk9200.dir.include.crt)
 sdk.dir.include.4           = $(wdk9200.dir.include.shared)
-# for macamd64.inc
-sdk.dir.include.5           = $(wdk9200.dir.include.um)
+sdk.dir.include.5           = $(wdk9200.dir.include.um) # for macamd64.inc
 sdk.dir.lib.1               = $(wdk9200.dir.lib)
 
 

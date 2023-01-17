@@ -16,18 +16,10 @@ wdk.certmgr       = $(winsdk.dir.bin)/certmgr.exe
 wdk.pvk2pfx       = $(winsdk.dir.bin)/pvk2pfx.exe
 
 
-#'$(target.kernel)' < 'nt6.1' is unsupported
-ifeq      '$(target.kernel)'  'nt6.1'
-  wdk.dir.lib.kernel = win7
-else ifeq '$(target.kernel)'  'nt6.2'
-  wdk.dir.lib.kernel = win8
-else ifeq '$(target.kernel)'  'nt6.3'
-  wdk.dir.lib.kernel = winv6.3
-else ifeq '$(target.kernel)'  'nt10.0'
-  wdk.dir.lib.kernel = $(winsdk.version)
-else 
-  $(error unknown target.kernel=$(target.kernel))
-endif
+wdk.dir.lib.nt6.1       = win7
+wdk.dir.lib.nt6.2       = win8
+wdk.dir.lib.nt6.3       = winv6.3
+wdk.dir.lib.nt10.0      = $(winsdk.version)
 
 
 wdk.dir.include.km      = $(winsdk.dir)/Include/$(winsdk.version)/km
@@ -35,7 +27,7 @@ wdk.dir.include.crt     = $(winsdk.dir)/Include/$(winsdk.version)/km/crt
 wdk.dir.include.ucrt    = $(winsdk.dir)/Include/$(winsdk.version)/ucrt
 wdk.dir.include.shared  = $(winsdk.dir)/Include/$(winsdk.version)/shared
 wdk.dir.include.um      = $(winsdk.dir)/Include/$(winsdk.version)/um
-wdk.dir.lib             = $(winsdk.dir)/Lib/$(wdk.dir.lib.kernel)/km/x86
+wdk.dir.lib             = $(winsdk.dir)/Lib/$(wdk.dir.lib.$(target.kernel))/km/x86
 
 
 sdk.dir.include.1       = $(msvc.dir.include)
@@ -46,7 +38,7 @@ sdk.dir.include.5       = $(wdk.dir.include.shared)
 sdk.dir.lib.1           = $(wdk.dir.lib)
 
 
-wdk.df                  = $(make.dir.bin)/x86/df.exe
+wdk.df = $(make.dir.bin)/x86/df.exe
 
 
 target.arch = x86

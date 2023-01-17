@@ -2,7 +2,7 @@
 #      cl definitions
 ###############################################
 
-  wdk.compiler.definitions.cpprtl_debug            +=  _DEBUG DEBUG DBG
+  wdk.compiler.definitions.cpprtl_debug            +=  _DEBUG DEBUG
 
 
 

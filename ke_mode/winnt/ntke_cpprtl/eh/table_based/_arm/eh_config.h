@@ -22,7 +22,7 @@ namespace cpprtl
   typedef unsigned long imagebase_t;
 #endif
 
-  typedef   signed char int8_t;    // to feed up msvc_data_4
+  typedef   signed char int8_t;    // to feed up eh_data_4
   typedef unsigned char uint8_t;   // ^
   typedef int           int32_t;   // ^
   typedef unsigned      uint32_t;  // ^
